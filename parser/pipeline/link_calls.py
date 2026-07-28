@@ -24,13 +24,28 @@ def load_symbol_tables(symbols_dir: Path) -> list[dict]:
     return tables
 
 
-def resolve_python_module_path(dotted: str, file_index: set[str]) -> str | None:
+def resolve_python_module_path(dotted: str, file_index: set[str], importing_file: str = "") -> str | None:
+    """Resolve a dotted Python module path against a candidate package root.
+
+    A repo isn't always its own sys.path root (src/ layouts, nested fixture
+    repos, monorepos): `from backend.db import x` inside
+    `fixtures/sample_repo/backend/app.py` means the real root is
+    `fixtures/sample_repo`, not the top of the repo. Try every ancestor
+    directory of the importing file, nearest first, and use the first one
+    where the dotted path actually resolves to a file on disk.
+    """
     if not dotted:
         return None
-    base = dotted.replace(".", "/")
-    for candidate in (f"{base}.py", f"{base}/__init__.py"):
-        if candidate in file_index:
-            return candidate
+    tail = dotted.replace(".", "/")
+    ancestors = []
+    parts = Path(importing_file).parent.parts if importing_file else ()
+    for i in range(len(parts), -1, -1):
+        ancestors.append("/".join(parts[:i]))
+    for root in ancestors:
+        base = f"{root}/{tail}" if root else tail
+        for candidate in (f"{base}.py", f"{base}/__init__.py"):
+            if candidate in file_index:
+                return candidate
     return None
 
 
@@ -63,18 +78,18 @@ def build_import_bindings(table: dict, file_index: set[str]) -> dict:
             module_dotted = imp["module"]
             imported_name = imp["imported_name"]
             if imp["kind"] == "import":
-                module_path = resolve_python_module_path(module_dotted, file_index)
+                module_path = resolve_python_module_path(module_dotted, file_index, file_path)
                 local_name = imp["alias"] or module_dotted.split(".")[-1]
                 bindings[local_name] = {"type": "module", "module_path": module_path} if module_path else {"type": "external", "raw": module_dotted}
                 continue
             # from_import
             local_name = imp["alias"] or imported_name
             submodule_dotted = f"{module_dotted}.{imported_name}" if module_dotted else imported_name
-            submodule_path = resolve_python_module_path(submodule_dotted, file_index)
+            submodule_path = resolve_python_module_path(submodule_dotted, file_index, file_path)
             if submodule_path:
                 bindings[local_name] = {"type": "module", "module_path": submodule_path}
                 continue
-            module_path = resolve_python_module_path(module_dotted, file_index)
+            module_path = resolve_python_module_path(module_dotted, file_index, file_path)
             if module_path:
                 bindings[local_name] = {"type": "symbol_ref", "module_path": module_path, "symbol_name": imported_name}
             else:
@@ -269,7 +284,7 @@ def main(symbols_dir: str, output_path: str) -> None:
                     "evidence": f"matched route string '{path_str}'",
                 })
 
-    graph = {"repo": "fixtures/sample_repo", "commit": None, "nodes": all_nodes, "edges": edges}
+    graph = {"repo": symbols_dir, "commit": None, "nodes": all_nodes, "edges": edges}
     Path(output_path).write_text(json.dumps(graph, indent=2), encoding="utf-8")
     print(f"Wrote {len(all_nodes)} nodes and {len(edges)} edges to {output_path}")
 

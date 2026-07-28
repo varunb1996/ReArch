@@ -4,6 +4,7 @@ Hardcoded to the one fixture repo's pre-built Kuzu DB — no auth, no upload,
 no multi-repo support yet. Those come in M7/M8. Run with:
     .venv/Scripts/uvicorn api.main:app --reload --port 8000
 """
+import os
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -11,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.services.graph_store import GraphStore
 
-DB_PATH = str(Path(__file__).resolve().parent / "data" / "kuzu_db")
+DB_PATH = os.environ.get("REARCH_DB_PATH") or str(Path(__file__).resolve().parent / "data" / "kuzu_db")
 
 app = FastAPI(title="ReArch API (dev)")
 app.add_middleware(

@@ -9,6 +9,9 @@ from pathlib import Path
 
 import tree_sitter_language_pack as tslp
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from parser.pipeline.repo_walk import iter_code_files
+
 EXTENSION_TO_LANGUAGE = {
     ".py": "python",
     ".js": "javascript",
@@ -64,9 +67,7 @@ def main(repo_dir: str, output_dir: str) -> None:
 
     parsed_count = 0
     skipped = []
-    for file_path in sorted(repo_path.rglob("*")):
-        if not file_path.is_file():
-            continue
+    for file_path in iter_code_files(repo_path, set(EXTENSION_TO_LANGUAGE)):
         result = parse_file(file_path)
         if result is None:
             skipped.append(str(file_path))

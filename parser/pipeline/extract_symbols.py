@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from parser.pipeline.repo_walk import iter_code_files
 from parser.resolvers.python.extract import extract as extract_python
 from parser.resolvers.javascript.extract import extract as extract_javascript
 
@@ -26,19 +27,24 @@ def main(repo_dir: str, output_dir: str) -> None:
     out_path.mkdir(parents=True, exist_ok=True)
 
     extracted = 0
-    for file_path in sorted(repo_path.rglob("*")):
-        if not file_path.is_file():
-            continue
-        extractor = EXTENSION_TO_EXTRACTOR.get(file_path.suffix)
-        if extractor is None:
-            continue
+    errors = []
+    for file_path in iter_code_files(repo_path, set(EXTENSION_TO_EXTRACTOR)):
+        extractor = EXTENSION_TO_EXTRACTOR[file_path.suffix]
         rel = file_path.relative_to(repo_path)
-        result = extractor(file_path, rel)
+        try:
+            result = extractor(file_path, rel)
+        except Exception as exc:
+            errors.append((str(rel), str(exc)))
+            continue
         out_file = out_path / (str(rel).replace("\\", "__").replace("/", "__") + ".symbols.json")
         out_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
         extracted += 1
 
     print(f"Extracted symbol tables for {extracted} files into {out_path}")
+    if errors:
+        print(f"Failed to parse {len(errors)} files:")
+        for rel, msg in errors[:20]:
+            print(f"  {rel}: {msg}")
 
 
 if __name__ == "__main__":

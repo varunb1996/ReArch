@@ -6,3 +6,4 @@ node_modules/
 api/data/
 *.log
 ingest/
+.env

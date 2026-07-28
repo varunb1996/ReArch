@@ -159,8 +159,11 @@ export default function App() {
   const [repos, setRepos] = useState([]);
   const [selectedRepoId, setSelectedRepoId] = useState(null);
   const [graph, setGraph] = useState(null);
+  const [narratives, setNarratives] = useState({});
   const [selectedNode, setSelectedNode] = useState(null);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [focusedCluster, setFocusedCluster] = useState(null);
 
   useEffect(() => {
     localStorage.setItem("rearch-username", username);
@@ -183,6 +186,9 @@ export default function App() {
   useEffect(() => {
     if (!selectedRepoId || !username) return;
     setGraph(null);
+    setNarratives({});
+    setSearchQuery("");
+    setFocusedCluster(null);
     apiFetch(`/api/repos/${selectedRepoId}/graph`, username)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
@@ -190,6 +196,10 @@ export default function App() {
       })
       .then(setGraph)
       .catch((err) => setError(String(err)));
+    apiFetch(`/api/repos/${selectedRepoId}/narratives`, username)
+      .then((res) => (res.ok ? res.json() : {}))
+      .then(setNarratives)
+      .catch(() => setNarratives({}));
   }, [selectedRepoId, username]);
 
   const handleRepoAdded = useCallback(
@@ -205,8 +215,17 @@ export default function App() {
     const rawNodes = graph.nodes.map(toFlowNode);
     const rawEdges = graph.edges.map(toFlowEdge);
     const positioned = layoutGraph(rawNodes, graph.edges);
-    return { flowNodes: positioned, flowEdges: rawEdges };
-  }, [graph]);
+
+    const query = searchQuery.trim().toLowerCase();
+    const styled = positioned.map((n) => {
+      const matchesSearch = !query || n.data.label.toLowerCase().includes(query);
+      const matchesCluster = focusedCluster === null || n.data.raw.cluster === focusedCluster;
+      const dimmed = !matchesSearch || !matchesCluster;
+      return { ...n, style: { ...n.style, opacity: dimmed ? 0.12 : 1 } };
+    });
+
+    return { flowNodes: styled, flowEdges: rawEdges };
+  }, [graph, searchQuery, focusedCluster]);
 
   const onNodeClick = useCallback((_, node) => setSelectedNode(node.data.raw), []);
 
@@ -239,11 +258,27 @@ export default function App() {
         {error && <div className="status error">{error}</div>}
         {!error && !graph && <div className="status">{selectedRepoId ? "Loading blueprint..." : "Select or add a repo to view its blueprint."}</div>}
         {graph && (
-          <ReactFlow nodes={flowNodes} edges={flowEdges} onNodeClick={onNodeClick} fitView>
-            <Background />
-            <Controls />
-            <MiniMap pannable zoomable />
-          </ReactFlow>
+          <>
+            <div className="canvas-toolbar">
+              <input
+                className="search-box"
+                type="text"
+                placeholder="Search nodes by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {focusedCluster !== null && (
+                <button className="clear-focus" onClick={() => setFocusedCluster(null)}>
+                  Clear cluster focus (#{focusedCluster})
+                </button>
+              )}
+            </div>
+            <ReactFlow nodes={flowNodes} edges={flowEdges} onNodeClick={onNodeClick} fitView>
+              <Background />
+              <Controls />
+              <MiniMap pannable zoomable />
+            </ReactFlow>
+          </>
         )}
       </div>
 
@@ -268,6 +303,22 @@ export default function App() {
         ) : (
           <p className="hint">Nothing selected.</p>
         )}
+        {selectedNode && selectedNode.cluster >= 0 && narratives[selectedNode.cluster] && (
+          <div className="narrative">
+            <strong>Why this subsystem exists (inferred)</strong>
+            <p>{narratives[selectedNode.cluster].text}</p>
+            <details>
+              <summary>Grounded in</summary>
+              <p className="hint">
+                Calls out to: {narratives[selectedNode.cluster].grounded_in.calls_out.join(", ") || "none detected"}
+              </p>
+              <p className="hint">
+                Called by: {narratives[selectedNode.cluster].grounded_in.calls_in.join(", ") || "none detected"}
+              </p>
+              <p className="hint">Excerpt shown to the model: {narratives[selectedNode.cluster].grounded_in.excerpt_source}</p>
+            </details>
+          </div>
+        )}
         <div className="legend">
           <strong>Edges</strong>
           <div><span className="swatch" style={{ background: "#16a34a" }} /> resolved</div>
@@ -277,9 +328,13 @@ export default function App() {
         </div>
         {clusterSummary.length > 0 && (
           <div className="legend">
-            <strong>Clusters ({clusterSummary.length})</strong>
+            <strong>Clusters ({clusterSummary.length}) — click to focus</strong>
             {clusterSummary.map(([cluster, count]) => (
-              <div key={cluster}>
+              <div
+                key={cluster}
+                className={`cluster-row ${focusedCluster === cluster ? "active" : ""}`}
+                onClick={() => setFocusedCluster(focusedCluster === cluster ? null : cluster)}
+              >
                 <span className="swatch" style={{ background: clusterColor(cluster) }} /> #{cluster} ({count} nodes)
               </div>
             ))}

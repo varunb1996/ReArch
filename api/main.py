@@ -11,8 +11,10 @@ checks, per-user repo lists) doesn't change when that swap happens.
 Run with:
     .venv/Scripts/uvicorn api.main:app --reload --port 8000
 """
+import json
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -20,6 +22,8 @@ from pydantic import BaseModel
 from api.services.graph_store import GraphStore
 from api.services.user_store import UserStore
 from parser.pipeline.ingest_repo import main as ingest_repo_main
+
+load_dotenv()
 
 DATA_ROOT = Path(__file__).resolve().parent / "data"
 REPOS_ROOT = DATA_ROOT / "repos"
@@ -94,3 +98,15 @@ def get_repo_graph(repo_id: str, user_id: str = Depends(get_current_user)):
 
     graph_store = get_graph_store(repo_id)
     return {"nodes": graph_store.all_nodes(), "edges": graph_store.all_edges()}
+
+
+@app.get("/api/repos/{repo_id}/narratives")
+def get_repo_narratives(repo_id: str, user_id: str = Depends(get_current_user)):
+    repo = get_user_store().get_repo(repo_id)
+    if repo is None or repo["user_id"] != user_id:
+        raise HTTPException(404, "no such repo for this user")
+
+    narratives_path = REPOS_ROOT / repo_id / "narratives.json"
+    if not narratives_path.exists():
+        return {}
+    return json.loads(narratives_path.read_text(encoding="utf-8"))

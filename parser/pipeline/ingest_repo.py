@@ -18,6 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from parser.pipeline.extract_symbols import main as extract_symbols_main
 from parser.pipeline.link_calls import main as link_calls_main
 from parser.pipeline.cluster_nodes import main as cluster_nodes_main
+from parser.pipeline.generate_narratives import main as generate_narratives_main
 
 
 def clone_or_update(git_url: str, dest: Path) -> None:
@@ -33,6 +34,8 @@ def main(git_url: str, work_dir: str) -> Path:
     repo_dir = work_path / "repo"
     symbols_dir = work_path / "symbols"
     graph_path = work_path / "graph.json"
+    narratives_path = work_path / "narratives.json"
+    narratives_cache_path = work_path / "narratives_cache.json"
 
     print(f"Cloning/updating {git_url} -> {repo_dir}")
     clone_or_update(git_url, repo_dir)
@@ -45,6 +48,9 @@ def main(git_url: str, work_dir: str) -> Path:
 
     print("Embedding and clustering nodes into candidate subsystems...")
     cluster_nodes_main(str(graph_path), str(graph_path))
+
+    print("Generating subsystem intent narratives (skipped if GROQ_API_KEY unset)...")
+    generate_narratives_main(str(graph_path), str(repo_dir), str(narratives_path), str(narratives_cache_path))
 
     return graph_path
 

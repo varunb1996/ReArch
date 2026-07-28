@@ -33,6 +33,50 @@ html, body, #root {
   position: relative;
 }
 
+.canvas-toolbar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.search-box {
+  width: 220px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 12px;
+}
+
+.clear-focus {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #1d4ed8;
+  color: white;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.cluster-row {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.cluster-row:hover {
+  background: #1e293b;
+}
+
+.cluster-row.active {
+  background: #1d4ed8;
+}
+
 .inspector {
   width: 260px;
   padding: 16px;
@@ -73,6 +117,34 @@ html, body, #root {
 .mono {
   font-family: ui-monospace, monospace;
   font-size: 10px;
+}
+
+.narrative {
+  margin-top: 16px;
+  padding: 10px;
+  background: #1e293b;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.narrative strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #fbbf24;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.narrative p {
+  margin: 0 0 6px;
+  line-height: 1.4;
+}
+
+.narrative details summary {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 11px;
 }
 
 .legend {

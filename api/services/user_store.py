@@ -62,6 +62,12 @@ class UserStore:
         ).fetchall()
         return [{"id": r[0], "name": r[1], "git_url": r[2], "status": r[3], "error": r[4]} for r in rows]
 
+    def all_repos(self) -> list[dict]:
+        """Across all users — used by the git webhook, which reacts to a
+        push on a given URL regardless of which users are tracking it."""
+        rows = self.conn.execute("SELECT id, user_id, git_url FROM repos").fetchall()
+        return [{"id": r[0], "user_id": r[1], "git_url": r[2]} for r in rows]
+
     def get_repo(self, repo_id: str) -> dict | None:
         row = self.conn.execute(
             "SELECT id, user_id, name, git_url, status, error FROM repos WHERE id=?", (repo_id,)

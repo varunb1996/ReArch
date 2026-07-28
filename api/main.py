@@ -11,12 +11,15 @@ checks, per-user repo lists) doesn't change when that swap happens.
 Run with:
     .venv/Scripts/uvicorn api.main:app --reload --port 8000
 """
+import hashlib
+import hmac
 import json
+import os
 import shutil
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -79,6 +82,31 @@ def get_current_user(x_user: str = Header(...)) -> str:
     return get_user_store().get_or_create_user(username)
 
 
+def run_reanalysis(repo_id: str, git_url: str, *, fresh_db: bool) -> None:
+    """Shared by the manual reanalyze endpoint, initial repo creation, and
+    the git webhook — one place that runs the pipeline and updates status,
+    so all three trigger paths behave identically."""
+    store = get_user_store()
+    work_dir = REPOS_ROOT / repo_id
+    try:
+        result = ingest_repo_main(git_url, str(work_dir))
+        store_fn = reset_graph_store if fresh_db else get_graph_store
+        store_fn(repo_id).load_graph_json(str(result["graph_path"]))
+        store.set_repo_status(repo_id, "ready")
+    except Exception as exc:
+        store.set_repo_status(repo_id, "error", str(exc))
+
+
+def normalize_git_url(url: str) -> str:
+    """Strip protocol/trailing-slash/.git so URLs from different sources
+    (our stored git_url vs. GitHub's webhook payload fields) compare equal."""
+    url = url.strip().lower()
+    for prefix in ("https://", "http://", "git@github.com:"):
+        if url.startswith(prefix):
+            url = url[len(prefix):]
+    return url.rstrip("/").removesuffix(".git")
+
+
 class CreateRepoRequest(BaseModel):
     git_url: str
     name: str | None = None
@@ -89,15 +117,7 @@ def create_repo(body: CreateRepoRequest, user_id: str = Depends(get_current_user
     store = get_user_store()
     name = body.name or body.git_url.rstrip("/").rsplit("/", 1)[-1].removesuffix(".git")
     repo_id = store.create_repo(user_id, name, body.git_url)
-
-    work_dir = REPOS_ROOT / repo_id
-    try:
-        result = ingest_repo_main(body.git_url, str(work_dir))
-        get_graph_store(repo_id).load_graph_json(str(result["graph_path"]))
-        store.set_repo_status(repo_id, "ready")
-    except Exception as exc:
-        store.set_repo_status(repo_id, "error", str(exc))
-
+    run_reanalysis(repo_id, body.git_url, fresh_db=False)
     return store.get_repo(repo_id)
 
 
@@ -107,16 +127,46 @@ def reanalyze_repo(repo_id: str, user_id: str = Depends(get_current_user)):
     repo = store.get_repo(repo_id)
     if repo is None or repo["user_id"] != user_id:
         raise HTTPException(404, "no such repo for this user")
-
-    work_dir = REPOS_ROOT / repo_id
-    try:
-        result = ingest_repo_main(repo["git_url"], str(work_dir))
-        reset_graph_store(repo_id).load_graph_json(str(result["graph_path"]))
-        store.set_repo_status(repo_id, "ready")
-    except Exception as exc:
-        store.set_repo_status(repo_id, "error", str(exc))
-
+    run_reanalysis(repo_id, repo["git_url"], fresh_db=True)
     return store.get_repo(repo_id)
+
+
+@app.post("/api/webhooks/github")
+async def github_webhook(request: Request):
+    """Push-triggered re-analysis — the 'real-time blueprint sync' milestone.
+    Requires WEBHOOK_SECRET to be set (GitHub repo settings -> Webhooks ->
+    Secret) and verifies the request really came from GitHub via HMAC-SHA256
+    over the raw body, exactly as GitHub signs it. Reachability note: GitHub
+    can only deliver this to a publicly reachable URL, so testing against a
+    local dev server needs a tunnel (e.g. `cloudflared tunnel --url
+    http://localhost:8000`) pointed at this endpoint.
+    """
+    secret = os.environ.get("WEBHOOK_SECRET")
+    if not secret:
+        raise HTTPException(501, "WEBHOOK_SECRET not configured; webhook disabled")
+
+    body = await request.body()
+    signature = request.headers.get("X-Hub-Signature-256", "")
+    expected = "sha256=" + hmac.new(secret.encode(), body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(signature, expected):
+        raise HTTPException(401, "invalid webhook signature")
+
+    payload = json.loads(body)
+    if request.headers.get("X-GitHub-Event") != "push":
+        return {"status": "ignored", "reason": "not a push event"}
+
+    repo_info = payload.get("repository", {})
+    pushed_url = repo_info.get("clone_url") or repo_info.get("html_url", "")
+    pushed_normalized = normalize_git_url(pushed_url)
+
+    store = get_user_store()
+    matched = []
+    for repo in store.all_repos():
+        if normalize_git_url(repo["git_url"]) == pushed_normalized:
+            matched.append(repo["id"])
+            run_reanalysis(repo["id"], repo["git_url"], fresh_db=True)
+
+    return {"status": "ok", "matched_repos": matched}
 
 
 @app.get("/api/repos")

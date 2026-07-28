@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+parser/output/
+node_modules/
+api/data/
+*.log

@@ -47,6 +47,14 @@ class GraphStore:
         for stmt in SCHEMA_STATEMENTS:
             self.conn.execute(stmt)
 
+    def close(self) -> None:
+        """Release Kuzu's file handles on db_path. Required before deleting
+        or replacing the DB directory on Windows — without this, re-analysis
+        (which wipes and recreates the DB) fails with a locked-directory
+        error even though the Python object is no longer referenced."""
+        self.conn.close()
+        self.db.close()
+
     def load_graph_json(self, graph_json_path: str) -> None:
         graph = json.loads(Path(graph_json_path).read_text(encoding="utf-8"))
         known_ids = {n["id"] for n in graph["nodes"]}

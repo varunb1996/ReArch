@@ -9,6 +9,7 @@ Cloudflare Queues, GitHub OAuth) are exactly the two functions below.
 Usage:
     .venv/Scripts/python parser/pipeline/ingest_repo.py <git_url> <work_dir>
 """
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -29,16 +30,26 @@ def clone_or_update(git_url: str, dest: Path) -> None:
         subprocess.run(["git", "clone", "--depth", "1", git_url, str(dest)], check=True)
 
 
-def main(git_url: str, work_dir: str) -> Path:
+def current_commit_sha(repo_dir: Path) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo_dir), "rev-parse", "HEAD"],
+        check=True, capture_output=True, text=True,
+    )
+    return result.stdout.strip()
+
+
+def main(git_url: str, work_dir: str) -> dict:
     work_path = Path(work_dir)
     repo_dir = work_path / "repo"
     symbols_dir = work_path / "symbols"
     graph_path = work_path / "graph.json"
     narratives_path = work_path / "narratives.json"
     narratives_cache_path = work_path / "narratives_cache.json"
+    snapshots_dir = work_path / "snapshots"
 
     print(f"Cloning/updating {git_url} -> {repo_dir}")
     clone_or_update(git_url, repo_dir)
+    commit_sha = current_commit_sha(repo_dir)
 
     print("Extracting symbol tables...")
     extract_symbols_main(str(repo_dir), str(symbols_dir))
@@ -52,7 +63,12 @@ def main(git_url: str, work_dir: str) -> Path:
     print("Generating subsystem intent narratives (skipped if GROQ_API_KEY unset)...")
     generate_narratives_main(str(graph_path), str(repo_dir), str(narratives_path), str(narratives_cache_path))
 
-    return graph_path
+    snapshots_dir.mkdir(parents=True, exist_ok=True)
+    snapshot_path = snapshots_dir / f"{commit_sha}.json"
+    shutil.copyfile(graph_path, snapshot_path)
+    print(f"Snapshotted graph at commit {commit_sha[:12]} -> {snapshot_path}")
+
+    return {"graph_path": graph_path, "commit_sha": commit_sha, "snapshot_path": snapshot_path}
 
 
 if __name__ == "__main__":

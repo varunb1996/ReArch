@@ -154,6 +154,124 @@ function RepoPanel({ username, setUsername, repos, selectedRepoId, onSelectRepo,
   );
 }
 
+function HistoryPanel({ username, repoId, onReanalyzed }) {
+  const [commits, setCommits] = useState([]);
+  const [fromCommit, setFromCommit] = useState("");
+  const [toCommit, setToCommit] = useState("");
+  const [diff, setDiff] = useState(null);
+  const [diffError, setDiffError] = useState(null);
+  const [reanalyzing, setReanalyzing] = useState(false);
+
+  const refreshCommits = useCallback(() => {
+    apiFetch(`/api/repos/${repoId}/commits`, username)
+      .then((res) => res.json())
+      .then((list) => {
+        setCommits(list);
+        if (list.length >= 2) {
+          setToCommit(list[0].commit_sha);
+          setFromCommit(list[1].commit_sha);
+        }
+      })
+      .catch(() => setCommits([]));
+  }, [repoId, username]);
+
+  useEffect(() => {
+    refreshCommits();
+    setDiff(null);
+    setDiffError(null);
+  }, [refreshCommits]);
+
+  const handleReanalyze = async () => {
+    setReanalyzing(true);
+    try {
+      await apiFetch(`/api/repos/${repoId}/reanalyze`, username, { method: "POST" });
+      refreshCommits();
+      onReanalyzed();
+    } finally {
+      setReanalyzing(false);
+    }
+  };
+
+  const handleViewDiff = async () => {
+    setDiffError(null);
+    setDiff(null);
+    try {
+      const res = await apiFetch(`/api/repos/${repoId}/diff?from_commit=${fromCommit}&to_commit=${toCommit}`, username);
+      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      setDiff(await res.json());
+    } catch (err) {
+      setDiffError(String(err));
+    }
+  };
+
+  return (
+    <div className="history-panel">
+      <div className="history-header">
+        <strong>History ({commits.length} analyzed commit{commits.length === 1 ? "" : "s"})</strong>
+        <button onClick={handleReanalyze} disabled={reanalyzing}>
+          {reanalyzing ? "Re-analyzing..." : "Re-analyze now"}
+        </button>
+      </div>
+      {commits.length >= 2 ? (
+        <div className="diff-controls">
+          <label className="field">
+            <span>From</span>
+            <select value={fromCommit} onChange={(e) => setFromCommit(e.target.value)}>
+              {commits.map((c) => (
+                <option key={c.commit_sha} value={c.commit_sha}>{c.commit_sha.slice(0, 10)}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>To</span>
+            <select value={toCommit} onChange={(e) => setToCommit(e.target.value)}>
+              {commits.map((c) => (
+                <option key={c.commit_sha} value={c.commit_sha}>{c.commit_sha.slice(0, 10)}</option>
+              ))}
+            </select>
+          </label>
+          <button onClick={handleViewDiff}>View diff</button>
+        </div>
+      ) : (
+        <p className="hint">Re-analyze again after new commits land to enable diffing.</p>
+      )}
+      {diffError && <p className="form-error">{diffError}</p>}
+      {diff && (
+        <div className="diff-result">
+          <p className="hint">
+            +{diff.summary.nodes_added} -{diff.summary.nodes_removed} nodes, +{diff.summary.edges_added} -{diff.summary.edges_removed} edges,{" "}
+            {diff.summary.resolution_changed} resolution changes, {diff.summary.cluster_membership_changed} cluster moves
+          </p>
+          {diff.nodes_added.length > 0 && (
+            <details open>
+              <summary>Nodes added ({diff.nodes_added.length})</summary>
+              {diff.nodes_added.map((n) => (
+                <div key={n.id} className="diff-item added">+ {n.qualified_name} ({n.path})</div>
+              ))}
+            </details>
+          )}
+          {diff.nodes_removed.length > 0 && (
+            <details open>
+              <summary>Nodes removed ({diff.nodes_removed.length})</summary>
+              {diff.nodes_removed.map((n) => (
+                <div key={n.id} className="diff-item removed">- {n.qualified_name} ({n.path})</div>
+              ))}
+            </details>
+          )}
+          {diff.cluster_membership_changed.length > 0 && (
+            <details>
+              <summary>Cluster moves ({diff.cluster_membership_changed.length})</summary>
+              {diff.cluster_membership_changed.map((c) => (
+                <div key={c.id} className="diff-item">{c.qualified_name}: #{c.old_cluster} &rarr; #{c.new_cluster}</div>
+              ))}
+            </details>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function App() {
   const [username, setUsername] = useState(() => localStorage.getItem("rearch-username") || "");
   const [repos, setRepos] = useState([]);
@@ -183,12 +301,8 @@ export default function App() {
     setGraph(null);
   }, [username, refreshRepos]);
 
-  useEffect(() => {
+  const loadRepoData = useCallback(() => {
     if (!selectedRepoId || !username) return;
-    setGraph(null);
-    setNarratives({});
-    setSearchQuery("");
-    setFocusedCluster(null);
     apiFetch(`/api/repos/${selectedRepoId}/graph`, username)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
@@ -200,6 +314,16 @@ export default function App() {
       .then((res) => (res.ok ? res.json() : {}))
       .then(setNarratives)
       .catch(() => setNarratives({}));
+  }, [selectedRepoId, username]);
+
+  useEffect(() => {
+    if (!selectedRepoId || !username) return;
+    setGraph(null);
+    setNarratives({});
+    setSearchQuery("");
+    setFocusedCluster(null);
+    loadRepoData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRepoId, username]);
 
   const handleRepoAdded = useCallback(
@@ -252,6 +376,16 @@ export default function App() {
           onSelectRepo={setSelectedRepoId}
           onRepoAdded={handleRepoAdded}
         />
+        {selectedRepoId && (
+          <HistoryPanel
+            username={username}
+            repoId={selectedRepoId}
+            onReanalyzed={() => {
+              refreshRepos();
+              loadRepoData();
+            }}
+          />
+        )}
       </aside>
 
       <div className="canvas">

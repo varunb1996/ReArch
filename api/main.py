@@ -12,6 +12,7 @@ Run with:
     .venv/Scripts/uvicorn api.main:app --reload --port 8000
 """
 import json
+import shutil
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -21,6 +22,7 @@ from pydantic import BaseModel
 
 from api.services.graph_store import GraphStore
 from api.services.user_store import UserStore
+from parser.pipeline.diff_graphs import diff_graphs
 from parser.pipeline.ingest_repo import main as ingest_repo_main
 
 load_dotenv()
@@ -54,6 +56,22 @@ def get_graph_store(repo_id: str) -> GraphStore:
     return _graph_stores[repo_id]
 
 
+def reset_graph_store(repo_id: str) -> GraphStore:
+    """Wipe and recreate the Kuzu DB for a repo. Required before re-analysis:
+    Kuzu's MERGE only adds/updates, so without a full reset, nodes/edges
+    removed since the last analysis would linger as stale data forever."""
+    existing = _graph_stores.pop(repo_id, None)
+    if existing is not None:
+        existing.close()
+    db_path = REPOS_ROOT / repo_id / "kuzu_db"
+    for path in (db_path, db_path.with_name(db_path.name + ".wal")):
+        if path.is_dir():
+            shutil.rmtree(path)
+        elif path.exists():
+            path.unlink()
+    return get_graph_store(repo_id)
+
+
 def get_current_user(x_user: str = Header(...)) -> str:
     username = x_user.strip()
     if not username:
@@ -74,8 +92,26 @@ def create_repo(body: CreateRepoRequest, user_id: str = Depends(get_current_user
 
     work_dir = REPOS_ROOT / repo_id
     try:
-        graph_path = ingest_repo_main(body.git_url, str(work_dir))
-        get_graph_store(repo_id).load_graph_json(str(graph_path))
+        result = ingest_repo_main(body.git_url, str(work_dir))
+        get_graph_store(repo_id).load_graph_json(str(result["graph_path"]))
+        store.set_repo_status(repo_id, "ready")
+    except Exception as exc:
+        store.set_repo_status(repo_id, "error", str(exc))
+
+    return store.get_repo(repo_id)
+
+
+@app.post("/api/repos/{repo_id}/reanalyze")
+def reanalyze_repo(repo_id: str, user_id: str = Depends(get_current_user)):
+    store = get_user_store()
+    repo = store.get_repo(repo_id)
+    if repo is None or repo["user_id"] != user_id:
+        raise HTTPException(404, "no such repo for this user")
+
+    work_dir = REPOS_ROOT / repo_id
+    try:
+        result = ingest_repo_main(repo["git_url"], str(work_dir))
+        reset_graph_store(repo_id).load_graph_json(str(result["graph_path"]))
         store.set_repo_status(repo_id, "ready")
     except Exception as exc:
         store.set_repo_status(repo_id, "error", str(exc))
@@ -110,3 +146,34 @@ def get_repo_narratives(repo_id: str, user_id: str = Depends(get_current_user)):
     if not narratives_path.exists():
         return {}
     return json.loads(narratives_path.read_text(encoding="utf-8"))
+
+
+@app.get("/api/repos/{repo_id}/commits")
+def list_repo_commits(repo_id: str, user_id: str = Depends(get_current_user)):
+    repo = get_user_store().get_repo(repo_id)
+    if repo is None or repo["user_id"] != user_id:
+        raise HTTPException(404, "no such repo for this user")
+
+    snapshots_dir = REPOS_ROOT / repo_id / "snapshots"
+    if not snapshots_dir.exists():
+        return []
+    commits = [{"commit_sha": f.stem, "analyzed_at": f.stat().st_mtime} for f in snapshots_dir.glob("*.json")]
+    commits.sort(key=lambda c: c["analyzed_at"], reverse=True)
+    return commits
+
+
+@app.get("/api/repos/{repo_id}/diff")
+def get_repo_diff(repo_id: str, from_commit: str, to_commit: str, user_id: str = Depends(get_current_user)):
+    repo = get_user_store().get_repo(repo_id)
+    if repo is None or repo["user_id"] != user_id:
+        raise HTTPException(404, "no such repo for this user")
+
+    snapshots_dir = REPOS_ROOT / repo_id / "snapshots"
+    old_path = snapshots_dir / f"{from_commit}.json"
+    new_path = snapshots_dir / f"{to_commit}.json"
+    if not old_path.exists() or not new_path.exists():
+        raise HTTPException(404, "one or both commit snapshots not found for this repo")
+
+    old_graph = json.loads(old_path.read_text(encoding="utf-8"))
+    new_graph = json.loads(new_path.read_text(encoding="utf-8"))
+    return diff_graphs(old_graph, new_graph)

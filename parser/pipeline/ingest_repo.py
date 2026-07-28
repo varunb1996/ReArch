@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from parser.pipeline.extract_symbols import main as extract_symbols_main
 from parser.pipeline.link_calls import main as link_calls_main
+from parser.pipeline.cluster_nodes import main as cluster_nodes_main
 
 
 def clone_or_update(git_url: str, dest: Path) -> None:
@@ -41,6 +42,9 @@ def main(git_url: str, work_dir: str) -> Path:
 
     print("Resolving calls/imports into graph...")
     link_calls_main(str(symbols_dir), str(graph_path))
+
+    print("Embedding and clustering nodes into candidate subsystems...")
+    cluster_nodes_main(str(graph_path), str(graph_path))
 
     return graph_path
 

@@ -21,6 +21,7 @@ SCHEMA_STATEMENTS = [
         qualified_name STRING,
         start_line INT64,
         end_line INT64,
+        cluster INT64,
         PRIMARY KEY (id)
     )""",
     "CREATE REL TABLE IF NOT EXISTS IMPORTS(FROM Node TO Node, resolution STRING, evidence STRING)",
@@ -55,7 +56,8 @@ class GraphStore:
                 """MERGE (n:Node {id: $id})
                    SET n.kind=$kind, n.language=$language, n.path=$path,
                        n.name=$name, n.qualified_name=$qualified_name,
-                       n.start_line=$start_line, n.end_line=$end_line""",
+                       n.start_line=$start_line, n.end_line=$end_line,
+                       n.cluster=$cluster""",
                 {
                     "id": node["id"],
                     "kind": node["kind"],
@@ -65,6 +67,7 @@ class GraphStore:
                     "qualified_name": node.get("qualified_name", ""),
                     "start_line": node.get("start_line", 0) or 0,
                     "end_line": node.get("end_line", 0) or 0,
+                    "cluster": node.get("cluster", -1) if node.get("cluster") is not None else -1,
                 },
             )
 
@@ -77,7 +80,8 @@ class GraphStore:
                     self.conn.execute(
                         """MERGE (n:Node {id: $id})
                            SET n.kind=$kind, n.name=$name, n.qualified_name=$name,
-                               n.language='', n.path='', n.start_line=0, n.end_line=0""",
+                               n.language='', n.path='', n.start_line=0, n.end_line=0,
+                               n.cluster=-1""",
                         {"id": placeholder_id, "kind": UNRESOLVED_NODE_KIND, "name": raw},
                     )
 
@@ -122,10 +126,13 @@ class GraphStore:
     def all_nodes(self) -> list[dict]:
         rows = self.query(
             """MATCH (n:Node)
-               RETURN n.id, n.kind, n.language, n.path, n.name, n.qualified_name"""
+               RETURN n.id, n.kind, n.language, n.path, n.name, n.qualified_name, n.cluster"""
         )
         return [
-            {"id": r[0], "kind": r[1], "language": r[2], "path": r[3], "name": r[4], "qualified_name": r[5]}
+            {
+                "id": r[0], "kind": r[1], "language": r[2], "path": r[3],
+                "name": r[4], "qualified_name": r[5], "cluster": r[6],
+            }
             for r in rows
         ]
 

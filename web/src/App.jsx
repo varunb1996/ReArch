@@ -12,13 +12,29 @@ import "./App.css";
 
 const API_BASE = "http://localhost:8000";
 
-const KIND_COLOR = {
-  module: "#64748b",
-  class: "#7c3aed",
-  function: "#2563eb",
-  method: "#0891b2",
-  unresolved: "#94a3b8",
+const KIND_BADGE = {
+  module: "mod",
+  class: "cls",
+  function: "fn",
+  method: "mth",
+  unresolved: "?",
 };
+
+const KIND_BORDER = {
+  module: "#e2e8f0",
+  class: "#f8fafc",
+  function: "#e2e8f0",
+  method: "#e2e8f0",
+  unresolved: "#64748b",
+};
+
+// Distinct, colorblind-friendlier palette for cluster identity (background).
+// Kind is shown separately (badge + border) so the two dimensions don't collide.
+const CLUSTER_PALETTE = [
+  "#2563eb", "#16a34a", "#dc2626", "#9333ea", "#ea580c",
+  "#0891b2", "#ca8a04", "#db2777", "#4d7c0f", "#7c3aed",
+];
+const UNCLUSTERED_COLOR = "#475569";
 
 const RESOLUTION_STYLE = {
   resolved: { stroke: "#16a34a", dashed: false },
@@ -27,18 +43,25 @@ const RESOLUTION_STYLE = {
   unresolved: { stroke: "#cbd5e1", dashed: true },
 };
 
+function clusterColor(cluster) {
+  if (cluster === undefined || cluster === null || cluster < 0) return UNCLUSTERED_COLOR;
+  return CLUSTER_PALETTE[cluster % CLUSTER_PALETTE.length];
+}
+
 function toFlowNode(node) {
+  const background = node.kind === "module" || node.kind === "unresolved" ? UNCLUSTERED_COLOR : clusterColor(node.cluster);
   return {
     id: node.id,
-    data: { label: node.qualified_name || node.name, raw: node },
+    data: { label: `[${KIND_BADGE[node.kind] || node.kind}] ${node.qualified_name || node.name}`, raw: node },
     position: { x: 0, y: 0 },
     style: {
-      background: KIND_COLOR[node.kind] || "#334155",
+      background,
       color: "white",
       borderRadius: 6,
       fontSize: 11,
-      padding: 6,
+      padding: "4px 6px",
       width: 200,
+      border: `1px solid ${KIND_BORDER[node.kind] || "#e2e8f0"}`,
     },
   };
 }
@@ -187,6 +210,16 @@ export default function App() {
 
   const onNodeClick = useCallback((_, node) => setSelectedNode(node.data.raw), []);
 
+  const clusterSummary = useMemo(() => {
+    if (!graph) return [];
+    const counts = new Map();
+    for (const node of graph.nodes) {
+      if (node.cluster === undefined || node.cluster === null || node.cluster < 0) continue;
+      counts.set(node.cluster, (counts.get(node.cluster) || 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => a[0] - b[0]);
+  }, [graph]);
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -223,6 +256,8 @@ export default function App() {
             <dd>{selectedNode.qualified_name}</dd>
             <dt>Kind</dt>
             <dd>{selectedNode.kind}</dd>
+            <dt>Cluster</dt>
+            <dd>{selectedNode.cluster >= 0 ? `#${selectedNode.cluster}` : "unclustered"}</dd>
             <dt>Language</dt>
             <dd>{selectedNode.language || "—"}</dd>
             <dt>Path</dt>
@@ -240,6 +275,17 @@ export default function App() {
           <div><span className="swatch" style={{ background: "#2563eb" }} /> inferred-http</div>
           <div><span className="swatch" style={{ background: "#cbd5e1" }} /> unresolved</div>
         </div>
+        {clusterSummary.length > 0 && (
+          <div className="legend">
+            <strong>Clusters ({clusterSummary.length})</strong>
+            {clusterSummary.map(([cluster, count]) => (
+              <div key={cluster}>
+                <span className="swatch" style={{ background: clusterColor(cluster) }} /> #{cluster} ({count} nodes)
+              </div>
+            ))}
+            <div><span className="swatch" style={{ background: UNCLUSTERED_COLOR }} /> unclustered / modules</div>
+          </div>
+        )}
       </aside>
     </div>
   );

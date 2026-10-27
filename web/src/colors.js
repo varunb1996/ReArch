@@ -2,7 +2,7 @@
 // its own fill; readiness is carried by hatching (see App.css) as well as colour, so
 // the sheet still reads in greyscale. Vermilion is reserved for faults: dependency
 // cycles. Keep these in step with the custom properties in App.css.
-export const UNIT_PALETTE = [
+const UNIT_PALETTE = [
   "#D9A02B", // ochre
   "#6E9A44", // moss
   "#2D8079", // teal
@@ -14,7 +14,6 @@ export const UNIT_PALETTE = [
   "#8A8A2D", // olive
   "#6B4F3A", // bark
 ];
-export const CLUSTER_PALETTE = UNIT_PALETTE;
 export const UNCLUSTERED_COLOR = "#8A9690";
 export const FAULT = "#E5391B";
 export const INK = "#14211E";

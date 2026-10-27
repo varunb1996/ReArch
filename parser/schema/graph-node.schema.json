@@ -2,57 +2,172 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://rearch.dev/schema/graph.schema.json",
   "title": "ReArch dependency/call graph",
-  "description": "Canonical shape for a resolved graph snapshot (output of the link_calls pass, M3+). Node IDs are stable across commits so version-aware diffing (M13) can key on them directly.",
+  "description": "Canonical shape for a resolved graph snapshot (output of the link pass, then the cluster pass adds `cluster`). Node IDs are stable across commits so version-aware diffing can key on them directly.",
   "type": "object",
   "properties": {
-    "repo": { "type": "string" },
-    "commit": { "type": ["string", "null"] },
-    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
-    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } }
+    "commit": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    }
   },
-  "required": ["nodes", "edges"],
+  "required": [
+    "nodes",
+    "edges"
+  ],
   "$defs": {
     "node": {
       "type": "object",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Stable ID: '<language>:<relative_path>:<qualified_symbol_name>'. Must not depend on DB auto-increment IDs so diffing survives renames/moves being detected as such rather than as spurious add+remove."
+          "description": "Stable ID: '<language>:<relative_path>:<qualified_symbol_name>'. Must not depend on DB auto-increment IDs so diffing survives renames/moves being detected as such rather than as spurious add+remove. Overloaded methods in Java/C#/PHP get a '~2', '~3' suffix so every definition has its own node."
         },
-        "kind": { "enum": ["module", "class", "function", "method"] },
-        "language": { "type": "string" },
-        "path": { "type": "string" },
-        "name": { "type": "string" },
-        "qualified_name": { "type": "string" },
-        "start_line": { "type": "integer" },
-        "end_line": { "type": "integer" },
+        "kind": {
+          "enum": [
+            "module",
+            "class",
+            "function",
+            "method"
+          ]
+        },
+        "language": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "qualified_name": {
+          "type": "string"
+        },
+        "start_line": {
+          "type": "integer"
+        },
+        "end_line": {
+          "type": "integer"
+        },
         "bases": {
           "type": "array",
-          "items": { "type": "string" },
-          "description": "Base class names for kind=class, as written in source (not yet resolved to node IDs)."
+          "items": {
+            "type": "string"
+          },
+          "description": "Base classes, interfaces and traits for kind=class, as written in source (not yet resolved to node IDs)."
+        },
+        "params": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Parameter declarations as written, for functions and methods."
+        },
+        "cluster": {
+          "type": "integer",
+          "description": "Subsystem id assigned by the cluster pass; -1 means unassigned (modules and unresolved placeholders are never clustered)."
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Java package, C# namespace or PHP namespace, dotted. Set on classes (and PHP top-level functions)."
+        },
+        "returns": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Declared return type of a Java/C#/PHP method with wrappers like Task<T> removed; used to type `var x = recv.method()`."
+        },
+        "is_interface": {
+          "type": "boolean",
+          "description": "True for Java/C#/PHP interfaces: calls through one resolve to its declaration, not to an implementation."
         }
       },
-      "required": ["id", "kind", "language", "path", "name", "qualified_name"]
+      "required": [
+        "id",
+        "kind",
+        "language",
+        "path",
+        "name",
+        "qualified_name"
+      ]
     },
     "edge": {
       "type": "object",
       "properties": {
-        "source": { "type": "string", "description": "Node ID of the caller/importer/subclass." },
+        "source": {
+          "type": "string",
+          "description": "Node ID of the caller/importer/subclass."
+        },
         "target": {
           "type": "string",
           "description": "Node ID of the callee/imported symbol/base class, OR an 'unresolved:<raw expression>' placeholder ID when resolution fails."
         },
-        "kind": { "enum": ["imports", "calls", "inherits"] },
+        "kind": {
+          "enum": [
+            "imports",
+            "calls",
+            "inherits"
+          ]
+        },
         "resolution": {
-          "enum": ["resolved", "dynamic", "inferred-http", "unresolved"],
+          "enum": [
+            "resolved",
+            "dynamic",
+            "inferred-http",
+            "unresolved"
+          ],
           "description": "resolved = single unambiguous static target. dynamic = fan-out over a known finite set (e.g. dict-based dispatch) but the exact runtime target can't be determined statically. inferred-http = cross-language edge guessed from matching route/URL string literals, never asserted as certain. unresolved = target symbol could not be found at all (e.g. calling a bare local variable with no traceable origin)."
         },
         "evidence": {
-          "type": ["string", "null"],
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Short human-readable justification, e.g. the matched route string or the dict literal name that produced a dynamic fan-out."
+        },
+        "external": {
+          "type": "object",
+          "description": "Present on an unresolved edge whose root is a known library, so the migration plan can say which subsystem depends on which framework.",
+          "properties": {
+            "package": {
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "stdlib",
+                "third-party",
+                "builtin",
+                "library"
+              ],
+              "description": "library = known to be outside the project but which of several imported namespaces it came from is not known."
+            }
+          },
+          "required": [
+            "package",
+            "kind"
+          ]
         }
       },
-      "required": ["source", "target", "kind", "resolution"]
+      "required": [
+        "source",
+        "target",
+        "kind",
+        "resolution"
+      ]
     }
   }
 }

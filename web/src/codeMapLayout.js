@@ -10,7 +10,7 @@ function shortDirectory(label) {
   return directory.split("/").slice(-2).join("/");
 }
 
-export function describeTerritory(key, count, plan) {
+function describeTerritory(key, count, plan) {
   if (key === "files") return { title: "Source files", meta: `${count} files`, color: UNCLUSTERED_COLOR };
   if (key === "outside") return { title: "Outside this codebase", meta: `${count} libraries and calls the analysis could not pin down`, color: UNCLUSTERED_COLOR };
   if (key === "loose") return { title: "Between subsystems", meta: `${count} symbols that belong to none of them`, color: UNCLUSTERED_COLOR };

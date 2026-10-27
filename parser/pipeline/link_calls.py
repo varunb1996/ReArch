@@ -12,9 +12,72 @@ schema's `resolution` field and Risk #1 in the project plan.
 Usage:
     .venv/Scripts/python parser/pipeline/link_calls.py <symbols_dir> <output_graph.json>
 """
+import builtins
 import json
+import re
 import sys
 from pathlib import Path
+
+PY_STDLIB = set(sys.stdlib_module_names)
+PY_BUILTINS = set(dir(builtins))
+NODE_CORE = {
+    "fs", "path", "os", "http", "https", "url", "util", "events", "stream", "crypto",
+    "child_process", "buffer", "assert", "zlib", "net", "tls", "dns", "readline", "process",
+}
+JS_GLOBALS = {
+    "fetch", "JSON", "Promise", "document", "window", "console", "Math", "Object", "Array",
+    "String", "Number", "Boolean", "Date", "Map", "Set", "RegExp", "Error", "setTimeout",
+    "setInterval", "clearTimeout", "clearInterval", "parseInt", "parseFloat", "localStorage",
+    "sessionStorage", "URL", "FormData", "Symbol", "BigInt", "alert", "require",
+}
+
+
+def external_info(language: str, raw: str) -> dict | None:
+    """Classify an unresolvable import target as stdlib / third-party.
+
+    Returns None for relative JS specifiers: those are internal files we failed
+    to resolve, not external packages, and must stay plain "unresolved".
+    """
+    if language == "python":
+        package = raw.split(".")[0]
+        if not package:
+            return None
+        return {"package": package, "kind": "stdlib" if package in PY_STDLIB else "third-party"}
+    spec = raw.split("::")[0]
+    if not spec or spec.startswith("."):
+        return None
+    if spec.startswith("node:") or spec in NODE_CORE:
+        return {"package": spec.removeprefix("node:"), "kind": "stdlib"}
+    parts = spec.split("/")
+    package = "/".join(parts[:2]) if spec.startswith("@") else parts[0]
+    return {"package": package, "kind": "third-party"}
+
+
+def classify_external_call(language: str, callee_repr: str, root_hint: str | None, bindings: dict) -> dict | None:
+    """Is an unresolved call really a call into a library / builtin?
+
+    The root identifier of the callee (`fastapi` in `fastapi.FastAPI`, `json`
+    in `json.loads`) decides it: if it is bound by a non-local import the call
+    is external; if it is a language builtin/global it is builtin. Calls on
+    local variables (`users.map`, `self.x`) return None and stay "unknown".
+    """
+    root = re.split(r"[.\(\[]", root_hint or callee_repr)[0]
+    binding = bindings.get(root)
+    if binding and binding["type"] == "external":
+        return external_info(language, binding["raw"])
+    if language == "python" and root in PY_BUILTINS:
+        return {"package": "builtins", "kind": "builtin"}
+    if language == "javascript" and root in JS_GLOBALS:
+        return {"package": "js-globals", "kind": "builtin"}
+    return None
+
+
+def unresolved_call_edge(caller_id: str, call: dict, language: str, bindings: dict) -> dict:
+    edge = {"source": caller_id, "target": f"unresolved:{call['callee_repr']}", "kind": "calls", "resolution": "unresolved"}
+    external = classify_external_call(language, call["callee_repr"], call.get("object_repr"), bindings)
+    if external:
+        edge["external"] = external
+    return edge
 
 
 def load_symbol_tables(symbols_dir: Path) -> list[dict]:
@@ -36,6 +99,8 @@ def resolve_python_module_path(dotted: str, file_index: set[str], importing_file
     """
     if not dotted:
         return None
+    if dotted.startswith("."):
+        return resolve_relative_python_module(dotted, file_index, importing_file)
     tail = dotted.replace(".", "/")
     ancestors = []
     parts = Path(importing_file).parent.parts if importing_file else ()
@@ -47,6 +112,20 @@ def resolve_python_module_path(dotted: str, file_index: set[str], importing_file
             if candidate in file_index:
                 return candidate
     return None
+
+
+def resolve_relative_python_module(dotted: str, file_index: set[str], importing_file: str) -> str | None:
+    """`from .x import y` (one dot: the importing file's package), `from ..x`
+    (its parent package), `from . import z` (dotted is just the dots)."""
+    dots = len(dotted) - len(dotted.lstrip("."))
+    parts = Path(importing_file).parent.parts if importing_file else ()
+    keep = len(parts) - (dots - 1)
+    if keep < 0:
+        return None
+    root = "/".join(parts[:keep])
+    tail = dotted.lstrip(".").replace(".", "/")
+    candidates = [f"{root}/{tail}.py", f"{root}/{tail}/__init__.py"] if tail else [f"{root}/__init__.py"]
+    return next((c for c in (c.lstrip("/") for c in candidates) if c in file_index), None)
 
 
 def resolve_js_module_path(spec: str, importing_file: str, file_index: set[str]) -> str | None:
@@ -84,7 +163,12 @@ def build_import_bindings(table: dict, file_index: set[str]) -> dict:
                 continue
             # from_import
             local_name = imp["alias"] or imported_name
-            submodule_dotted = f"{module_dotted}.{imported_name}" if module_dotted else imported_name
+            if not module_dotted:
+                submodule_dotted = imported_name
+            elif module_dotted.endswith("."):  # `from . import utils`, `from .. import x`
+                submodule_dotted = f"{module_dotted}{imported_name}"
+            else:
+                submodule_dotted = f"{module_dotted}.{imported_name}"
             submodule_path = resolve_python_module_path(submodule_dotted, file_index, file_path)
             if submodule_path:
                 bindings[local_name] = {"type": "module", "module_path": submodule_path}
@@ -139,6 +223,63 @@ def dynamic_fanout_targets(object_repr: str, scope_ids: list[str], table: dict, 
     return targets, dict_lit["name"]
 
 
+def find_method_id(class_node: dict, method: str, ctx: dict, nodes_by_file: dict, node_lookup: dict, seen: set | None = None, depth: int = 0) -> str | None:
+    """Find `method` on a class, walking up its resolvable base classes."""
+    method_id = f"{class_node['id']}.{method}"
+    if method_id in node_lookup:
+        return method_id
+    seen = seen if seen is not None else {class_node["id"]}
+    if depth >= 6:
+        return None
+    base_table, base_bindings = ctx[class_node["path"]]
+    for base in class_node.get("bases", []):
+        base_node = resolve_local_or_import(base, base_table, base_bindings, nodes_by_file)
+        if base_node and base_node["kind"] == "class" and base_node["id"] not in seen:
+            seen.add(base_node["id"])
+            found = find_method_id(base_node, method, ctx, nodes_by_file, node_lookup, seen, depth + 1)
+            if found:
+                return found
+    return None
+
+
+def enclosing_class(caller_node: dict | None, table: dict) -> dict | None:
+    if not caller_node:
+        return None
+    parts = caller_node["qualified_name"].split(".")
+    for i in range(len(parts) - 1, 0, -1):
+        qualified = ".".join(parts[:i])
+        for n in table["nodes"]:
+            if n["kind"] == "class" and n["qualified_name"] == qualified:
+                return n
+    return None
+
+
+def instance_class(object_repr: str, scope_ids: list[str], table: dict, bindings: dict, nodes_by_file: dict) -> dict | None:
+    """The class an identifier was constructed as (`x = Foo(...)` / `const x = new Foo()`), if known.
+
+    Only direct constructor assignments count; anything flowing through a
+    function return or a reassignment is left unresolved on purpose.
+    """
+    binding = next(
+        (b for sid in scope_ids for b in table["local_bindings"]
+         if b["scope_id"] == sid and b["name"] == object_repr and b["value_kind"] == "constructor_call"),
+        None,
+    )
+    if not binding:
+        return None
+    callee = binding["callee_repr"]
+    if "." in callee:
+        owner, _, class_name = callee.rpartition(".")
+        owner_binding = bindings.get(owner)
+        node = (
+            find_node_by_name_in_module(owner_binding["module_path"], class_name, nodes_by_file)
+            if owner_binding and owner_binding["type"] == "module" else None
+        )
+    else:
+        node = resolve_local_or_import(callee, table, bindings, nodes_by_file)
+    return node if node and node["kind"] == "class" else None
+
+
 def main(symbols_dir: str, output_path: str) -> None:
     tables = load_symbol_tables(Path(symbols_dir))
 
@@ -164,11 +305,12 @@ def main(symbols_dir: str, output_path: str) -> None:
         all_nodes.extend(table["nodes"])
 
     node_lookup = {n["id"]: n for n in all_nodes}
+    ctx = {t["path"]: (t, build_import_bindings(t, file_index)) for t in tables}
     edges = []
 
     for table in tables:
         file_path = table["path"]
-        bindings = build_import_bindings(table, file_index)
+        bindings = ctx[file_path][1]
 
         for imp in table["imports"]:
             if table["language"] == "python":
@@ -185,7 +327,11 @@ def main(symbols_dir: str, output_path: str) -> None:
                 target_id = node["id"] if node else f"unresolved:{binding['module_path']}::{binding['symbol_name']}"
                 edges.append({"source": table["module_id"], "target": target_id, "kind": "imports", "resolution": "resolved" if node else "unresolved"})
             else:
-                edges.append({"source": table["module_id"], "target": f"unresolved:{binding['raw']}", "kind": "imports", "resolution": "unresolved"})
+                edge = {"source": table["module_id"], "target": f"unresolved:{binding['raw']}", "kind": "imports", "resolution": "unresolved"}
+                external = external_info(table["language"], binding["raw"])
+                if external:
+                    edge["external"] = external
+                edges.append(edge)
 
         for cls_node in [n for n in table["nodes"] if n["kind"] == "class"]:
             for base in cls_node.get("bases", []):
@@ -211,7 +357,7 @@ def main(symbols_dir: str, output_path: str) -> None:
                 if node:
                     edges.append({"source": caller_id, "target": node["id"], "kind": "calls", "resolution": "resolved"})
                 else:
-                    edges.append({"source": caller_id, "target": f"unresolved:{name}", "kind": "calls", "resolution": "unresolved"})
+                    edges.append(unresolved_call_edge(caller_id, call, table["language"], bindings))
 
             elif kind == "subscript":
                 targets, dict_name = dynamic_fanout_targets(call["object_repr"], scope_ids, table, bindings, nodes_by_file)
@@ -219,7 +365,7 @@ def main(symbols_dir: str, output_path: str) -> None:
                     for t in targets:
                         edges.append({"source": caller_id, "target": t, "kind": "calls", "resolution": "dynamic", "evidence": f"dict literal '{dict_name}'"})
                 else:
-                    edges.append({"source": caller_id, "target": f"unresolved:{call['callee_repr']}", "kind": "calls", "resolution": "unresolved"})
+                    edges.append(unresolved_call_edge(caller_id, call, table["language"], bindings))
 
             elif kind == "attribute":
                 object_repr = call["object_repr"]
@@ -241,16 +387,29 @@ def main(symbols_dir: str, output_path: str) -> None:
                     if not resolved:
                         edges.append({"source": caller_id, "target": f"unresolved:super().{property_repr}", "kind": "calls", "resolution": "unresolved"})
                     continue
+                owner_class = None
+                evidence = None
+                if object_repr in ("self", "this"):
+                    owner_class = enclosing_class(node_lookup.get(caller_id), table)
+                    evidence = f"{object_repr}.{property_repr} within {owner_class['qualified_name']}" if owner_class else None
+                elif object_repr and object_repr.isidentifier():
+                    owner_class = instance_class(object_repr, scope_ids, table, bindings, nodes_by_file)
+                    evidence = f"'{object_repr}' is constructed as {owner_class['qualified_name']}" if owner_class else None
+                if owner_class:
+                    method_id = find_method_id(owner_class, property_repr, ctx, nodes_by_file, node_lookup)
+                    if method_id:
+                        edges.append({"source": caller_id, "target": method_id, "kind": "calls", "resolution": "resolved", "evidence": evidence})
+                        continue
                 binding = bindings.get(object_repr)
                 if binding and binding["type"] == "module":
                     node = find_node_by_name_in_module(binding["module_path"], property_repr, nodes_by_file)
                     target_id = node["id"] if node else f"unresolved:{binding['module_path']}::{property_repr}"
                     edges.append({"source": caller_id, "target": target_id, "kind": "calls", "resolution": "resolved" if node else "unresolved"})
                 else:
-                    edges.append({"source": caller_id, "target": f"unresolved:{call['callee_repr']}", "kind": "calls", "resolution": "unresolved"})
+                    edges.append(unresolved_call_edge(caller_id, call, table["language"], bindings))
 
             else:  # "other"
-                edges.append({"source": caller_id, "target": f"unresolved:{call['callee_repr']}", "kind": "calls", "resolution": "unresolved"})
+                edges.append(unresolved_call_edge(caller_id, call, table["language"], bindings))
 
     # M4: cross-language edges, inferred by matching HTTP route/URL string
     # literals between backend route declarations and frontend fetch() calls.
@@ -284,7 +443,7 @@ def main(symbols_dir: str, output_path: str) -> None:
                     "evidence": f"matched route string '{path_str}'",
                 })
 
-    graph = {"repo": symbols_dir, "commit": None, "nodes": all_nodes, "edges": edges}
+    graph = {"commit": None, "nodes": all_nodes, "edges": edges}  # no absolute paths: graphs get published
     Path(output_path).write_text(json.dumps(graph, indent=2), encoding="utf-8")
     print(f"Wrote {len(all_nodes)} nodes and {len(edges)} edges to {output_path}")
 

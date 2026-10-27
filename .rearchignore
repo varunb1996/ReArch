@@ -1,0 +1,5 @@
+﻿# Paths ReArch skips when it analyzes this repository (see parser/pipeline/repo_walk.py).
+# Test directories are skipped everywhere by default. The fixture is a deliberately fake app used
+# to test the linker; it would show up as fake subsystems in ReArch's own blueprint.
+fixtures/
+

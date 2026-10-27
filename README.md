@@ -2,91 +2,88 @@
 
 **Decode the Past. Design the Future.**
 
-ReArch reverse-engineers undocumented legacy codebases into interactive, explorable system blueprints, so teams can plan modernization without spelunking through years of un-commented code first. Unlike static-visualization tools, ReArch builds a verified structural graph first, then grounds an LLM in that graph (never in raw source dumps) to explain *why* a subsystem likely exists — with every claim traceable back to the facts that produced it.
+ReArch reverse-engineers an undocumented codebase into an interactive architecture blueprint and a **migration plan**: which parts can be extracted first, which are tangled in dependency cycles that must be cut before anything moves, what interface each part already exposes, and how far the analysis itself can be trusted for each one.
 
-Built entirely on free tools as a solo side project, with a clear path to paid infrastructure once there's traction. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full system design.
+It does this by building a verified structural graph first (tree-sitter, cross-file call resolution), clustering it into candidate subsystems, measuring coupling between them, and only then asking an LLM to write the plan in words. The LLM never discovers structure and never sees raw source dumps. Every name in its output is checked against the measured facts, and anything unverified is flagged.
 
-## Status
+## What you get
 
-All 14 milestones from the original build plan are implemented and verified against real code (both a hand-crafted test fixture and this repository's own source, ingested by the tool itself):
+- **Blueprint**: an interactive dependency graph, colored by subsystem, with edges labelled by how sure the analysis is (resolved, dynamic dispatch, inferred cross-language HTTP, unresolved).
+- **Migration plan**: subsystems ordered into extraction waves (leaves first), dependency cycles with the cheapest links to cut, the entry points each subsystem already exposes (its seams), third-party/framework coupling, and a readiness label with the reasons behind it. Downloadable as Markdown.
+- **Intent narratives**: a "why does this subsystem exist" paragraph per subsystem, shown next to the facts that produced it.
+- **Version-aware diffing** between analyzed commits, and a **GitHub webhook** that re-analyzes on every push.
 
-| Phase | Milestones | Status |
-|---|---|---|
-| 0 — Structural core | Tree-sitter parsing, symbol extraction, cross-file/cross-language call resolution | Done |
-| 1 — Storage + viewing | Kùzu graph store, FastAPI + React Flow blueprint viewer | Done |
-| 2 — Real ingestion | Clone-and-analyze any git repo, multi-user isolation | Done |
-| 3 — Semantic layer | Embedding + clustering nodes into candidate subsystems | Done |
-| 4 — LLM narratives | Grounded "why this exists" generation via Groq, with caching | Done |
-| 5 — Productization | Search/focus UI, version-aware diffing, GitHub webhook auto-sync | Done |
+Languages today: **Python and JavaScript/JSX**, including calls across the two (inferred from route strings). Adding a language means adding a tree-sitter extractor; see [ARCHITECTURE.md](ARCHITECTURE.md).
 
-This is a demo-scale MVP, not a production service — see [ARCHITECTURE.md § Known Limitations](ARCHITECTURE.md#known-limitations) for what that means concretely.
+## Run it locally
 
-## Quick start
-
-### Prerequisites
-
-- **Python 3.13** specifically (not 3.14 — `kuzu` and `tree-sitter-language-pack` don't yet ship Windows wheels for 3.14). If you have multiple Python versions via the `py` launcher: `py -3.13 -m venv .venv`.
-- **Node.js** (any recent LTS) for the frontend.
-- **git** on PATH.
-
-### Backend setup
+Requires **Python 3.13** (not 3.14 yet: `kuzu` and `tree-sitter-language-pack` lack 3.14 wheels on Windows), Node 20+, and git.
 
 ```bash
 py -3.13 -m venv .venv
 .venv/Scripts/pip install -r requirements.txt
+cp .env.example .env        # optional: add GROQ_API_KEY for written narratives and plans
+.venv/Scripts/uvicorn api.main:app --port 8000
 ```
-
-Copy `.env.example` to `.env` and fill in:
-- `GROQ_API_KEY` — free at [console.groq.com](https://console.groq.com), no card required. Without it, narrative generation is silently skipped (everything else still works).
-- `WEBHOOK_SECRET` — any random string, only needed if you're wiring up `POST /api/webhooks/github` for push-triggered re-analysis.
-
-Run the API:
-
-```bash
-.venv/Scripts/uvicorn api.main:app --reload --port 8000
-```
-
-### Frontend setup
 
 ```bash
 cd web
 npm install
-npm run dev
+npm run dev                 # http://localhost:5173
 ```
 
-Open `http://localhost:5173`, enter any username (there's no real auth yet — see [ARCHITECTURE.md § Multi-user model](ARCHITECTURE.md#multi-user-model)), and paste a git URL to analyze.
+Enter any username, paste a git URL (a local path also works in local mode), and press Analyze. Without `GROQ_API_KEY` you still get the full blueprint and all migration metrics; only the written prose is skipped.
 
-### Running the pipeline standalone
-
-Each pipeline stage is also a runnable script, useful for debugging one stage in isolation:
+### Tests
 
 ```bash
-.venv/Scripts/python parser/pipeline/ingest_repo.py <git_url> <work_dir>
+.venv/Scripts/pip install -r requirements-dev.txt
+.venv/Scripts/python -m pytest
 ```
 
-runs the whole pipeline (clone → extract → resolve → cluster → narrate → snapshot) and prints progress for each stage. See [ARCHITECTURE.md § Pipeline](ARCHITECTURE.md#pipeline) for what each stage does and its individual script.
+The suite covers the linker against a hand-verified fixture, the migration engine on synthetic graphs with known answers, the access-control and URL-safety rules a public deployment depends on, and the background-analysis flow.
 
-## Project structure
+## Deploy it
+
+The UI is static (GitHub Pages); the API needs a real process (git, tree-sitter, an embedded graph database), so it runs as a Docker image on a free **Hugging Face Space**. Both deploy automatically from GitHub Actions on every push to `main`. One-time setup:
+
+1. **API**: create a Space at huggingface.co/new-space (SDK: **Docker**, blank). In the Space's *Settings → Variables and secrets* add the secret `GROQ_API_KEY`.
+2. In this GitHub repo, *Settings → Secrets and variables → Actions*: add secret `HF_TOKEN` (a Hugging Face token with **write** access) and variable `HF_SPACE` (`owner/space-name`). Push to `main`, or run **Deploy API to Hugging Face Space** manually.
+3. **UI**: add the repository variable `API_BASE` with the Space's URL (`https://<owner>-<space-name>.hf.space`), and set *Settings → Pages → Source* to **GitHub Actions**. The **Deploy UI to GitHub Pages** workflow publishes to `https://<owner>.github.io/ReArch/`.
+
+The hosted server runs in *public mode* (`REARCH_PUBLIC_MODE=1`, set by the Dockerfile): only public `https://github.com/<owner>/<repo>` URLs are accepted, each browser gets a private random id instead of a username, example analyses bundled in `demo/` are read-only and load instantly, analyses are rate limited (3/hour per visitor, 10/day per IP) and run one at a time. Details in [ARCHITECTURE.md](ARCHITECTURE.md#running-it-in-public).
+
+To refresh the bundled examples: `.venv/Scripts/python scripts/build_demo.py https://github.com/psf/requests`, then commit `demo/`.
+
+### Configuration
+
+| Variable | Where | Meaning |
+|---|---|---|
+| `GROQ_API_KEY` | API | Enables written narratives and plans. Optional. |
+| `GROQ_MODEL` | API | Defaults to `openai/gpt-oss-120b`. Groq retires models; `GET https://api.groq.com/openai/v1/models` lists what your key can use. |
+| `WEBHOOK_SECRET` | API | Enables `POST /api/webhooks/github`. |
+| `REARCH_PUBLIC_MODE` | API | `1` turns on the public-deployment guardrails. |
+| `REARCH_CORS_ORIGINS` | API | Comma-separated allowed browser origins. |
+| `REARCH_DATA_DIR` | API | Where analyses and the user database are stored. |
+| `REARCH_MAX_CODE_FILES` | API | Largest repository accepted (default 3000 analyzable files). |
+| `VITE_API_BASE` | UI build | Backend URL. Defaults to `http://localhost:8000`. |
+
+## Project layout
 
 ```
 parser/
-  schema/graph-node.schema.json   canonical node/edge schema — read this first
-  resolvers/{python,javascript}/  per-language symbol/call extraction
-  pipeline/                       the 6-stage pipeline, each stage a standalone script
+  schema/graph-node.schema.json   the node/edge contract every stage conforms to
+  resolvers/{python,javascript}/  per-language symbol and call extraction (tree-sitter)
+  pipeline/                       extract -> link -> cluster -> narrate -> migration plan -> snapshot
 api/
-  main.py                        FastAPI app: repos, graph, narratives, diff, webhook routes
-  services/graph_store.py        Kùzu graph storage (Neo4j stand-in)
-  services/user_store.py         SQLite user/repo store (Supabase stand-in)
-web/
-  src/App.jsx                    React Flow blueprint viewer, repo manager, diff UI
-fixtures/sample_repo/            hand-crafted multi-language test repo with known ground truth
+  main.py                         FastAPI app and routes
+  security.py                     public-deployment guardrails
+  services/                       Kùzu graph store, SQLite user/repo store
+web/                              React + React Flow UI
+demo/                             bundled example analyses for the hosted demo
+scripts/build_demo.py             regenerate those examples
+tests/                            pytest suite
+Dockerfile, .github/workflows/    deployment
 ```
 
-## Testing changes
-
-There's no formal test suite yet — verification has been done by:
-1. Running the pipeline against `fixtures/sample_repo/GROUND_TRUTH.md`'s hand-verified expected edges.
-2. Running it against this repo's own real source as an uncurated end-to-end check.
-3. Manual verification of the running UI via browser automation during development.
-
-If you change the resolver/pipeline logic, re-run both checks before trusting the output.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how each stage works, why the design is the way it is, and what it cannot do.

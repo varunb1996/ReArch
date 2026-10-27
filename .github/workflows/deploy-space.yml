@@ -1,0 +1,58 @@
+name: Deploy API to Hugging Face Space
+
+# One-time setup:
+#   1. Create a Docker Space at huggingface.co/new-space (SDK: Docker, blank template).
+#   2. In the Space: Settings -> Variables and secrets -> add secret GROQ_API_KEY
+#      (and WEBHOOK_SECRET if you use the GitHub webhook).
+#   3. In this GitHub repo: Settings -> Secrets and variables -> Actions ->
+#        secret   HF_TOKEN   a Hugging Face access token with WRITE access
+#        variable HF_SPACE   owner/space-name, e.g. varunb1996/rearch-api
+# Every push to main that touches the backend then rebuilds and redeploys the Space.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "api/**"
+      - "parser/**"
+      - "demo/**"
+      - "requirements.txt"
+      - "Dockerfile"
+      - "deploy/space/**"
+      - ".github/workflows/deploy-space.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-space
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # Skipped (not failed) until the one-time setup above has been done.
+    if: ${{ vars.HF_SPACE != '' }}
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_SPACE: ${{ vars.HF_SPACE }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check configuration
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE" ]; then
+            echo "::error::Set the HF_TOKEN secret and the HF_SPACE variable (see the comment at the top of this workflow)."
+            exit 1
+          fi
+      - name: Assemble and push the Space
+        run: |
+          set -euo pipefail
+          space="$RUNNER_TEMP/space"
+          mkdir -p "$space"
+          cp -r api parser demo requirements.txt Dockerfile "$space/"
+          cp deploy/space/README.md "$space/README.md"
+          cd "$space"
+          git init -q -b main
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -qm "Deploy ${GITHUB_SHA::7}"
+          git push --force "https://${HF_SPACE%%/*}:${HF_TOKEN}@huggingface.co/spaces/${HF_SPACE}" main

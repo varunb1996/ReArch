@@ -1,142 +1,104 @@
 # ReArch — Architecture
 
-## Design philosophy
+## Design principles
 
-Two decisions shape everything else in this system:
-
-1. **Structural graph first, LLM narrative second.** A deterministic, testable dependency/call graph is built via static analysis before any LLM reasoning happens. This is cheaper (free-tier LLM quota is scarce), lower-risk, and — critically — it makes the LLM's output more trustworthy: narratives are generated *from* verified graph facts and small targeted excerpts, never by asking a model to reason over an entire unbounded repo. If the graph is wrong, that's a debuggable, deterministic bug. If a narrative is wrong, it's flagged as inferred and shown next to the facts that produced it, so a human can judge for themselves.
-
-2. **Free tools for every layer, with named swap-in points for scale.** Every cloud service in the original plan (Neo4j, Supabase, Hugging Face) has a genuinely free local-first stand-in that required no account signup for this MVP phase. Each stand-in is isolated behind a single file/function so swapping to the paid/cloud version later is a narrow, mechanical change — not a rewrite. See [§ Free-tier stack and swap-in points](#free-tier-stack-and-swap-in-points).
+1. **Measure first, narrate second.** Everything structural is computed deterministically: the dependency graph, the subsystems, the coupling metrics, the extraction order. The LLM only turns measured facts into prose. It is never asked to discover structure, never sees whole files, and its output is machine-checked against the facts (see [the reference guard](#5-migration-plan)).
+2. **Never assert more than you know.** Every edge carries a `resolution` (`resolved`, `dynamic`, `inferred-http`, `unresolved`). Unresolved calls carry no coupling weight and lower a subsystem's confidence score instead of being guessed at. Narratives are shown beside the facts that produced them.
+3. **Free first, with narrow swap points.** Each cloud service in the original plan has a free local stand-in isolated behind one file (Kùzu for Neo4j, SQLite for Postgres), so moving to the paid service later is a mechanical change.
 
 ## Pipeline
 
-The pipeline is six sequential stages, each a standalone script under `parser/pipeline/`, orchestrated end-to-end by `ingest_repo.py`. Every stage reads/writes plain JSON, so any stage can be run and inspected in isolation.
+Each stage is a script under `parser/pipeline/` that reads and writes plain JSON, so any stage can be run and inspected on its own. `ingest_repo.py` runs them in order.
 
 ```
-git clone/pull
-     │
-     ▼
-[1] Structural parsing        parser/resolvers/{python,javascript}/extract.py
-     tree-sitter AST → per-file symbol table (functions, classes, imports,
-     call sites, local variable bindings, dict literals, HTTP route calls) —
-     structured facts, not the AST itself. See parser/pipeline/extract_symbols.py
-     for the driver that walks the repo (excluding node_modules/.venv/.git/etc,
-     via parser/pipeline/repo_walk.py) and calls the right extractor per file.
-     │
-     ▼
-[2] Cross-file/cross-language resolution   parser/pipeline/link_calls.py
-     Resolves imports and call sites into a graph:
-       - same-file/same-language calls (name lookup, attribute lookup on
-         imported module bindings, super() → base class method)
-       - Python import-root inference: tries every ancestor directory of the
-         importing file, nearest first, so `from backend.db import x` inside
-         a nested fixture repo resolves correctly even though the outer repo
-         isn't the package root (found and fixed via real-repo testing, not
-         theorized in advance — see "Real-world validation" below)
-       - dynamic dispatch (dict-based fan-out, e.g. `HANDLERS[kind](...)`):
-         resolved as a "dynamic" edge fanning out to every value in the dict
-         literal, never collapsed to a guessed single target
-       - cross-language HTTP boundaries: naive string-literal matching
-         between backend route decorators/registrations and frontend
-         fetch()/axios-style calls, flagged "inferred-http", never certain
-     Every edge carries a `resolution` field: resolved | dynamic |
-     inferred-http | unresolved. Nothing is ever asserted with false
-     confidence — see parser/schema/graph-node.schema.json for the full
-     node/edge schema, which every other stage conforms to.
-     │
-     ▼
-[3] Semantic clustering       parser/pipeline/cluster_nodes.py
-     Each function/method/class node is embedded from structured facts
-     (qualified name, params, resolved callers/callees pulled from stage 2)
-     — never raw source — using fastembed (local ONNX model, no torch, no
-     account). Vectors are clustered with scikit-learn's HDBSCAN (no need to
-     pick k upfront; genuinely uncategorizable nodes become noise, cluster
-     -1, rather than being forced into a group). Cluster id is written back
-     onto each node.
-     │
-     ▼
-[4] LLM intent narratives     parser/pipeline/generate_narratives.py
-     One narrative per cluster, not per node — keeps API volume small. The
-     prompt contains: the cluster's member list, its external callers/
-     callees (from stage 2's edges), and one small excerpt (~15 lines) from
-     its most-connected member — read directly from the cloned source at
-     the resolved start/end line. The system prompt explicitly instructs the
-     model to state uncertainty about business intent rather than invent it.
-     Calls Groq's OpenAI-compatible chat completions endpoint directly via
-     `requests` (no SDK dependency). Results are cached by a hash of the
-     cluster's sorted member-node-IDs, so re-analyzing a repo whose clusters
-     haven't changed costs zero API calls — the main protection against
-     Groq's free-tier rate limits. Skipped silently (not an error) if
-     GROQ_API_KEY isn't set.
-     │
-     ▼
-[5] Snapshot                  parser/pipeline/ingest_repo.py (final step)
-     The resolved+clustered+narrated graph is copied to
-     work_dir/snapshots/<commit_sha>.json. Because node IDs are stable
-     across commits (see schema below), two snapshots can be diffed
-     directly by set difference — no fuzzy matching needed.
-     │
-     ▼
-[6] Storage + serving         api/services/graph_store.py, api/main.py
-     Loaded into Kùzu (embedded graph DB) for the live UI; the JSON
-     snapshots are the source of truth for diffing (stage 7, on demand).
+git clone (hardened)  ->  1 parse  ->  2 link  ->  3 cluster  ->  4 narrate  ->  5 migration plan  ->  6 snapshot
 ```
 
-**Stage 7 (on demand, not part of ingestion):** `parser/pipeline/diff_graphs.py` diffs two snapshots: nodes added/removed, edges added/removed, edges whose `resolution` changed (e.g. an edge that was `unresolved` and became `resolved` after a resolver improvement — a genuine signal, not noise), and nodes whose cluster membership moved. Exposed via `GET /api/repos/{id}/diff?from_commit=X&to_commit=Y`.
+### 1. Parse — `parser/resolvers/{python,javascript}/extract.py`
+tree-sitter parses each file; the extractor reduces the AST to a per-file symbol table: functions/classes/methods with line ranges, imports, call sites, local `x = Foo()` constructions, dict literals (for dispatch tables) and HTTP routes/`fetch` calls. `repo_walk.py` decides which files are in scope: it skips vendor and build directories, **test code** (tests describe how a system is checked, not how it is built; on `psf/requests` they were 60% of all symbols), minified or oversized files, symlinks, and anything listed in the repo's `.rearchignore`.
 
-**Stage 8 (event-triggered):** `POST /api/webhooks/github` verifies GitHub's HMAC-SHA256 signature over the raw request body, matches the pushed repo's URL (normalized across `https://`/`.git` variants) against stored repos, and re-runs the entire pipeline for every user tracking that URL. This is what closes the loop from the original plan's "real-time blueprint sync via IDE/Git integration" goal.
+### 2. Link — `link_calls.py`
+Resolves the symbol tables into a graph:
+- imports and direct calls, across files, with Python package-root inference (tries every ancestor of the importing file, nearest first);
+- `self.m()` / `this.m()` and `x = Foo(); x.m()` (direct constructor assignments only), following inheritance;
+- dict-based dispatch as a `dynamic` fan-out to every value in the table, never collapsed to a guessed target;
+- frontend `fetch("/api/x")` matched to backend route strings as `inferred-http`;
+- **external dependencies**: an unresolved call whose root name is bound to a non-project import is tagged `stdlib`, `third-party` (with the package name) or `builtin`. This is what lets the migration plan say which subsystem is tied to which framework.
 
-## Data model
+Calls on values the analysis cannot type (`items.append`, `node.child_by_field_name`) stay plain `unresolved`.
 
-`parser/schema/graph-node.schema.json` is the contract every stage conforms to. The one decision everything else depends on:
+### 3. Cluster — `cluster_nodes.py`
+Each function/method/class is embedded from structured facts (qualified name, parameters, resolved callers and callees, never raw source) with `fastembed` (`bge-small-en-v1.5`, local ONNX). Then:
+1. **HDBSCAN** finds tight cores (no `k` to choose, genuine outliers stay unassigned).
+2. **Merge to a target count**, `max(5, round(0.7·√n))` subsystems, folding the smallest cluster into its nearest neighbour. HDBSCAN alone reported 59 "subsystems" for a 37-file library; a plan with dozens of subsystems is noise.
+3. **Adopt unassigned nodes** into the subsystem they mostly call and are called by (strictly more than half of their resolved neighbours, so a node that straddles two subsystems stays unassigned).
+4. **Keep structure whole**: a class and its methods, a function and its nested functions, always share one subsystem. Embeddings otherwise split them, which fakes coupling.
+5. Renumber so `#0` is the largest.
 
-**Node IDs are `<language>:<repo-relative-path>:<qualified-symbol-name>`** — never a database auto-increment ID. This is what makes diffing (stage 7) tractable: a renamed function shows up as one add + one remove of a differently-named node, not as churn across the whole graph. It's also what makes cross-stage joins trivial — the same ID means the same symbol whether you're looking at the raw graph, the clustered graph, or a narrative's "grounded_in" facts.
+### 4. Narrate — `generate_narratives.py`
+One narrative per subsystem (the largest 20), prompted with its members, external callers/callees and one ~15-line excerpt from its most-connected member. Cached by the subsystem's member ids, so re-analysis of an unchanged subsystem costs nothing. Failures are never cached or stored as text; the subsystem is simply retried next run. Model: `openai/gpt-oss-120b` on Groq (override with `GROQ_MODEL`; Groq retires models without notice).
 
-**Edges always carry a `resolution` field** (`resolved` / `dynamic` / `inferred-http` / `unresolved`), which is the mechanism the whole hallucination-mitigation strategy hangs off of: nothing downstream (clustering context, narrative prompts, the UI's edge styling) ever has to guess how confident a given edge is — it's explicit in the data.
+### 5. Migration plan — `migration_plan.py`
+Deterministic analysis over the clustered graph. Constants are named at the top of the file so every label is explainable and tunable.
 
-## Multi-user model
+| Measure | Definition |
+|---|---|
+| Coupling weight of an edge | resolution (`resolved` 1.0, `inferred-http` 0.75, `dynamic` 0.5, unresolved 0) × kind (`inherits` 1.5, `calls` 1.0, `imports` 0.5) |
+| Cohesion | internal weight / (internal + incoming + outgoing). Below 50% the cluster is not a clean boundary. |
+| Instability | outgoing / (incoming + outgoing), Martin's metric. |
+| Confidence | resolved edges / (resolved + dynamic/inferred + unresolved calls whose method name matches something this project defines). Calls like `items.append` are not counted: they cannot be project code. |
+| Waves | Tarjan SCCs condense dependency cycles; wave *k* depends only on waves < *k*; wave 0 depends on nothing and is extracted first. |
+| Cycle cut candidates | greedy feedback-arc-set: repeatedly remove the lowest-weight link still inside a cycle. A starting point for where to introduce an interface, not a proof of the minimum cut. |
+| Seams | nodes in a subsystem that other subsystems call, ranked by incoming weight: the interface to introduce when extracting it. |
+| Readiness | `needs-prep` if in a cycle or cohesion < 50%; else `caution` if confidence < 60%, dynamic dispatch is present, the public surface exceeds 8 entry points, 4+ third-party packages are used or it crosses an HTTP boundary; else `ready`. Reasons are always listed. |
 
-`api/services/user_store.py` is a SQLite table pair (`users`, `repos`) — a zero-setup stand-in for Supabase's Postgres. Identity is a dev-only `X-User` HTTP header trusted as-is (`api/main.py`'s `get_current_user()`); there is no password or token verification. This is not real auth — it exists so the ownership-isolation logic (a user can only ever list/view their *own* repos; `GET /api/repos/{id}/graph` 404s for anyone else) could be built and demonstrated without a real auth provider. The swap-in to real auth later is exactly one function.
+The written plan is one LLM call over a compact rendering of these facts (the 15 largest or cyclic subsystems when there are more; a 59-subsystem prompt was rejected by Groq as too large). **Reference guard:** every backticked identifier and `#<id>` in the result must exist in the measured facts. A violation triggers one corrective retry; anything still unverified is stored as `narrative_warnings` and shown to the user. This caught real inventions (made-up function names, a wrong subsystem label) that prompting alone did not prevent.
 
-Each repo gets its own Kùzu DB file under `api/data/repos/<repo_id>/kuzu_db` and its own working directory (clone, symbol tables, graph snapshots, narrative cache) — full isolation at the storage layer, not just query-level filtering.
+### 6. Snapshot and store
+The graph is copied to `snapshots/<commit>.json` (node ids are `language:path:qualified_name`, stable across commits, so diffing is plain set difference: `diff_graphs.py`) and loaded into Kùzu for the live UI.
+
+## Running it in public
+
+`REARCH_PUBLIC_MODE=1` (set in the Dockerfile) turns on `api/security.py`. Local development stays permissive.
+
+- **Repo URLs**: only `https://github.com/<owner>/<repo>`. Always, even locally, anything git could read as an option (`--upload-pack=...`) is refused, and the clone uses `--`, `core.symlinks=false`, a timeout, no credential prompts, `--depth 1`. Without these, a stranger could clone the server's own directories or run commands through git options.
+- **Identity**: the `X-User` header is a bearer secret. In public mode it must be a long random id (the browser generates one); short guessable names are refused, so nobody can read another visitor's analyses by guessing a username. A reserved read-only `demo` account holds the bundled examples.
+- **Isolation**: all reads go through one `require_repo` check; demo repos are readable by anyone and writable by no one. Commit ids in diff URLs are validated so they cannot escape the snapshots folder.
+- **Load**: analyses run as background jobs (the request returns `pending` and the UI polls, because they outlive a hosting proxy's request timeout); one at a time; 3 per visitor per hour and 10 per IP per day; repository size capped; unexpected errors are logged server-side and replaced with a generic message so server paths never reach users.
+- **Examples**: `demo/<repo>/` holds pre-computed results (`scripts/build_demo.py`). A fresh server loads them in seconds with no clone and no LLM call, which matters on an ephemeral disk.
+
+## Deployment topology
+
+```
+Browser ──> GitHub Pages (static React build)
+   │
+   └─────> Hugging Face Space (Docker: FastAPI + Kùzu + SQLite, ephemeral disk)
+                 ├─> git clone  github.com (public repos)
+                 └─> Groq API   (narratives + plan, key held server-side only)
+```
+
+GitHub Actions: `ci.yml` (tests, lint, build; its Linux install also proves the pinned requirements work), `deploy-pages.yml`, `deploy-space.yml`. The Docker image pre-fetches the embedding model and tree-sitter grammars at build time so the first visitor does not wait on downloads.
 
 ## Free-tier stack and swap-in points
 
-| Layer | MVP choice (what's actually running) | Why | Real swap-in later |
-|---|---|---|---|
-| Parsing | tree-sitter + tree-sitter-language-pack | MIT, 40+ grammars, no per-language parser to hand-roll | (already the real choice — no swap needed) |
-| Graph DB | **Kùzu** (embedded, single-file, Cypher-like) | Zero install, zero account — genuinely stands in for Neo4j's query model | Neo4j AuraDB Free → self-hosted Community. Confined to `api/services/graph_store.py` |
-| User/repo metadata | **SQLite** | Zero setup | Supabase Postgres. Confined to `api/services/user_store.py` |
-| Embeddings | **fastembed** (local ONNX, `BAAI/bge-small-en-v1.5`) | No torch, no account, no API key | Could move to a hosted embeddings API if local compute becomes the bottleneck — unlikely before real scale |
-| LLM narratives | **Groq** (`llama-3.3-70b-versatile`) | Free, fast, generous enough limits for demo-scale, protected further by caching | Paid Groq tier, or add back the originally-planned Hugging Face overflow lane (explicitly skipped — HF's free tier is now thin, and caching alone already protects rate limits) |
-| Backend hosting | Local (`uvicorn`) + Cloudflare quick tunnel for public reachability | Zero cost, zero deploy step for a side project at this stage | Render free tier → paid, per original plan |
-| Frontend | Local Vite dev server | — | Cloudflare Pages / Vercel |
-| Repo ingestion | Direct `git clone` (public repos) / PAT (private) | No OAuth app registration needed for a single-operator tool | GitHub OAuth app, once other people are connecting *their own* repos through a UI |
-| Real-time sync | GitHub webhook + Cloudflare quick tunnel (ephemeral, anonymous, no account) | Free, proven to work with a real GitHub webhook delivery in testing | A stable domain (Cloudflare Tunnel with a real hostname, or just wherever the API ends up deployed) |
+| Layer | Now | Later |
+|---|---|---|
+| Parsing | tree-sitter | (no change) |
+| Graph store | Kùzu, embedded, `api/services/graph_store.py` | Neo4j Aura / self-hosted |
+| Users and repos | SQLite, `api/services/user_store.py` | Postgres |
+| Embeddings | fastembed, local | hosted API if compute becomes the bottleneck |
+| LLM | Groq free tier | paid tier, or another provider behind `call_groq` |
+| API hosting | Hugging Face Docker Space (free, ephemeral disk) | persistent volume or a paid host |
+| UI hosting | GitHub Pages | (no change) |
+| Identity | random per-browser id | a real auth provider behind `get_current_user()` |
 
 ## Known limitations
 
-Honest, not glossed over — these are the same three risks flagged in the original project plan, now confirmed (or refined) by building the thing:
-
-1. **Cross-language and dynamic-language call resolution has a real ceiling.** Duck typing, reflection, DI, and true cross-service boundaries aren't visible to any static parser. The `resolution` field (dynamic/inferred-http/unresolved) exists specifically so this limitation is visible in the data rather than papered over. The Python import-root-inference heuristic (§ Pipeline, stage 2) is a real fix for a real bug found via testing against this repo's own nested fixture — but it's a heuristic (nearest-ancestor-that-resolves), not a full `sys.path`/build-system-aware resolver, and will still miss more exotic layouts (namespace packages, `PYTHONPATH` manipulation, monorepo tooling with custom resolution).
-
-2. **LLM narratives are fundamentally under-determined.** A graph shows what calls what, not the business reason it exists. The mitigation is architectural, not just prompting: narratives are always shown next to the graph facts (`grounded_in`) that produced them, explicitly framed as inferred in the UI, and the system prompt instructs the model to describe structure rather than invent intent when the facts don't support a claim. This was validated by direct inspection of real generated narratives, which do correctly hedge ("the exact business intent is unclear without more context") rather than confabulate.
-
-3. **Free-tier ceilings are real and were hit on purpose, not by surprise.** Groq's rate limits, a single-file Kùzu DB, and `git clone --depth 1` are all fine at demo scale (hundreds of files) and will not survive a genuine multi-hundred-thousand-line enterprise monorepo unchanged. That's an explicit, intentional boundary of this MVP phase, matching the stated plan to move to paid tiers once there's real traction — not a hidden gap.
-
-4. **The Cloudflare quick tunnel is anonymous and ephemeral.** It has no uptime guarantee and its URL changes every time it's restarted (confirmed while building M14 — a real GitHub webhook ping was successfully delivered through it, but the webhook's Payload URL would need updating if the tunnel restarts). Fine for testing the real-time-sync feature; not something to depend on for anything long-running without either a named Cloudflare Tunnel or a real deployment.
-
-5. **No real authentication.** The `X-User` header is trusted as-is by design, for this phase — see § Multi-user model.
-
-## Milestone reference
-
-The full 14-milestone build plan (with phase structure, verification approach per phase, and the original free-tier research) is preserved in this repo's development history — each milestone's implementation is one or two files listed in § Pipeline above, and was verified before moving to the next one:
-
-- **M1–M4** (structural core): `parser/pipeline/dump_ast.py`, `parser/resolvers/*/extract.py`, `parser/pipeline/link_calls.py` — validated against `fixtures/sample_repo/GROUND_TRUTH.md`, a hand-written expected-edges document.
-- **M5–M6** (storage + viewing): `api/services/graph_store.py`, `api/main.py`, `web/src/App.jsx`.
-- **M7–M8** (real ingestion + multi-user): `parser/pipeline/ingest_repo.py`, `parser/pipeline/repo_walk.py`, `api/services/user_store.py`.
-- **M9** (semantic layer): `parser/pipeline/cluster_nodes.py`.
-- **M10–M11** (LLM narratives): `parser/pipeline/generate_narratives.py`.
-- **M12** (UI polish): search/focus in `web/src/App.jsx`.
-- **M13** (diffing): `parser/pipeline/diff_graphs.py`.
-- **M14** (real-time sync): the `/api/webhooks/github` route in `api/main.py`.
+- **Two languages.** Python and JavaScript/JSX only. TypeScript, Java, C#, PHP and COBOL are the realistic next step and each needs a tree-sitter extractor plus its import-resolution rules. Most real legacy code is in those languages, so this is the biggest gap.
+- **Subsystems are candidates, not modules.** Clusters come from naming and call structure, not from the build system. They can group files across directories, and a cycle between two clusters means those groupings are entangled, which is useful to know but is not a statement about the repo's own package boundaries.
+- **Static analysis has a ceiling.** Reflection, dependency injection, duck typing and cross-service calls are invisible to a parser. The confidence score and `dynamic`/`unresolved` labels exist so that gap is visible rather than hidden. Instance-method resolution covers direct constructor assignments only.
+- **LLM output is advisory.** The reference guard stops invented names, not wrong reasoning. The plan says what the structure supports, not what the business needs.
+- **Free-tier throughput.** Groq's free tier rate-limits the per-subsystem narrative calls, so an analysis of a mid-size repo takes a few minutes. Groq also retires models with little notice.
+- **Ephemeral storage.** On a free Space, user analyses are lost on restart; only the bundled examples persist (they are in the image).
+- **Not a security boundary for secrets.** Rate limits are in memory and reset on restart; the client IP is taken from `X-Forwarded-For`. This is fine for a portfolio-scale service and not for adversarial scale.
+- **Docker image not built locally.** Development was on Windows without Docker; the first real build happens in the Space. CI's Linux dependency install is the early warning.

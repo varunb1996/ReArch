@@ -1,0 +1,331 @@
+{
+  "0": {
+    "text": "The members of Subsystem #0 are the core networking-stack of the **requests** library: utilities for URL handling, proxy selection, authentication helpers, a hierarchy of exception types, the **PreparedRequest** model that turns a user-level request into a fully-specified HTTP message, and the **HTTPAdapter**/**SessionRedirectMixin** classes that manage connection pools, send the request through urllib3, and follow redirects.  \n\nAll of these pieces work together to turn a high-level `Session.request()` call into a concrete HTTP transaction: they build the request, choose the right proxy, verify certificates, handle authentication, serialize the body, and then hand the request to an adapter that creates or reuses a connection pool and returns a `Response`.  \n\nBecause they share many internal helpers (e.g., `_urllib3_request_context`, `proxy_bypass`, `to_native_string`) and are tightly coupled through the same call-graph, they are clustered as a single subsystem that implements the \u201cprepare-and-send HTTP request\u201d workflow and the associated error handling. The cohesion comes from the need to keep request preparation, adapter configuration, and redirect handling together so that a `Session` can reliably issue HTTP calls with proper proxy, auth, and retry semantics.",
+    "member_count": 63,
+    "grounded_in": {
+      "calls_out": [
+        "BaseAdapter.__init__",
+        "CaseInsensitiveDict",
+        "ConnectTimeout",
+        "ConnectionError",
+        "HTTPBasicAuth",
+        "InvalidHeader",
+        "InvalidJSONError",
+        "MissingSchema",
+        "ProxyError",
+        "ReadTimeout",
+        "RequestEncodingMixin._encode_files",
+        "RequestEncodingMixin._encode_params",
+        "RequestHooksMixin.register_hook",
+        "Response",
+        "RetryError"
+      ],
+      "calls_in": [
+        "HTTPBasicAuth.__call__",
+        "HTTPProxyAuth.__call__",
+        "MockRequest.__init__",
+        "MockRequest.get_full_url",
+        "Request.prepare",
+        "Session.__init__",
+        "Session.get_adapter",
+        "Session.merge_environment_settings",
+        "Session.prepare_request",
+        "Session.request",
+        "Session.send",
+        "unquote_unreserved"
+      ],
+      "excerpt_source": "SessionRedirectMixin.resolve_redirects (src/requests/sessions.py)"
+    }
+  },
+  "1": {
+    "text": "The members of this cluster implement the high-level HTTP client API of the *requests* library. It contains the public convenience functions (`get`, `post`, \u2026) that delegate to a `Session` object, the `Session` class with its request-building, preparation, and sending logic, and a set of utility helpers for parsing and validating HTTP headers. All of these symbols call into lower-level objects such as `PreparedRequest`, `HTTPAdapter`, and authentication helpers, and they are the only parts of the codebase that expose the \u201crequests\u201d namespace to callers, which is why they form a tightly-coupled subsystem: they collectively provide a coherent, stateful interface for constructing, configuring, and dispatching HTTP requests.",
+    "member_count": 38,
+    "grounded_in": {
+      "calls_out": [
+        "HTTPAdapter",
+        "InvalidSchema",
+        "PreparedRequest",
+        "PreparedRequest.prepare",
+        "Request",
+        "RequestsCookieJar",
+        "SessionRedirectMixin.resolve_redirects",
+        "cookiejar_from_dict",
+        "default_headers",
+        "default_hooks",
+        "dispatch_hook",
+        "extract_cookies_to_jar",
+        "get_environ_proxies",
+        "get_netrc_auth",
+        "is_prepared"
+      ],
+      "calls_in": [
+        "<module>",
+        "HTTPAdapter.send",
+        "HTTPDigestAuth.handle_401",
+        "PreparedRequest.prepare_headers",
+        "Response.links",
+        "session"
+      ],
+      "excerpt_source": "Session.send (src/requests/sessions.py)"
+    }
+  },
+  "2": {
+    "text": "The subsystem groups the **Response** class and a handful of related exception and utility symbols that together implement the representation of an HTTP response returned by the library. All of the methods (`__enter__`, `__exit__`, `iter_content`, `iter_lines`, `json`, `raise_for_status`, etc.) provide the public API for consuming the response body, inspecting status, headers, encoding, and handling context-manager usage, while the utilities (`stream_decode_response_unicode`, `iter_slices`) and the `StreamConsumedError` exception support the low-level streaming and slicing logic used by those methods. Because these objects are tightly coupled\u2014`HTTPAdapter.build_response` constructs a `Response` and the response\u2019s methods rely on the same helper functions and error types\u2014the clustering reflects a cohesive unit that isolates all response-handling functionality from the rest of the HTTP client. The subsystem therefore exists to encapsulate parsing, iteration, decoding, and error handling of HTTP responses in a single, reusable component.",
+    "member_count": 33,
+    "grounded_in": {
+      "calls_out": [
+        "CaseInsensitiveDict",
+        "ChunkedEncodingError",
+        "ConnectionError",
+        "ContentDecodingError",
+        "HTTPError",
+        "JSONDecodeError",
+        "SSLError",
+        "cookiejar_from_dict",
+        "guess_json_utf",
+        "parse_header_links",
+        "unresolved:RuntimeError",
+        "unresolved:TypeError",
+        "unresolved:b\"\".join",
+        "unresolved:cast",
+        "unresolved:chardet.detect"
+      ],
+      "calls_in": [
+        "HTTPAdapter.build_response"
+      ],
+      "excerpt_source": "Response.iter_content (src/requests/models.py)"
+    }
+  },
+  "3": {
+    "text": "The subsystem is the cookie-handling layer of the HTTP client library. It defines a custom mapping-like class `RequestsCookieJar` together with a small hierarchy of helper types (e.g., `CookieConflictError`) and implements the full dictionary API (get, set, iteration, containment, item access, copy, serialization, etc.) plus cookie-specific helpers such as `list_domains`, `list_paths`, and `_find_no_duplicates`. All of the methods rely on lower-level utilities like `create_cookie`, `morsel_to_cookie`, and `remove_cookie_by_name` to translate between Python\u2019s `Morsel` objects and the library\u2019s internal cookie representation, and to enforce domain/path rules when setting or deleting cookies. Because many higher-level components (e.g., `Session.prepare_request` and `cookiejar_from_dict`) need a single, mutable container that can store, retrieve, and serialize cookies while handling conflicts across domains, the code is grouped together as a cohesive unit that encapsulates all cookie-jar logic in one place.",
+    "member_count": 27,
+    "grounded_in": {
+      "calls_out": [
+        "create_cookie",
+        "morsel_to_cookie",
+        "remove_cookie_by_name",
+        "unresolved:KeyError",
+        "unresolved:copy.copy",
+        "unresolved:domains.append",
+        "unresolved:isinstance",
+        "unresolved:iter",
+        "unresolved:kwargs.get",
+        "unresolved:list",
+        "unresolved:new_cj.set_policy",
+        "unresolved:paths.append",
+        "unresolved:self.__dict__.copy",
+        "unresolved:self.__dict__.update",
+        "unresolved:state.pop"
+      ],
+      "calls_in": [
+        "Session.prepare_request",
+        "cookiejar_from_dict"
+      ],
+      "excerpt_source": "RequestsCookieJar.set (src/requests/cookies.py)"
+    }
+  },
+  "4": {
+    "text": "The members of this subsystem define the data-structures and error types that the rest of the library uses when building and sending HTTP requests.  \nThe classes in `src/requests/_types.py` (`SupportsRead`, `SupportsItems`, `_ValidatedRequest`, `BaseRequestKwargs`, `RequestKwargs`, `GetKwargs`, `PostKwargs`, `DataKwargs`) model the different sets of keyword arguments a request can accept and provide small helper protocols (`read`, `items`) for objects that can be streamed or iterated.  \nThe classes in `src/requests/exceptions.py` (`RequestException` and its many subclasses such as `ConnectionError`, `Timeout`, `SSLError`, etc.) form a hierarchy of exceptions that capture various failure modes of an HTTP operation; the `RequestException.__init__` implementation extracts optional `request` and `response` objects from the constructor\u2019s kwargs and stores them for later inspection, then forwards the remaining arguments to the base `Exception`.  \nTogether these types give the library a self-contained, well-typed way to validate request parameters and to raise, propagate, and inspect rich error information, which is why they are clustered as a single cohesive unit.",
+    "member_count": 22,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:hasattr",
+        "unresolved:kwargs.pop",
+        "unresolved:super",
+        "unresolved:super().__init__"
+      ],
+      "calls_in": [
+        "HTTPAdapter.send",
+        "Response.iter_content.generate"
+      ],
+      "excerpt_source": "RequestException.__init__ (src/requests/exceptions.py)"
+    }
+  },
+  "5": {
+    "text": "The subsystem implements lightweight dictionary-like containers that treat string keys without regard to case. `CaseInsensitiveDict` stores a normal mapping internally but normalises look-ups (and deletions) by lower-casing the key while preserving the original capitalisation for iteration and representation; it also supplies helpers such as `lower_items` and a proper `copy`. `LookupDict` is a thin wrapper that forwards attribute access and item access to an underlying mapping, providing a convenient \u201cdot-lookup\u201d style API. Both classes are used throughout the HTTP client (e.g., when building request headers, preparing responses, and initializing sessions) to manage header dictionaries and other case-insensitive mappings in a consistent, reusable way, which is why they are grouped together as a single cohesive unit.",
+    "member_count": 20,
+    "grounded_in": {
+      "calls_out": [
+        "default_user_agent",
+        "unresolved:AttributeError",
+        "unresolved:OrderedDict",
+        "unresolved:dict",
+        "unresolved:isinstance",
+        "unresolved:key.lower",
+        "unresolved:len",
+        "unresolved:self.__dict__.get",
+        "unresolved:self._store.items",
+        "unresolved:self._store.values",
+        "unresolved:self.items",
+        "unresolved:self.update",
+        "unresolved:str",
+        "unresolved:super",
+        "unresolved:super().__init__"
+      ],
+      "calls_in": [
+        "<module>",
+        "HTTPAdapter.build_response",
+        "PreparedRequest.prepare_headers",
+        "Response.__init__",
+        "Session.__init__"
+      ],
+      "excerpt_source": "CaseInsensitiveDict (src/requests/structures.py)"
+    }
+  },
+  "6": {
+    "text": "The six-member subsystem implements a lightweight **request fa\u00e7ade** that mimics the interface expected by the `http.cookiejar` machinery in the Python standard library. All of the methods (`get_type`, `get_host`, `get_full_url`, `has_header`, `add_header`, etc.) simply forward information from an underlying **requests.Response** object (`self._r`) and expose it through the same attribute names (`origin_req_host`, `unverifiable`, etc.) that `http.cookiejar` calls when extracting or sending cookies.  \n\nBecause `extract_cookies_to_jar` and `get_cookie_header` (the two external dependents) operate on objects that implement the `urllib.request.Request`-like protocol, this mock class is grouped together so that the rest of the codebase can reuse the standard cookie handling code without pulling in the full urllib request implementation. The subsystem therefore exists as a cohesive unit to **bridge the `requests` library\u2019s response objects with the cookie-jar API**, providing the minimal set of methods and header-access helpers required for cookie extraction and header generation.",
+    "member_count": 15,
+    "grounded_in": {
+      "calls_out": [
+        "is_prepared",
+        "to_native_string",
+        "unresolved:NotImplementedError",
+        "unresolved:self._new_headers.get",
+        "unresolved:self._r.headers.get",
+        "unresolved:urlparse",
+        "unresolved:urlunparse"
+      ],
+      "calls_in": [
+        "extract_cookies_to_jar",
+        "get_cookie_header"
+      ],
+      "excerpt_source": "MockRequest.get_full_url (src/requests/cookies.py)"
+    }
+  },
+  "7": {
+    "text": "The subsystem is the implementation of HTTP Digest authentication for the **requests** library. All 16 members are methods and helper functions of the `HTTPDigestAuth` class, which stores the challenge parameters (`realm`, `nonce`, `qop`, `algorithm`, etc.) in thread-local state, computes the required response hash (MD5, SHA-1, SHA-256, SHA-512) via the `build_digest_header` helpers, and injects the resulting `Authorization` header into outgoing requests (`__call__`). It also handles 401 challenges and redirects (`handle_401`, `handle_redirect`) and provides equality semantics. Because these functions are tightly coupled\u2014sharing the same challenge data, hash-generation logic, and request-modifying behavior\u2014they form a cohesive unit that encapsulates the full lifecycle of HTTP Digest auth within the client library.",
+    "member_count": 16,
+    "grounded_in": {
+      "calls_out": [
+        "extract_cookies_to_jar",
+        "parse_dict_header",
+        "unresolved:KD",
+        "unresolved:_r.history.append",
+        "unresolved:algorithm.upper",
+        "unresolved:all",
+        "unresolved:cast",
+        "unresolved:getattr",
+        "unresolved:hasattr",
+        "unresolved:hash_utf8",
+        "unresolved:hashlib.md5",
+        "unresolved:hashlib.md5(x, usedforsecurity=False).hexdigest",
+        "unresolved:hashlib.sha1",
+        "unresolved:hashlib.sha1(s, usedforsecurity=False).hexdigest",
+        "unresolved:hashlib.sha1(x, usedforsecurity=False).hexdigest"
+      ],
+      "calls_in": [],
+      "excerpt_source": "HTTPDigestAuth.build_digest_header (src/requests/auth.py)"
+    }
+  },
+  "8": {
+    "text": "The subsystem groups together the classes, functions, and helpers that translate between the library\u2019s internal **RequestsCookieJar** representation and the lower-level cookie objects used by Python\u2019s `http.cookiejar` (or `cookielib`) module, as well as a small mock implementation used by the test suite. It provides utilities for creating a `Cookie` from raw name/value pairs (`create_cookie`), converting dictionaries to and from a jar (`cookiejar_from_dict`, `dict_from_cookiejar`, `add_dict_to_cookiejar`), extracting cookies from HTTP responses (`extract_cookies_to_jar`), building the \u201cCookie\u201d request header (`get_cookie_header`), and removing or merging cookies (`remove_cookie_by_name`, `merge_cookies`). The `MockResponse` class mimics the minimal interface (`info`, `getheaders`) that the cookie-extraction code expects from a real HTTP response, allowing the same logic to be exercised in tests. All of these pieces are tightly coupled because they share the same data structures and are invoked together by higher-level components such as `Session`, `PreparedRequest`, and authentication handlers when preparing or processing HTTP requests and responses.",
+    "member_count": 15,
+    "grounded_in": {
+      "calls_out": [
+        "MockRequest",
+        "MockRequest.get_new_headers",
+        "RequestsCookieJar",
+        "RequestsCookieJar.set_cookie",
+        "unresolved:TypeError",
+        "unresolved:ValueError",
+        "unresolved:bool",
+        "unresolved:calendar.timegm",
+        "unresolved:clearables.append",
+        "unresolved:cookiejar.clear",
+        "unresolved:cookiejar.set_cookie",
+        "unresolved:cookielib.Cookie",
+        "unresolved:getattr",
+        "unresolved:hasattr",
+        "unresolved:int"
+      ],
+      "calls_in": [
+        "HTTPAdapter.build_response",
+        "HTTPDigestAuth.handle_401",
+        "PreparedRequest.prepare_cookies",
+        "RequestsCookieJar.__delitem__",
+        "RequestsCookieJar.set",
+        "Response.__init__",
+        "Session.__init__",
+        "Session.prepare_request",
+        "Session.send",
+        "SessionRedirectMixin.resolve_redirects"
+      ],
+      "excerpt_source": "create_cookie (src/requests/cookies.py)"
+    }
+  },
+  "9": {
+    "text": "The nine members form the **request-hook and adapter core** of the library. `BaseAdapter` defines a generic interface for sending and closing a low-level HTTP connection, while the `Request` class (with its `prepare` method) builds a `PreparedRequest` that can be handed to an adapter. `RequestHooksMixin` adds a dictionary-based hook registry (`register_hook`, `deregister_hook`) that `Request` inherits, allowing callers to attach callbacks (e.g., for \u201cresponse\u201d or \u201cpre-request\u201d events) which are stored in `self.hooks[event]` and later invoked by the adapter or session logic. Together these classes provide a self-contained subsystem that prepares a request, enriches it with user-defined callbacks, and supplies a pluggable transport layer for sending the request.",
+    "member_count": 12,
+    "grounded_in": {
+      "calls_out": [
+        "PreparedRequest",
+        "PreparedRequest.prepare",
+        "unresolved:ValueError",
+        "unresolved:hasattr",
+        "unresolved:hooks.items",
+        "unresolved:isinstance",
+        "unresolved:list",
+        "unresolved:self.hooks[event].append",
+        "unresolved:self.hooks[event].extend",
+        "unresolved:self.hooks[event].remove",
+        "unresolved:super",
+        "unresolved:super().__init__"
+      ],
+      "calls_in": [
+        "HTTPAdapter.__init__",
+        "PreparedRequest.__init__",
+        "PreparedRequest.prepare_hooks",
+        "Session.__init__",
+        "Session.request"
+      ],
+      "excerpt_source": "RequestHooksMixin.register_hook (src/requests/models.py)"
+    }
+  },
+  "10": {
+    "text": "The ten-member subsystem groups together utilities that turn user-supplied request data into the low-level byte payloads required by HTTP. `RequestEncodingMixin` (and its methods `path_url`, `_encode_params`, `_encode_files`) implements the logic for building query strings, form-encoded bodies, and multipart-form-data bodies, while the helper functions in `utils.py` (`guess_filename`, `from_key_val_list`, `to_key_val_list`) and the merging routine in `sessions.py` (`merge_setting`) support the conversion of dictionaries or key-value sequences into the canonical structures used by the mixin. These functions are called by the request-preparation pipeline (`PreparedRequest.prepare_body`, `PreparedRequest.prepare_url`, `Session.prepare_request`, etc.), indicating that the subsystem\u2019s purpose is to encode parameters, files, and URLs consistently before a request is sent. It is kept as a cohesive unit because all of the code shares the same responsibility\u2014transforming high-level request arguments into the exact byte format required by the underlying HTTP client.",
+    "member_count": 15,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:\"\".join",
+        "unresolved:OrderedDict",
+        "unresolved:RequestField",
+        "unresolved:ValueError",
+        "unresolved:cast",
+        "unresolved:dict_class",
+        "unresolved:encode_multipart_formdata",
+        "unresolved:field.decode",
+        "unresolved:fp.read",
+        "unresolved:getattr",
+        "unresolved:hasattr",
+        "unresolved:isinstance",
+        "unresolved:k.encode",
+        "unresolved:len",
+        "unresolved:list"
+      ],
+      "calls_in": [
+        "PreparedRequest.prepare_body",
+        "PreparedRequest.prepare_url",
+        "Session.merge_environment_settings",
+        "Session.prepare_request",
+        "merge_hooks"
+      ],
+      "excerpt_source": "RequestEncodingMixin._encode_files (src/requests/models.py)"
+    }
+  },
+  "11": {
+    "text": "The functions in this cluster implement the authentication helpers used by the **requests** library. `AuthBase` is the abstract callable that all auth objects inherit from, and the concrete subclasses `HTTPBasicAuth` and `HTTPProxyAuth` provide callable objects that attach the appropriate *Authorization* (or *Proxy-Authorization*) header to a `PreparedRequest`. The methods (`__init__`, `__call__`, `__eq__`, `__ne__`) manage the stored credentials, compare auth objects, and invoke the internal utility `_basic_auth_str` to build the header value. Because these classes are the only code that prepares and injects authentication data into outgoing HTTP requests, they are grouped together as a cohesive subsystem that isolates credential handling from the rest of the request-building pipeline.",
+    "member_count": 11,
+    "grounded_in": {
+      "calls_out": [
+        "_basic_auth_str",
+        "unresolved:NotImplementedError",
+        "unresolved:all",
+        "unresolved:getattr"
+      ],
+      "calls_in": [
+        "PreparedRequest.prepare_auth"
+      ],
+      "excerpt_source": "HTTPBasicAuth.__eq__ (src/requests/auth.py)"
+    }
+  }
+}

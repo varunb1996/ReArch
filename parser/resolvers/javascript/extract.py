@@ -182,6 +182,15 @@ def extract(path: Path, rel_path: Path | None = None) -> dict:
                         "name": _text(name_node, source),
                         "pairs": _object_pairs(value_node, source),
                     })
+                elif value_node.type == "new_expression":
+                    ctor = value_node.children[1] if len(value_node.children) > 1 else None
+                    if ctor is not None and ctor.type in ("identifier", "member_expression"):
+                        local_bindings.append({
+                            "scope_id": scope_id,
+                            "name": _text(name_node, source),
+                            "value_kind": "constructor_call",
+                            "callee_repr": _text(ctor, source),
+                        })
 
         for child in node.children:
             walk(child, scope_stack, scope_kind_stack, current_function_id)

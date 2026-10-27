@@ -1,0 +1,3189 @@
+{
+  "summary": {
+    "subsystems": 12,
+    "cycle_groups": 1,
+    "waves": 3,
+    "coverage": 0.89,
+    "overall_confidence": 0.83,
+    "readiness": {
+      "needs-prep": 12
+    },
+    "third_party": [
+      {
+        "package": "urllib3",
+        "uses": 45
+      },
+      {
+        "package": "typing_extensions",
+        "uses": 6
+      },
+      {
+        "package": "idna",
+        "uses": 2
+      },
+      {
+        "package": "_typeshed",
+        "uses": 1
+      }
+    ]
+  },
+  "subsystems": [
+    {
+      "id": 0,
+      "label": "src/requests \u00b7 sessions.SessionRedirectMixin.resolve_redirects",
+      "purpose": "The members of Subsystem #0 are the core networking-stack of the **requests** library: utilities for URL handling, proxy selection, authentication helpers, a hierarchy of exception types, the **PreparedRequest** model that turns a user-level request into a fully-specified HTTP message, and the **HTTPAdapter**/**SessionRedirectMixin** classes that manage connection pools, send the request through urllib3, and follow redirects.  \n\nAll of these pieces work together to turn a high-level `Session.request()` call into a concrete HTTP transaction: they build the request, choose the right proxy, verify certificates, handle authentication, serialize the body, and then hand the request to an adapter that creates or reuses a connection pool and returns a `Response`.  \n\nBecause they share many internal helpers (e.g., `_urllib3_request_context`, `proxy_bypass`, `to_native_string`) and are tightly coupled through the same call-graph, they are clustered as a single subsystem that implements the \u201cprepare-and-send HTTP request\u201d workflow and the associated error handling. The cohesion comes from the need to keep request preparation, adapter configuration, and redirect handling together so that a `Session` can reliably issue HTTP calls with proper proxy, auth, and retry semantics.",
+      "members": 63,
+      "files": 8,
+      "loc": 1678,
+      "languages": [
+        "python"
+      ],
+      "afferent": 34.0,
+      "efferent": 47.5,
+      "instability": 0.58,
+      "cohesion": 0.52,
+      "confidence": 0.89,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [
+        "large public surface (18 entry points used by other subsystems)"
+      ],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/models.py:PreparedRequest",
+          "name": "PreparedRequest",
+          "kind": "class",
+          "path": "src/requests/models.py",
+          "weight": 6.0,
+          "called_from": [
+            1,
+            3,
+            4,
+            7,
+            9
+          ]
+        },
+        {
+          "id": "python:src/requests/_types.py:is_prepared",
+          "name": "is_prepared",
+          "kind": "function",
+          "path": "src/requests/_types.py",
+          "weight": 4.0,
+          "called_from": [
+            1,
+            3,
+            6
+          ]
+        },
+        {
+          "id": "python:src/requests/_internal_utils.py:to_native_string",
+          "name": "to_native_string",
+          "kind": "function",
+          "path": "src/requests/_internal_utils.py",
+          "weight": 3.0,
+          "called_from": [
+            1,
+            2,
+            3,
+            6,
+            7
+          ]
+        },
+        {
+          "id": "python:src/requests/adapters.py:HTTPAdapter",
+          "name": "HTTPAdapter",
+          "kind": "class",
+          "path": "src/requests/adapters.py",
+          "weight": 3.0,
+          "called_from": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/auth.py:_basic_auth_str",
+          "name": "_basic_auth_str",
+          "kind": "function",
+          "path": "src/requests/auth.py",
+          "weight": 2.5,
+          "called_from": [
+            1,
+            11
+          ]
+        },
+        {
+          "id": "python:src/requests/models.py:PreparedRequest.prepare",
+          "name": "PreparedRequest.prepare",
+          "kind": "method",
+          "path": "src/requests/models.py",
+          "weight": 2.0,
+          "called_from": [
+            1,
+            9
+          ]
+        },
+        {
+          "id": "python:src/requests/sessions.py:SessionRedirectMixin.resolve_redirects",
+          "name": "SessionRedirectMixin.resolve_redirects",
+          "kind": "method",
+          "path": "src/requests/sessions.py",
+          "weight": 2.0,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "python:src/requests/exceptions.py:InvalidSchema",
+          "name": "InvalidSchema",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 1.5,
+          "called_from": [
+            1
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 4,
+          "weight": 19.5,
+          "edges": 23,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "ConnectionError",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ConnectTimeout",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ProxyError",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 8,
+          "weight": 7.0,
+          "edges": 8,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "extract_cookies_to_jar",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPAdapter.build_response",
+              "target": "extract_cookies_to_jar",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PreparedRequest.prepare_cookies",
+              "target": "cookiejar_from_dict",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 6.5,
+          "edges": 6,
+          "examples": [
+            {
+              "source": "HTTPAdapter",
+              "target": "BaseAdapter",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPAdapter.__init__",
+              "target": "BaseAdapter.__init__",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PreparedRequest",
+              "target": "RequestHooksMixin",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 10,
+          "weight": 5.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "PreparedRequest",
+              "target": "RequestEncodingMixin",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PreparedRequest.prepare_url",
+              "target": "RequestEncodingMixin._encode_params",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PreparedRequest.prepare_body",
+              "target": "RequestEncodingMixin._encode_files",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 3.0,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "InvalidHeader",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPAdapter.send",
+              "target": "InvalidHeader",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PreparedRequest.prepare_headers",
+              "target": "check_header_validity",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 3.0,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CaseInsensitiveDict",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPAdapter.build_response",
+              "target": "CaseInsensitiveDict",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PreparedRequest.prepare_headers",
+              "target": "CaseInsensitiveDict",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPAdapter.build_response",
+              "target": "Response",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 11,
+          "weight": 1.0,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "PreparedRequest.prepare_auth",
+              "target": "HTTPBasicAuth",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 20.5,
+          "edges": 27
+        },
+        {
+          "subsystem": 4,
+          "weight": 2.5,
+          "edges": 3
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.5,
+          "edges": 5
+        },
+        {
+          "subsystem": 11,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 6,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 9,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 3,
+          "weight": 1.5,
+          "edges": 3
+        },
+        {
+          "subsystem": 7,
+          "weight": 1.0,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "urllib3",
+          "uses": 33
+        },
+        {
+          "package": "idna",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 17
+        },
+        {
+          "package": "re",
+          "uses": 6
+        },
+        {
+          "package": "os",
+          "uses": 6
+        },
+        {
+          "package": "socket",
+          "uses": 5
+        },
+        {
+          "package": "netrc",
+          "uses": 4
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/sessions.py:SessionRedirectMixin.resolve_redirects",
+          "name": "SessionRedirectMixin.resolve_redirects",
+          "kind": "method",
+          "path": "src/requests/sessions.py"
+        },
+        {
+          "id": "python:src/requests/adapters.py:HTTPAdapter.send",
+          "name": "HTTPAdapter.send",
+          "kind": "method",
+          "path": "src/requests/adapters.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:_basic_auth_str",
+          "name": "_basic_auth_str",
+          "kind": "function",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/models.py:PreparedRequest.prepare_url",
+          "name": "PreparedRequest.prepare_url",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:PreparedRequest.prepare_body",
+          "name": "PreparedRequest.prepare_body",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/_internal_utils.py:to_native_string",
+          "name": "to_native_string",
+          "kind": "function",
+          "path": "src/requests/_internal_utils.py"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "label": "src/requests \u00b7 sessions.Session.send",
+      "purpose": "The members of this cluster implement the high-level HTTP client API of the *requests* library. It contains the public convenience functions (`get`, `post`, \u2026) that delegate to a `Session` object, the `Session` class with its request-building, preparation, and sending logic, and a set of utility helpers for parsing and validating HTTP headers. All of these symbols call into lower-level objects such as `PreparedRequest`, `HTTPAdapter`, and authentication helpers, and they are the only parts of the codebase that expose the \u201crequests\u201d namespace to callers, which is why they form a tightly-coupled subsystem: they collectively provide a coherent, stateful interface for constructing, configuring, and dispatching HTTP requests.",
+      "members": 38,
+      "files": 5,
+      "loc": 896,
+      "languages": [
+        "python"
+      ],
+      "afferent": 6.5,
+      "efferent": 46.0,
+      "instability": 0.88,
+      "cohesion": 0.38,
+      "confidence": 0.91,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 38% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/exceptions.py:InvalidHeader",
+          "name": "InvalidHeader",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 2.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/utils.py:check_header_validity",
+          "name": "check_header_validity",
+          "kind": "function",
+          "path": "src/requests/utils.py",
+          "weight": 1.5,
+          "called_from": [
+            0,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/utils.py:parse_dict_header",
+          "name": "parse_dict_header",
+          "kind": "function",
+          "path": "src/requests/utils.py",
+          "weight": 1.5,
+          "called_from": [
+            7
+          ]
+        },
+        {
+          "id": "python:src/requests/utils.py:parse_header_links",
+          "name": "parse_header_links",
+          "kind": "function",
+          "path": "src/requests/utils.py",
+          "weight": 1.5,
+          "called_from": [
+            2
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 20.5,
+          "edges": 27,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "to_native_string",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "is_prepared",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "HTTPAdapter",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 8,
+          "weight": 7.5,
+          "edges": 9,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "cookiejar_from_dict",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "extract_cookies_to_jar",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "merge_cookies",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 10,
+          "weight": 7.5,
+          "edges": 8,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "to_key_val_list",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Session.prepare_request",
+              "target": "merge_setting",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Session.prepare_request",
+              "target": "merge_setting",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 3.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "default_hooks",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Request",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "BaseAdapter",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 4,
+          "weight": 2.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "<module>",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "InvalidHeader",
+              "target": "RequestException",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "<module>",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CaseInsensitiveDict",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "default_headers",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Session.__init__",
+              "target": "default_headers",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 3,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestsCookieJar",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Session.prepare_request",
+              "target": "RequestsCookieJar",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 3.0,
+          "edges": 4
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 7,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "typing_extensions",
+          "uses": 3
+        },
+        {
+          "package": "urllib3",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 7
+        },
+        {
+          "package": "platform",
+          "uses": 6
+        },
+        {
+          "package": "collections",
+          "uses": 5
+        },
+        {
+          "package": "datetime",
+          "uses": 2
+        },
+        {
+          "package": "os",
+          "uses": 2
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/sessions.py:Session.send",
+          "name": "Session.send",
+          "kind": "method",
+          "path": "src/requests/sessions.py"
+        },
+        {
+          "id": "python:src/requests/sessions.py:Session.prepare_request",
+          "name": "Session.prepare_request",
+          "kind": "method",
+          "path": "src/requests/sessions.py"
+        },
+        {
+          "id": "python:src/requests/sessions.py:Session.request",
+          "name": "Session.request",
+          "kind": "method",
+          "path": "src/requests/sessions.py"
+        },
+        {
+          "id": "python:src/requests/sessions.py:Session.merge_environment_settings",
+          "name": "Session.merge_environment_settings",
+          "kind": "method",
+          "path": "src/requests/sessions.py"
+        },
+        {
+          "id": "python:src/requests/utils.py:parse_header_links",
+          "name": "parse_header_links",
+          "kind": "function",
+          "path": "src/requests/utils.py"
+        },
+        {
+          "id": "python:src/requests/api.py:request",
+          "name": "request",
+          "kind": "function",
+          "path": "src/requests/api.py"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "label": "src/requests \u00b7 models.Response.iter_content",
+      "purpose": "The subsystem groups the **Response** class and a handful of related exception and utility symbols that together implement the representation of an HTTP response returned by the library. All of the methods (`__enter__`, `__exit__`, `iter_content`, `iter_lines`, `json`, `raise_for_status`, etc.) provide the public API for consuming the response body, inspecting status, headers, encoding, and handling context-manager usage, while the utilities (`stream_decode_response_unicode`, `iter_slices`) and the `StreamConsumedError` exception support the low-level streaming and slicing logic used by those methods. Because these objects are tightly coupled\u2014`HTTPAdapter.build_response` constructs a `Response` and the response\u2019s methods rely on the same helper functions and error types\u2014the clustering reflects a cohesive unit that isolates all response-handling functionality from the rest of the HTTP client. The subsystem therefore exists to encapsulate parsing, iteration, decoding, and error handling of HTTP responses in a single, reusable component.",
+      "members": 33,
+      "files": 3,
+      "loc": 488,
+      "languages": [
+        "python"
+      ],
+      "afferent": 5.0,
+      "efferent": 15.5,
+      "instability": 0.76,
+      "cohesion": 0.32,
+      "confidence": 0.85,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 32% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/models.py:Response",
+          "name": "Response",
+          "kind": "class",
+          "path": "src/requests/models.py",
+          "weight": 5.0,
+          "called_from": [
+            0,
+            1,
+            4,
+            7,
+            9
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 4,
+          "weight": 5.0,
+          "edges": 6,
+          "examples": [
+            {
+              "source": "StreamConsumedError",
+              "target": "RequestException",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "<module>",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ConnectionError",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 2.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "to_native_string",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "InvalidURL",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "get_auth_from_url",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 8,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "cookiejar_from_dict",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "get_cookie_header",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Response.__init__",
+              "target": "cookiejar_from_dict",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "check_header_validity",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "parse_header_links",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Response.links",
+              "target": "parse_header_links",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CaseInsensitiveDict",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Response.__init__",
+              "target": "CaseInsensitiveDict",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 10,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "guess_filename",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "to_key_val_list",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 11,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HTTPBasicAuth",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "default_hooks",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 3,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestsCookieJar",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 4,
+          "weight": 1.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 1,
+          "weight": 1.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 7,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "urllib3",
+          "uses": 8
+        },
+        {
+          "package": "typing_extensions",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 8
+        },
+        {
+          "package": "collections",
+          "uses": 5
+        },
+        {
+          "package": "codecs",
+          "uses": 2
+        },
+        {
+          "package": "io",
+          "uses": 1
+        },
+        {
+          "package": "http",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/models.py:Response.iter_content",
+          "name": "Response.iter_content",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:Response.iter_content",
+          "name": "Response.iter_content",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:Response.iter_content",
+          "name": "Response.iter_content",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:Response",
+          "name": "Response",
+          "kind": "class",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:Response.iter_content.generate",
+          "name": "Response.iter_content.generate",
+          "kind": "function",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:Response.json",
+          "name": "Response.json",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "label": "src/requests \u00b7 cookies.RequestsCookieJar.set_cookie",
+      "purpose": "The subsystem is the cookie-handling layer of the HTTP client library. It defines a custom mapping-like class `RequestsCookieJar` together with a small hierarchy of helper types (e.g., `CookieConflictError`) and implements the full dictionary API (get, set, iteration, containment, item access, copy, serialization, etc.) plus cookie-specific helpers such as `list_domains`, `list_paths`, and `_find_no_duplicates`. All of the methods rely on lower-level utilities like `create_cookie`, `morsel_to_cookie`, and `remove_cookie_by_name` to translate between Python\u2019s `Morsel` objects and the library\u2019s internal cookie representation, and to enforce domain/path rules when setting or deleting cookies. Because many higher-level components (e.g., `Session.prepare_request` and `cookiejar_from_dict`) need a single, mutable container that can store, retrieve, and serialize cookies while handling conflicts across domains, the code is grouped together as a cohesive unit that encapsulates all cookie-jar logic in one place.",
+      "members": 27,
+      "files": 1,
+      "loc": 290,
+      "languages": [
+        "python"
+      ],
+      "afferent": 4.5,
+      "efferent": 5.5,
+      "instability": 0.55,
+      "cohesion": 0.55,
+      "confidence": 0.7,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar",
+          "name": "RequestsCookieJar",
+          "kind": "class",
+          "path": "src/requests/cookies.py",
+          "weight": 3.5,
+          "called_from": [
+            1,
+            2,
+            4,
+            8
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar.set_cookie",
+          "name": "RequestsCookieJar.set_cookie",
+          "kind": "method",
+          "path": "src/requests/cookies.py",
+          "weight": 1.0,
+          "called_from": [
+            8
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 8,
+          "weight": 4.0,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "RequestsCookieJar.set",
+              "target": "remove_cookie_by_name",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RequestsCookieJar.set",
+              "target": "morsel_to_cookie",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RequestsCookieJar.set",
+              "target": "create_cookie",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "to_native_string",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "is_prepared",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "PreparedRequest",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 8,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "_typeshed",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 5
+        },
+        {
+          "package": "http",
+          "uses": 3
+        },
+        {
+          "package": "collections",
+          "uses": 2
+        },
+        {
+          "package": "copy",
+          "uses": 1
+        },
+        {
+          "package": "threading",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar.set",
+          "name": "RequestsCookieJar.set",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar.set_cookie",
+          "name": "RequestsCookieJar.set_cookie",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar",
+          "name": "RequestsCookieJar",
+          "kind": "class",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar.update",
+          "name": "RequestsCookieJar.update",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar._find_no_duplicates",
+          "name": "RequestsCookieJar._find_no_duplicates",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:RequestsCookieJar.copy",
+          "name": "RequestsCookieJar.copy",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "label": "src/requests \u00b7 exceptions.RequestException",
+      "purpose": "The members of this subsystem define the data-structures and error types that the rest of the library uses when building and sending HTTP requests.  \nThe classes in `src/requests/_types.py` (`SupportsRead`, `SupportsItems`, `_ValidatedRequest`, `BaseRequestKwargs`, `RequestKwargs`, `GetKwargs`, `PostKwargs`, `DataKwargs`) model the different sets of keyword arguments a request can accept and provide small helper protocols (`read`, `items`) for objects that can be streamed or iterated.  \nThe classes in `src/requests/exceptions.py` (`RequestException` and its many subclasses such as `ConnectionError`, `Timeout`, `SSLError`, etc.) form a hierarchy of exceptions that capture various failure modes of an HTTP operation; the `RequestException.__init__` implementation extracts optional `request` and `response` objects from the constructor\u2019s kwargs and stores them for later inspection, then forwards the remaining arguments to the base `Exception`.  \nTogether these types give the library a self-contained, well-typed way to validate request parameters and to raise, propagate, and inspect rich error information, which is why they are clustered as a single cohesive unit.",
+      "members": 22,
+      "files": 2,
+      "loc": 87,
+      "languages": [
+        "python"
+      ],
+      "afferent": 27.5,
+      "efferent": 5.5,
+      "instability": 0.17,
+      "cohesion": 0.39,
+      "confidence": 0.92,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 39% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "large public surface (10 entry points used by other subsystems)"
+      ],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/exceptions.py:RequestException",
+          "name": "RequestException",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 7.5,
+          "called_from": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/exceptions.py:ConnectionError",
+          "name": "ConnectionError",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 5.0,
+          "called_from": [
+            0,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/exceptions.py:SSLError",
+          "name": "SSLError",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 4.0,
+          "called_from": [
+            0,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/_types.py:<module>",
+          "name": "<module>",
+          "kind": "module",
+          "path": "src/requests/_types.py",
+          "weight": 3.0,
+          "called_from": [
+            0,
+            1,
+            2,
+            9
+          ]
+        },
+        {
+          "id": "python:src/requests/exceptions.py:ProxyError",
+          "name": "ProxyError",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 2.5,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/exceptions.py:ConnectTimeout",
+          "name": "ConnectTimeout",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 1.5,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/exceptions.py:ReadTimeout",
+          "name": "ReadTimeout",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 1.5,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/exceptions.py:RetryError",
+          "name": "RetryError",
+          "kind": "class",
+          "path": "src/requests/exceptions.py",
+          "weight": 1.5,
+          "called_from": [
+            0
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 2.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "PreparedRequest",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "_ValidatedRequest",
+              "target": "PreparedRequest",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "PreparedRequest",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 11,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "AuthBase",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 3,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestsCookieJar",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CaseInsensitiveDict",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Request",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 19.5,
+          "edges": 23
+        },
+        {
+          "subsystem": 2,
+          "weight": 5.0,
+          "edges": 6
+        },
+        {
+          "subsystem": 1,
+          "weight": 2.5,
+          "edges": 3
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "typing_extensions",
+          "uses": 2
+        },
+        {
+          "package": "urllib3",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 13
+        },
+        {
+          "package": "collections",
+          "uses": 5
+        },
+        {
+          "package": "http",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/exceptions.py:RequestException",
+          "name": "RequestException",
+          "kind": "class",
+          "path": "src/requests/exceptions.py"
+        },
+        {
+          "id": "python:src/requests/exceptions.py:ConnectionError",
+          "name": "ConnectionError",
+          "kind": "class",
+          "path": "src/requests/exceptions.py"
+        },
+        {
+          "id": "python:src/requests/exceptions.py:SSLError",
+          "name": "SSLError",
+          "kind": "class",
+          "path": "src/requests/exceptions.py"
+        },
+        {
+          "id": "python:src/requests/_types.py:BaseRequestKwargs",
+          "name": "BaseRequestKwargs",
+          "kind": "class",
+          "path": "src/requests/_types.py"
+        },
+        {
+          "id": "python:src/requests/exceptions.py:RequestException.__init__",
+          "name": "RequestException.__init__",
+          "kind": "method",
+          "path": "src/requests/exceptions.py"
+        },
+        {
+          "id": "python:src/requests/exceptions.py:ConnectTimeout",
+          "name": "ConnectTimeout",
+          "kind": "class",
+          "path": "src/requests/exceptions.py"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "label": "src/requests \u00b7 structures.CaseInsensitiveDict",
+      "purpose": "The subsystem implements lightweight dictionary-like containers that treat string keys without regard to case. `CaseInsensitiveDict` stores a normal mapping internally but normalises look-ups (and deletions) by lower-casing the key while preserving the original capitalisation for iteration and representation; it also supplies helpers such as `lower_items` and a proper `copy`. `LookupDict` is a thin wrapper that forwards attribute access and item access to an underlying mapping, providing a convenient \u201cdot-lookup\u201d style API. Both classes are used throughout the HTTP client (e.g., when building request headers, preparing responses, and initializing sessions) to manage header dictionaries and other case-insensitive mappings in a consistent, reusable way, which is why they are grouped together as a single cohesive unit.",
+      "members": 20,
+      "files": 2,
+      "loc": 121,
+      "languages": [
+        "python"
+      ],
+      "afferent": 7.0,
+      "efferent": 0,
+      "instability": 0.0,
+      "cohesion": 0.42,
+      "confidence": 0.43,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "weak boundary: only 42% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "only 43% of its calls could be resolved statically; verify by hand"
+      ],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/structures.py:CaseInsensitiveDict",
+          "name": "CaseInsensitiveDict",
+          "kind": "class",
+          "path": "src/requests/structures.py",
+          "weight": 5.5,
+          "called_from": [
+            0,
+            1,
+            2,
+            4
+          ]
+        },
+        {
+          "id": "python:src/requests/utils.py:default_headers",
+          "name": "default_headers",
+          "kind": "function",
+          "path": "src/requests/utils.py",
+          "weight": 1.5,
+          "called_from": [
+            1
+          ]
+        }
+      ],
+      "depends_on": [],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 3.0,
+          "edges": 4
+        },
+        {
+          "subsystem": 1,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 6
+        },
+        {
+          "package": "collections",
+          "uses": 5
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/structures.py:CaseInsensitiveDict",
+          "name": "CaseInsensitiveDict",
+          "kind": "class",
+          "path": "src/requests/structures.py"
+        },
+        {
+          "id": "python:src/requests/structures.py:CaseInsensitiveDict.__eq__",
+          "name": "CaseInsensitiveDict.__eq__",
+          "kind": "method",
+          "path": "src/requests/structures.py"
+        },
+        {
+          "id": "python:src/requests/utils.py:default_headers",
+          "name": "default_headers",
+          "kind": "function",
+          "path": "src/requests/utils.py"
+        },
+        {
+          "id": "python:src/requests/structures.py:CaseInsensitiveDict.lower_items",
+          "name": "CaseInsensitiveDict.lower_items",
+          "kind": "method",
+          "path": "src/requests/structures.py"
+        },
+        {
+          "id": "python:src/requests/structures.py:CaseInsensitiveDict.__repr__",
+          "name": "CaseInsensitiveDict.__repr__",
+          "kind": "method",
+          "path": "src/requests/structures.py"
+        },
+        {
+          "id": "python:src/requests/structures.py:CaseInsensitiveDict.__init__",
+          "name": "CaseInsensitiveDict.__init__",
+          "kind": "method",
+          "path": "src/requests/structures.py"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "label": "src/requests \u00b7 cookies.MockRequest.get_full_url",
+      "purpose": "The six-member subsystem implements a lightweight **request fa\u00e7ade** that mimics the interface expected by the `http.cookiejar` machinery in the Python standard library. All of the methods (`get_type`, `get_host`, `get_full_url`, `has_header`, `add_header`, etc.) simply forward information from an underlying **requests.Response** object (`self._r`) and expose it through the same attribute names (`origin_req_host`, `unverifiable`, etc.) that `http.cookiejar` calls when extracting or sending cookies.  \n\nBecause `extract_cookies_to_jar` and `get_cookie_header` (the two external dependents) operate on objects that implement the `urllib.request.Request`-like protocol, this mock class is grouped together so that the rest of the codebase can reuse the standard cookie handling code without pulling in the full urllib request implementation. The subsystem therefore exists as a cohesive unit to **bridge the `requests` library\u2019s response objects with the cookie-jar API**, providing the minimal set of methods and header-access helpers required for cookie extraction and header generation.",
+      "members": 15,
+      "files": 1,
+      "loc": 81,
+      "languages": [
+        "python"
+      ],
+      "afferent": 3.0,
+      "efferent": 2.0,
+      "instability": 0.4,
+      "cohesion": 0.44,
+      "confidence": 0.67,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 44% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/cookies.py:MockRequest",
+          "name": "MockRequest",
+          "kind": "class",
+          "path": "src/requests/cookies.py",
+          "weight": 2.0,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:MockRequest.get_new_headers",
+          "name": "MockRequest.get_new_headers",
+          "kind": "method",
+          "path": "src/requests/cookies.py",
+          "weight": 1.0,
+          "called_from": [
+            8
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "MockRequest.__init__",
+              "target": "is_prepared",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "MockRequest.get_full_url",
+              "target": "to_native_string",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 8,
+          "weight": 3.0,
+          "edges": 3
+        }
+      ],
+      "third_party": [],
+      "stdlib": [],
+      "top_members": [
+        {
+          "id": "python:src/requests/cookies.py:MockRequest.get_full_url",
+          "name": "MockRequest.get_full_url",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:MockRequest.get_host",
+          "name": "MockRequest.get_host",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:MockRequest",
+          "name": "MockRequest",
+          "kind": "class",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:MockRequest.__init__",
+          "name": "MockRequest.__init__",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:MockRequest.get_origin_req_host",
+          "name": "MockRequest.get_origin_req_host",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:MockRequest.get_header",
+          "name": "MockRequest.get_header",
+          "kind": "method",
+          "path": "src/requests/cookies.py"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "label": "src/requests \u00b7 auth.HTTPDigestAuth.build_digest_header",
+      "purpose": "The subsystem is the implementation of HTTP Digest authentication for the **requests** library. All 16 members are methods and helper functions of the `HTTPDigestAuth` class, which stores the challenge parameters (`realm`, `nonce`, `qop`, `algorithm`, etc.) in thread-local state, computes the required response hash (MD5, SHA-1, SHA-256, SHA-512) via the `build_digest_header` helpers, and injects the resulting `Authorization` header into outgoing requests (`__call__`). It also handles 401 challenges and redirects (`handle_401`, `handle_redirect`) and provides equality semantics. Because these functions are tightly coupled\u2014sharing the same challenge data, hash-generation logic, and request-modifying behavior\u2014they form a cohesive unit that encapsulates the full lifecycle of HTTP Digest auth within the client library.",
+      "members": 16,
+      "files": 1,
+      "loc": 231,
+      "languages": [
+        "python"
+      ],
+      "afferent": 0,
+      "efferent": 6.0,
+      "instability": 1.0,
+      "cohesion": 0.33,
+      "confidence": 0.48,
+      "in_cycle": false,
+      "wave": 2,
+      "readiness": "needs-prep",
+      "blockers": [
+        "weak boundary: only 33% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "only 48% of its calls could be resolved statically; verify by hand"
+      ],
+      "exposed_api": [],
+      "depends_on": [
+        {
+          "subsystem": 8,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "extract_cookies_to_jar",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPDigestAuth.handle_401",
+              "target": "extract_cookies_to_jar",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "parse_dict_header",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPDigestAuth.handle_401",
+              "target": "parse_dict_header",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 11,
+          "weight": 1.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "HTTPDigestAuth",
+              "target": "AuthBase",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "to_native_string",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "PreparedRequest",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [],
+      "third_party": [],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 11
+        },
+        {
+          "package": "hashlib",
+          "uses": 10
+        },
+        {
+          "package": "time",
+          "uses": 2
+        },
+        {
+          "package": "base64",
+          "uses": 1
+        },
+        {
+          "package": "http",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/auth.py:HTTPDigestAuth.build_digest_header",
+          "name": "HTTPDigestAuth.build_digest_header",
+          "kind": "method",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPDigestAuth.handle_401",
+          "name": "HTTPDigestAuth.handle_401",
+          "kind": "method",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPDigestAuth.__call__",
+          "name": "HTTPDigestAuth.__call__",
+          "kind": "method",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPDigestAuth.build_digest_header.md5_utf8",
+          "name": "HTTPDigestAuth.build_digest_header.md5_utf8",
+          "kind": "function",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPDigestAuth.build_digest_header.sha_utf8",
+          "name": "HTTPDigestAuth.build_digest_header.sha_utf8",
+          "kind": "function",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPDigestAuth.build_digest_header.sha256_utf8",
+          "name": "HTTPDigestAuth.build_digest_header.sha256_utf8",
+          "kind": "function",
+          "path": "src/requests/auth.py"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "label": "src/requests \u00b7 cookies.extract_cookies_to_jar",
+      "purpose": "The subsystem groups together the classes, functions, and helpers that translate between the library\u2019s internal **RequestsCookieJar** representation and the lower-level cookie objects used by Python\u2019s `http.cookiejar` (or `cookielib`) module, as well as a small mock implementation used by the test suite. It provides utilities for creating a `Cookie` from raw name/value pairs (`create_cookie`), converting dictionaries to and from a jar (`cookiejar_from_dict`, `dict_from_cookiejar`, `add_dict_to_cookiejar`), extracting cookies from HTTP responses (`extract_cookies_to_jar`), building the \u201cCookie\u201d request header (`get_cookie_header`), and removing or merging cookies (`remove_cookie_by_name`, `merge_cookies`). The `MockResponse` class mimics the minimal interface (`info`, `getheaders`) that the cookie-extraction code expects from a real HTTP response, allowing the same logic to be exercised in tests. All of these pieces are tightly coupled because they share the same data structures and are invoked together by higher-level components such as `Session`, `PreparedRequest`, and authentication handlers when preparing or processing HTTP requests and responses.",
+      "members": 15,
+      "files": 2,
+      "loc": 198,
+      "languages": [
+        "python"
+      ],
+      "afferent": 22.0,
+      "efferent": 5.0,
+      "instability": 0.19,
+      "cohesion": 0.16,
+      "confidence": 0.71,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 16% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/cookies.py:extract_cookies_to_jar",
+          "name": "extract_cookies_to_jar",
+          "kind": "function",
+          "path": "src/requests/cookies.py",
+          "weight": 7.5,
+          "called_from": [
+            0,
+            1,
+            7
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:cookiejar_from_dict",
+          "name": "cookiejar_from_dict",
+          "kind": "function",
+          "path": "src/requests/cookies.py",
+          "weight": 5.5,
+          "called_from": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:merge_cookies",
+          "name": "merge_cookies",
+          "kind": "function",
+          "path": "src/requests/cookies.py",
+          "weight": 3.5,
+          "called_from": [
+            0,
+            1
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:remove_cookie_by_name",
+          "name": "remove_cookie_by_name",
+          "kind": "function",
+          "path": "src/requests/cookies.py",
+          "weight": 2.0,
+          "called_from": [
+            3
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:get_cookie_header",
+          "name": "get_cookie_header",
+          "kind": "function",
+          "path": "src/requests/cookies.py",
+          "weight": 1.5,
+          "called_from": [
+            0,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:create_cookie",
+          "name": "create_cookie",
+          "kind": "function",
+          "path": "src/requests/cookies.py",
+          "weight": 1.0,
+          "called_from": [
+            3
+          ]
+        },
+        {
+          "id": "python:src/requests/cookies.py:morsel_to_cookie",
+          "name": "morsel_to_cookie",
+          "kind": "function",
+          "path": "src/requests/cookies.py",
+          "weight": 1.0,
+          "called_from": [
+            3
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 6,
+          "weight": 3.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "extract_cookies_to_jar",
+              "target": "MockRequest",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "get_cookie_header",
+              "target": "MockRequest",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "get_cookie_header",
+              "target": "MockRequest.get_new_headers",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 3,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "cookiejar_from_dict",
+              "target": "RequestsCookieJar",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "cookiejar_from_dict",
+              "target": "RequestsCookieJar.set_cookie",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 7.5,
+          "edges": 9
+        },
+        {
+          "subsystem": 0,
+          "weight": 7.0,
+          "edges": 8
+        },
+        {
+          "subsystem": 3,
+          "weight": 4.0,
+          "edges": 4
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 7,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [],
+      "stdlib": [
+        {
+          "package": "time",
+          "uses": 2
+        },
+        {
+          "package": "calendar",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/cookies.py:extract_cookies_to_jar",
+          "name": "extract_cookies_to_jar",
+          "kind": "function",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:create_cookie",
+          "name": "create_cookie",
+          "kind": "function",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:cookiejar_from_dict",
+          "name": "cookiejar_from_dict",
+          "kind": "function",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:cookiejar_from_dict",
+          "name": "cookiejar_from_dict",
+          "kind": "function",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:cookiejar_from_dict",
+          "name": "cookiejar_from_dict",
+          "kind": "function",
+          "path": "src/requests/cookies.py"
+        },
+        {
+          "id": "python:src/requests/cookies.py:merge_cookies",
+          "name": "merge_cookies",
+          "kind": "function",
+          "path": "src/requests/cookies.py"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "label": "src/requests \u00b7 models.RequestHooksMixin.register_hook",
+      "purpose": "The nine members form the **request-hook and adapter core** of the library. `BaseAdapter` defines a generic interface for sending and closing a low-level HTTP connection, while the `Request` class (with its `prepare` method) builds a `PreparedRequest` that can be handed to an adapter. `RequestHooksMixin` adds a dictionary-based hook registry (`register_hook`, `deregister_hook`) that `Request` inherits, allowing callers to attach callbacks (e.g., for \u201cresponse\u201d or \u201cpre-request\u201d events) which are stored in `self.hooks[event]` and later invoked by the adapter or session logic. Together these classes provide a self-contained subsystem that prepares a request, enriches it with user-defined callbacks, and supplies a pluggable transport layer for sending the request.",
+      "members": 12,
+      "files": 3,
+      "loc": 156,
+      "languages": [
+        "python"
+      ],
+      "afferent": 11.0,
+      "efferent": 3.0,
+      "instability": 0.21,
+      "cohesion": 0.2,
+      "confidence": 0.78,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 20% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/hooks.py:default_hooks",
+          "name": "default_hooks",
+          "kind": "function",
+          "path": "src/requests/hooks.py",
+          "weight": 3.0,
+          "called_from": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/models.py:Request",
+          "name": "Request",
+          "kind": "class",
+          "path": "src/requests/models.py",
+          "weight": 2.5,
+          "called_from": [
+            0,
+            1,
+            4
+          ]
+        },
+        {
+          "id": "python:src/requests/adapters.py:BaseAdapter",
+          "name": "BaseAdapter",
+          "kind": "class",
+          "path": "src/requests/adapters.py",
+          "weight": 2.0,
+          "called_from": [
+            0,
+            1
+          ]
+        },
+        {
+          "id": "python:src/requests/models.py:RequestHooksMixin",
+          "name": "RequestHooksMixin",
+          "kind": "class",
+          "path": "src/requests/models.py",
+          "weight": 1.5,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/adapters.py:BaseAdapter.__init__",
+          "name": "BaseAdapter.__init__",
+          "kind": "method",
+          "path": "src/requests/adapters.py",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/models.py:RequestHooksMixin.register_hook",
+          "name": "RequestHooksMixin.register_hook",
+          "kind": "method",
+          "path": "src/requests/models.py",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "Request.prepare",
+              "target": "PreparedRequest",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Request.prepare",
+              "target": "PreparedRequest.prepare",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "<module>",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 6.5,
+          "edges": 6
+        },
+        {
+          "subsystem": 1,
+          "weight": 3.5,
+          "edges": 5
+        },
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [],
+      "stdlib": [
+        {
+          "package": "collections",
+          "uses": 2
+        },
+        {
+          "package": "typing",
+          "uses": 2
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/models.py:RequestHooksMixin.register_hook",
+          "name": "RequestHooksMixin.register_hook",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:Request",
+          "name": "Request",
+          "kind": "class",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/hooks.py:default_hooks",
+          "name": "default_hooks",
+          "kind": "function",
+          "path": "src/requests/hooks.py"
+        },
+        {
+          "id": "python:src/requests/models.py:Request.__init__",
+          "name": "Request.__init__",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/adapters.py:BaseAdapter.__init__",
+          "name": "BaseAdapter.__init__",
+          "kind": "method",
+          "path": "src/requests/adapters.py"
+        },
+        {
+          "id": "python:src/requests/adapters.py:BaseAdapter",
+          "name": "BaseAdapter",
+          "kind": "class",
+          "path": "src/requests/adapters.py"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "label": "src/requests \u00b7 models.RequestEncodingMixin._encode_files",
+      "purpose": "The ten-member subsystem groups together utilities that turn user-supplied request data into the low-level byte payloads required by HTTP. `RequestEncodingMixin` (and its methods `path_url`, `_encode_params`, `_encode_files`) implements the logic for building query strings, form-encoded bodies, and multipart-form-data bodies, while the helper functions in `utils.py` (`guess_filename`, `from_key_val_list`, `to_key_val_list`) and the merging routine in `sessions.py` (`merge_setting`) support the conversion of dictionaries or key-value sequences into the canonical structures used by the mixin. These functions are called by the request-preparation pipeline (`PreparedRequest.prepare_body`, `PreparedRequest.prepare_url`, `Session.prepare_request`, etc.), indicating that the subsystem\u2019s purpose is to encode parameters, files, and URLs consistently before a request is sent. It is kept as a cohesive unit because all of the code shares the same responsibility\u2014transforming high-level request arguments into the exact byte format required by the underlying HTTP client.",
+      "members": 15,
+      "files": 4,
+      "loc": 242,
+      "languages": [
+        "python"
+      ],
+      "afferent": 14.0,
+      "efferent": 0,
+      "instability": 0.0,
+      "cohesion": 0.36,
+      "confidence": 0.67,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "weak boundary: only 36% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/sessions.py:merge_setting",
+          "name": "merge_setting",
+          "kind": "function",
+          "path": "src/requests/sessions.py",
+          "weight": 7.0,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin._encode_params",
+          "name": "RequestEncodingMixin._encode_params",
+          "kind": "method",
+          "path": "src/requests/models.py",
+          "weight": 2.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin",
+          "name": "RequestEncodingMixin",
+          "kind": "class",
+          "path": "src/requests/models.py",
+          "weight": 1.5,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/_types.py:has_read",
+          "name": "has_read",
+          "kind": "function",
+          "path": "src/requests/_types.py",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin._encode_files",
+          "name": "RequestEncodingMixin._encode_files",
+          "kind": "method",
+          "path": "src/requests/models.py",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "python:src/requests/utils.py:to_key_val_list",
+          "name": "to_key_val_list",
+          "kind": "function",
+          "path": "src/requests/utils.py",
+          "weight": 1.0,
+          "called_from": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "python:src/requests/utils.py:guess_filename",
+          "name": "guess_filename",
+          "kind": "function",
+          "path": "src/requests/utils.py",
+          "weight": 0.5,
+          "called_from": [
+            2
+          ]
+        }
+      ],
+      "depends_on": [],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 7.5,
+          "edges": 8
+        },
+        {
+          "subsystem": 0,
+          "weight": 5.5,
+          "edges": 5
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.0,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "urllib3",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "typing",
+          "uses": 1
+        },
+        {
+          "package": "os",
+          "uses": 1
+        },
+        {
+          "package": "collections",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin._encode_files",
+          "name": "RequestEncodingMixin._encode_files",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/sessions.py:merge_setting",
+          "name": "merge_setting",
+          "kind": "function",
+          "path": "src/requests/sessions.py"
+        },
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin._encode_params",
+          "name": "RequestEncodingMixin._encode_params",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin._encode_params",
+          "name": "RequestEncodingMixin._encode_params",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin._encode_params",
+          "name": "RequestEncodingMixin._encode_params",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        },
+        {
+          "id": "python:src/requests/models.py:RequestEncodingMixin._encode_params",
+          "name": "RequestEncodingMixin._encode_params",
+          "kind": "method",
+          "path": "src/requests/models.py"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "label": "src/requests \u00b7 auth.HTTPBasicAuth",
+      "purpose": "The functions in this cluster implement the authentication helpers used by the **requests** library. `AuthBase` is the abstract callable that all auth objects inherit from, and the concrete subclasses `HTTPBasicAuth` and `HTTPProxyAuth` provide callable objects that attach the appropriate *Authorization* (or *Proxy-Authorization*) header to a `PreparedRequest`. The methods (`__init__`, `__call__`, `__eq__`, `__ne__`) manage the stored credentials, compare auth objects, and invoke the internal utility `_basic_auth_str` to build the header value. Because these classes are the only code that prepares and injects authentication data into outgoing HTTP requests, they are grouped together as a cohesive subsystem that isolates credential handling from the rest of the request-building pipeline.",
+      "members": 11,
+      "files": 1,
+      "loc": 40,
+      "languages": [
+        "python"
+      ],
+      "afferent": 3.5,
+      "efferent": 2.0,
+      "instability": 0.36,
+      "cohesion": 0.35,
+      "confidence": 1.0,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 35% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "python:src/requests/auth.py:AuthBase",
+          "name": "AuthBase",
+          "kind": "class",
+          "path": "src/requests/auth.py",
+          "weight": 2.0,
+          "called_from": [
+            4,
+            7
+          ]
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPBasicAuth",
+          "name": "HTTPBasicAuth",
+          "kind": "class",
+          "path": "src/requests/auth.py",
+          "weight": 1.5,
+          "called_from": [
+            0,
+            2
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "HTTPBasicAuth.__call__",
+              "target": "_basic_auth_str",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPProxyAuth.__call__",
+              "target": "_basic_auth_str",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 7,
+          "weight": 1.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.0,
+          "edges": 1
+        },
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [],
+      "stdlib": [],
+      "top_members": [
+        {
+          "id": "python:src/requests/auth.py:HTTPBasicAuth",
+          "name": "HTTPBasicAuth",
+          "kind": "class",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:AuthBase",
+          "name": "AuthBase",
+          "kind": "class",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPBasicAuth.__eq__",
+          "name": "HTTPBasicAuth.__eq__",
+          "kind": "method",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:AuthBase.__call__",
+          "name": "AuthBase.__call__",
+          "kind": "method",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPBasicAuth.__call__",
+          "name": "HTTPBasicAuth.__call__",
+          "kind": "method",
+          "path": "src/requests/auth.py"
+        },
+        {
+          "id": "python:src/requests/auth.py:HTTPProxyAuth",
+          "name": "HTTPProxyAuth",
+          "kind": "class",
+          "path": "src/requests/auth.py"
+        }
+      ]
+    }
+  ],
+  "waves": [
+    {
+      "index": 0,
+      "units": [
+        {
+          "subsystems": [
+            5
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            10
+          ],
+          "cyclic": false
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "units": [
+        {
+          "subsystems": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            6,
+            8,
+            9,
+            11
+          ],
+          "cyclic": true
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "units": [
+        {
+          "subsystems": [
+            7
+          ],
+          "cyclic": false
+        }
+      ]
+    }
+  ],
+  "cycles": [
+    {
+      "members": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        8,
+        9,
+        11
+      ],
+      "order_after_cuts": [
+        [
+          4,
+          6,
+          9
+        ],
+        [
+          8
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          1,
+          11
+        ],
+        [
+          2
+        ]
+      ],
+      "cut_candidates": [
+        {
+          "from": 2,
+          "to": 3,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestsCookieJar",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 2,
+          "to": 9,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "default_hooks",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 2,
+          "to": 11,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HTTPBasicAuth",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 4,
+          "to": 3,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestsCookieJar",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 4,
+          "to": 9,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Request",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 4,
+          "to": 11,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "AuthBase",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 9,
+          "to": 2,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 9,
+          "to": 4,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "<module>",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 0,
+          "to": 11,
+          "weight": 1.0,
+          "examples": [
+            {
+              "source": "PreparedRequest.prepare_auth",
+              "target": "HTTPBasicAuth",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "weight": 1.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 4,
+          "to": 2,
+          "weight": 1.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 1,
+          "to": 3,
+          "weight": 1.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestsCookieJar",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Session.prepare_request",
+              "target": "RequestsCookieJar",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 3,
+          "to": 0,
+          "weight": 1.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "to_native_string",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "is_prepared",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "PreparedRequest",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "weight": 2.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPAdapter.build_response",
+              "target": "Response",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Response",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 6,
+          "to": 0,
+          "weight": 2.0,
+          "examples": [
+            {
+              "source": "MockRequest.__init__",
+              "target": "is_prepared",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "MockRequest.get_full_url",
+              "target": "to_native_string",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 8,
+          "to": 3,
+          "weight": 2.0,
+          "examples": [
+            {
+              "source": "cookiejar_from_dict",
+              "target": "RequestsCookieJar",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "cookiejar_from_dict",
+              "target": "RequestsCookieJar.set_cookie",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 9,
+          "to": 0,
+          "weight": 2.0,
+          "examples": [
+            {
+              "source": "Request.prepare",
+              "target": "PreparedRequest",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Request.prepare",
+              "target": "PreparedRequest.prepare",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 1,
+          "to": 4,
+          "weight": 2.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "<module>",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "InvalidHeader",
+              "target": "RequestException",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "<module>",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 4,
+          "to": 0,
+          "weight": 2.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "PreparedRequest",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "_ValidatedRequest",
+              "target": "PreparedRequest",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "PreparedRequest",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 0,
+          "to": 1,
+          "weight": 3.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "InvalidHeader",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "HTTPAdapter.send",
+              "target": "InvalidHeader",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PreparedRequest.prepare_headers",
+              "target": "check_header_validity",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "narrative": "## Target shape  \nThe migration will produce three extraction waves that respect the declared dependencies. Wave 0 contains the two self-contained utilities (`CaseInsensitiveDict` and the request-encoding helpers). Wave 1 holds the large cyclic core of the library, which must be broken by introducing thin interfaces at the three cheapest cut links. Wave 2 extracts the digest-auth implementation after the core is isolated. All subsystems remain in the waves assigned by the analysis.\n\n## Migration sequence  \n\n- **Wave 0** \u2013 extract #5 and #10.  \n  - **#5** \u2013 expose a **facade over `CaseInsensitiveDict`** as the public interface; the only blocker is its weak boundary (only 42 % of dependencies stay inside).  \n  - **#10** \u2013 expose a **facade over `RequestEncodingMixin._encode_files`** (and related helpers) as the public interface; the blocker is its weak boundary (36 % internal cohesion).  \n\n- **Wave 1** \u2013 break the cycle, then extract the remaining subsystems in the order dictated by the cut links.  \n  1. **#4**, **#6**, **#9** \u2013 each can be extracted after the cycle is cut; the interface for #4 is the exception hierarchy (`RequestException` etc.), for #6 a **facade over `MockRequest.get_full_url`**, and for #9 a **facade over `RequestHooksMixin.register_hook`**. Their blockers are the cycle membership.  \n  2. **#8** \u2013 expose a **facade over `extract_cookies_to_jar`** (the cookie-translation functions). Blocker: still part of the cycle.  \n  3. **#0**, **#3** \u2013 expose a **facade over `SessionRedirectMixin.resolve_redirects`** and a **facade over `RequestsCookieJar.set_cookie`** respectively. Blocker: cycle membership.  \n  4. **#1**, **#11** \u2013 expose a **facade over `Session.send`** and a **facade over `HTTPBasicAuth`** respectively. Blocker: cycle membership.  \n  5. **#2** \u2013 expose a **facade over `Response.iter_content`** as the public entry point. Blocker: cycle membership.  \n\n  *The three cheapest cut links to break the cycle are:*  \n  - cut the dependency **#2 \u2192 #3** (weight 0.5) \u2013 introduce the `Response.iter_content` fa\u00e7ade before `RequestsCookieJar.set_cookie`.  \n  - cut the dependency **#2 \u2192 #9** (weight 0.5) \u2013 introduce the `Response.iter_content` fa\u00e7ade before `RequestHooksMixin.register_hook`.  \n  - cut the dependency **#2 \u2192 #11** (weight 0.5) \u2013 introduce the `Response.iter_content` fa\u00e7ade before `HTTPBasicAuth`.  \n\n- **Wave 2** \u2013 extract #7.  \n  - **#7** \u2013 expose a **facade over `HTTPDigestAuth.build_digest_header`**; the only blocker is its weak boundary (33 % internal cohesion).  \n\n## Biggest risks  \n- Cutting the three cycle links may expose hidden runtime dependencies that are not captured by static analysis (confidence \u2248 0.83).  \n- Weak boundaries in many subsystems (cohesion < 0.5) could lead to leaking internal implementation details through the new interfaces.  \n- The large public surface of #0 and #4 (many entry points used elsewhere) raises the chance of interface breakage after extraction.  \n- Low static-analysis coverage for #5 and #7 (\u2248 48 % and 43 %) means manual verification is required to avoid missed calls.\n\n## What this analysis cannot tell you  \n- The exact runtime behavior of the cut links (e.g., side-effects when `Response.iter_content` is called before the cookie jar is prepared).  \n- Whether the proposed facades will satisfy all callers\u2019 expectations for error handling and state mutation.  \n- The performance impact of introducing additional indirection layers at the interfaces.  \n- Any hidden dependencies on global interpreter state or third-party libraries that are not reflected in the static graph.",
+  "narrative_warnings": []
+}

@@ -17,12 +17,16 @@ import hashlib
 import json
 import os
 import sys
+import time
 from pathlib import Path
 
 import requests
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+# Groq retires models without much notice (llama-3.3-70b-versatile disappeared
+# from the free tier). Override with GROQ_MODEL in .env if this one goes too;
+# GET https://api.groq.com/openai/v1/models lists what a key can use.
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 
 SYSTEM_PROMPT = (
     "You analyze subsystems of a codebase discovered by clustering its call graph. "
@@ -37,7 +41,7 @@ SYSTEM_PROMPT = (
 
 def read_excerpt(repo_dir: Path, path: str, start_line: int | None, end_line: int | None, max_lines: int = 15) -> str:
     file_path = repo_dir / path
-    if not path or not file_path.exists():
+    if not path or not file_path.is_file() or not file_path.resolve().is_relative_to(repo_dir.resolve()):
         return ""
     lines = file_path.read_text(encoding="utf-8", errors="replace").splitlines()
     start = max(0, (start_line or 1) - 1)
@@ -68,23 +72,45 @@ def cluster_cache_key(cluster_id: int, members: list[dict]) -> str:
     return hashlib.sha256(basis.encode()).hexdigest()
 
 
-def call_groq(prompt: str, api_key: str, model: str) -> str:
-    resp = requests.post(
-        GROQ_API_URL,
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-        json={
-            "model": model,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            "temperature": 0.2,
-            "max_tokens": 220,
-        },
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"].strip()
+def call_groq(prompt: str, api_key: str, model: str, system: str = SYSTEM_PROMPT, max_tokens: int = 220) -> str:
+    payload = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.2,
+        "max_tokens": max_tokens,
+    }
+    if "gpt-oss" in model:
+        # Reasoning models spend completion tokens thinking before they answer;
+        # keep that small and don't return the thinking text.
+        payload["reasoning_effort"] = "low"
+        payload["include_reasoning"] = False
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    for attempt in range(3):
+        resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=60)
+        if resp.status_code == 429 and attempt < 2:
+            # Free-tier rate limit: wait as long as Groq asks (capped), then retry.
+            time.sleep(min(float(resp.headers.get("retry-after", 5)), 20))
+            continue
+        resp.raise_for_status()
+        content = (resp.json()["choices"][0]["message"].get("content") or "").strip()
+        if not content:
+            raise RuntimeError("Groq returned an empty answer (token budget spent on reasoning?)")
+        return content.translate(TYPOGRAPHY_TO_ASCII)
+    raise RuntimeError("Groq request failed after retries")
+
+
+# gpt-oss likes typographic spaces and hyphens (narrow no-break space,
+# no-break space, non-breaking hyphen, hyphen). They show up as mojibake in
+# terminals and break copy-paste, so flatten them to plain ASCII.
+TYPOGRAPHY_TO_ASCII = str.maketrans({chr(0x202F): " ", chr(0x00A0): " ", chr(0x2011): "-", chr(0x2010): "-"})
+
+FAILURE_MARKER = "(narrative generation failed"
+# Subsystem ids are numbered biggest-first, so on a large repo the largest ones get
+# narratives and the long tail does not cost an LLM call each.
+MAX_NARRATED_CLUSTERS = 20
 
 
 def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | None = None) -> None:
@@ -102,6 +128,9 @@ def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | Non
     cache_file = Path(cache_path) if cache_path else None
     if cache_file and cache_file.exists():
         cache = json.loads(cache_file.read_text(encoding="utf-8"))
+        # Older versions cached error strings as if they were narratives. Drop
+        # them so those clusters are retried instead of showing an error forever.
+        cache = {k: v for k, v in cache.items() if not v["text"].startswith(FAILURE_MARKER)}
 
     nodes_by_id = {n["id"]: n for n in graph["nodes"]}
     by_cluster: dict[int, list[dict]] = {}
@@ -119,8 +148,9 @@ def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | Non
 
     narratives: dict = {}
     calls_made = 0
+    failed = 0
 
-    for cluster_id, members in sorted(by_cluster.items()):
+    for cluster_id, members in sorted(by_cluster.items())[:MAX_NARRATED_CLUSTERS]:
         member_ids = {m["id"] for m in members}
         key = cluster_cache_key(cluster_id, members)
 
@@ -148,9 +178,13 @@ def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | Non
         prompt = build_cluster_prompt(cluster_id, members, calls_out, calls_in, excerpt_node, excerpt_text)
 
         try:
-            text = call_groq(prompt, api_key, model)
+            text = call_groq(prompt, api_key, model, max_tokens=900)
         except Exception as exc:
-            text = f"(narrative generation failed: {exc})"
+            # Leave this cluster without a narrative (and out of the cache) so
+            # the next run retries it, rather than storing the error as an answer.
+            print(f"  cluster {cluster_id}: narrative failed, will retry next run ({exc})")
+            failed += 1
+            continue
 
         entry = {
             "text": text,
@@ -170,7 +204,8 @@ def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | Non
         cache_file.write_text(json.dumps(cache, indent=2), encoding="utf-8")
 
     Path(output_path).write_text(json.dumps(narratives, indent=2), encoding="utf-8")
-    print(f"Generated {calls_made} new narratives ({len(narratives) - calls_made} served from cache) for {len(by_cluster)} clusters.")
+    cached = len(narratives) - calls_made
+    print(f"Generated {calls_made} new narratives ({cached} from cache, {failed} failed) for {len(by_cluster)} clusters.")
 
 
 if __name__ == "__main__":

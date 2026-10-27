@@ -72,7 +72,9 @@ def extract(path: Path, rel_path: Path | None = None) -> dict:
             module_node = None
             if import_kw_index is not None:
                 for c in node.children[:import_kw_index]:
-                    if c.type == "dotted_name":
+                    # `relative_import` is `from .models import X` / `from .. import y`;
+                    # its text keeps the leading dots (".models", "..") for the linker.
+                    if c.type in ("dotted_name", "relative_import"):
                         module_node = c
             module_name = _text(module_node, source) if module_node else None
             trailing = node.children[import_kw_index + 1:] if import_kw_index is not None else []
@@ -221,6 +223,15 @@ def extract(path: Path, rel_path: Path | None = None) -> dict:
                         "name": _text(left, source),
                         "pairs": _dict_pairs(right, source),
                     })
+                elif right.type == "call":
+                    ctor = right.child_by_field_name("function")
+                    if ctor is not None and ctor.type in ("identifier", "attribute"):
+                        local_bindings.append({
+                            "scope_id": scope_id,
+                            "name": _text(left, source),
+                            "value_kind": "constructor_call",
+                            "callee_repr": _text(ctor, source),
+                        })
 
         for child in node.children:
             walk(child, scope_stack, scope_kind_stack, current_function_id)

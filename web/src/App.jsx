@@ -8,9 +8,11 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { layoutGraph } from "./layout";
+import { API_BASE, apiFetch, errorMessage } from "./api";
+import { UNCLUSTERED_COLOR, clusterColor } from "./colors";
+import MigrationPanel from "./MigrationPanel";
+import SubsystemMap from "./SubsystemMap";
 import "./App.css";
-
-const API_BASE = "http://localhost:8000";
 
 const KIND_BADGE = {
   module: "mod",
@@ -28,25 +30,12 @@ const KIND_BORDER = {
   unresolved: "#64748b",
 };
 
-// Distinct, colorblind-friendlier palette for cluster identity (background).
-// Kind is shown separately (badge + border) so the two dimensions don't collide.
-const CLUSTER_PALETTE = [
-  "#2563eb", "#16a34a", "#dc2626", "#9333ea", "#ea580c",
-  "#0891b2", "#ca8a04", "#db2777", "#4d7c0f", "#7c3aed",
-];
-const UNCLUSTERED_COLOR = "#475569";
-
 const RESOLUTION_STYLE = {
   resolved: { stroke: "#16a34a", dashed: false },
   dynamic: { stroke: "#f59e0b", dashed: true },
   "inferred-http": { stroke: "#2563eb", dashed: true },
   unresolved: { stroke: "#cbd5e1", dashed: true },
 };
-
-function clusterColor(cluster) {
-  if (cluster === undefined || cluster === null || cluster < 0) return UNCLUSTERED_COLOR;
-  return CLUSTER_PALETTE[cluster % CLUSTER_PALETTE.length];
-}
 
 function toFlowNode(node) {
   const background = node.kind === "module" || node.kind === "unresolved" ? UNCLUSTERED_COLOR : clusterColor(node.cluster);
@@ -72,21 +61,13 @@ function toFlowEdge(edge, index) {
     id: `e${index}-${edge.source}-${edge.target}`,
     source: edge.source,
     target: edge.target,
-    label: edge.kind,
     animated: edge.resolution === "dynamic",
     style: { stroke: style.stroke, strokeDasharray: style.dashed ? "5,5" : undefined },
     markerEnd: { type: MarkerType.ArrowClosed, color: style.stroke },
   };
 }
 
-function apiFetch(path, username, options = {}) {
-  return fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: { "X-User": username, "Content-Type": "application/json", ...options.headers },
-  });
-}
-
-function RepoPanel({ username, setUsername, repos, selectedRepoId, onSelectRepo, onRepoAdded }) {
+function RepoPanel({ showUsername, typedName, setTypedName, username, repos, demoRepos, selectedRepoId, onSelectRepo, onRepoAdded }) {
   const [gitUrl, setGitUrl] = useState("");
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -101,55 +82,62 @@ function RepoPanel({ username, setUsername, repos, selectedRepoId, onSelectRepo,
         method: "POST",
         body: JSON.stringify({ git_url: gitUrl, name: name || undefined }),
       });
-      if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      if (!res.ok) throw new Error(await errorMessage(res));
       const repo = await res.json();
       setGitUrl("");
       setName("");
       onRepoAdded(repo.id);
     } catch (err) {
-      setFormError(String(err));
+      setFormError(err.message || String(err));
     } finally {
       setSubmitting(false);
     }
   };
 
+  const row = (repo) => (
+    <li key={repo.id} className={repo.id === selectedRepoId ? "selected" : ""} onClick={() => onSelectRepo(repo.id)}>
+      <span className={`status-dot status-${repo.status}`} />
+      <span className="repo-name">{repo.name}</span>
+      <span className="repo-status">{repo.status === "pending" ? "analyzing..." : repo.status}</span>
+    </li>
+  );
+
   return (
     <div className="repo-panel">
-      <label className="field">
-        <span>Username</span>
-        <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. alice" />
-      </label>
+      {showUsername && (
+        <label className="field">
+          <span>Username</span>
+          <input value={typedName} onChange={(e) => setTypedName(e.target.value)} placeholder="e.g. alice" />
+        </label>
+      )}
 
       <form onSubmit={handleSubmit} className="add-repo-form">
         <label className="field">
-          <span>Git URL</span>
-          <input value={gitUrl} onChange={(e) => setGitUrl(e.target.value)} placeholder="https://github.com/user/repo.git" required />
+          <span>Analyze a public GitHub repo</span>
+          <input value={gitUrl} onChange={(e) => setGitUrl(e.target.value)} placeholder="https://github.com/user/repo" required />
         </label>
         <label className="field">
           <span>Name (optional)</span>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="my-repo" />
         </label>
         <button type="submit" disabled={submitting || !username}>
-          {submitting ? "Analyzing..." : "Add repo"}
+          {submitting ? "Starting..." : "Analyze"}
         </button>
         {formError && <p className="form-error">{formError}</p>}
       </form>
 
-      <ul className="repo-list">
-        {repos.map((repo) => (
-          <li
-            key={repo.id}
-            className={repo.id === selectedRepoId ? "selected" : ""}
-            onClick={() => repo.status === "ready" && onSelectRepo(repo.id)}
-          >
-            <span className={`status-dot status-${repo.status}`} />
-            <span className="repo-name">{repo.name}</span>
-            <span className="repo-status">{repo.status}</span>
-            {repo.error && <span className="repo-error" title={repo.error}>error</span>}
-          </li>
-        ))}
-        {repos.length === 0 && <li className="hint">No repos yet — add one above.</li>}
-      </ul>
+      {repos.length > 0 && (
+        <>
+          <div className="list-title">Your analyses</div>
+          <ul className="repo-list">{repos.map(row)}</ul>
+        </>
+      )}
+      {demoRepos.length > 0 && (
+        <>
+          <div className="list-title">Examples (read-only)</div>
+          <ul className="repo-list">{demoRepos.map(row)}</ul>
+        </>
+      )}
     </div>
   );
 }
@@ -161,6 +149,7 @@ function HistoryPanel({ username, repoId, onReanalyzed }) {
   const [diff, setDiff] = useState(null);
   const [diffError, setDiffError] = useState(null);
   const [reanalyzing, setReanalyzing] = useState(false);
+  const [reanalyzeError, setReanalyzeError] = useState(null);
 
   const refreshCommits = useCallback(() => {
     apiFetch(`/api/repos/${repoId}/commits`, username)
@@ -183,10 +172,13 @@ function HistoryPanel({ username, repoId, onReanalyzed }) {
 
   const handleReanalyze = async () => {
     setReanalyzing(true);
+    setReanalyzeError(null);
     try {
-      await apiFetch(`/api/repos/${repoId}/reanalyze`, username, { method: "POST" });
-      refreshCommits();
+      const res = await apiFetch(`/api/repos/${repoId}/reanalyze`, username, { method: "POST" });
+      if (!res.ok) throw new Error(await errorMessage(res));
       onReanalyzed();
+    } catch (err) {
+      setReanalyzeError(err.message || String(err));
     } finally {
       setReanalyzing(false);
     }
@@ -212,6 +204,7 @@ function HistoryPanel({ username, repoId, onReanalyzed }) {
           {reanalyzing ? "Re-analyzing..." : "Re-analyze now"}
         </button>
       </div>
+      {reanalyzeError && <p className="form-error">{reanalyzeError}</p>}
       {commits.length >= 2 ? (
         <div className="diff-controls">
           <label className="field">
@@ -273,8 +266,21 @@ function HistoryPanel({ username, repoId, onReanalyzed }) {
 }
 
 export default function App() {
-  const [username, setUsername] = useState(() => localStorage.getItem("rearch-username") || "");
+  // Hosted mode asks the server (/api/health) and uses a random private id
+  // instead of a typed username; local mode keeps the simple name field.
+  const [publicMode, setPublicMode] = useState(null);
+  const [typedName, setTypedName] = useState(() => localStorage.getItem("rearch-username") || "");
+  const [visitorId] = useState(() => {
+    let id = localStorage.getItem("rearch-visitor");
+    if (!id) {
+      id = crypto.randomUUID().replaceAll("-", "");
+      localStorage.setItem("rearch-visitor", id);
+    }
+    return id;
+  });
+  const username = publicMode ? visitorId : typedName;
   const [repos, setRepos] = useState([]);
+  const [demoRepos, setDemoRepos] = useState([]);
   const [selectedRepoId, setSelectedRepoId] = useState(null);
   const [graph, setGraph] = useState(null);
   const [narratives, setNarratives] = useState({});
@@ -282,18 +288,45 @@ export default function App() {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [focusedCluster, setFocusedCluster] = useState(null);
+  const [view, setView] = useState("map");
+  const [migration, setMigration] = useState(null);
+  const [showUnresolved, setShowUnresolved] = useState(false);
+  const [flowInstance, setFlowInstance] = useState(null);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [showInspector, setShowInspector] = useState(() => window.innerWidth >= 1200);
 
   useEffect(() => {
-    localStorage.setItem("rearch-username", username);
-  }, [username]);
+    fetch(`${API_BASE}/api/health`)
+      .then((res) => res.json())
+      .then((health) => setPublicMode(Boolean(health.public_mode)))
+      .catch(() => {
+        setPublicMode(false);
+        setError(`Cannot reach the ReArch API at ${API_BASE}.`);
+      });
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("rearch-username", typedName);
+  }, [typedName]);
 
   const refreshRepos = useCallback(() => {
-    if (!username) return;
+    if (publicMode === null) return;
+    fetch(`${API_BASE}/api/demo/repos`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setDemoRepos)
+      .catch(() => setDemoRepos([]));
+    if (!username) {
+      setRepos([]);
+      return;
+    }
     apiFetch("/api/repos", username)
-      .then((res) => res.json())
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await errorMessage(res));
+        return res.json();
+      })
       .then(setRepos)
-      .catch((err) => setError(String(err)));
-  }, [username]);
+      .catch((err) => setError(err.message || String(err)));
+  }, [username, publicMode]);
 
   useEffect(() => {
     refreshRepos();
@@ -301,44 +334,78 @@ export default function App() {
     setGraph(null);
   }, [username, refreshRepos]);
 
+  // An analysis runs in the background for minutes; poll until it settles.
+  const anyPending = repos.some((r) => r.status === "pending") || demoRepos.some((r) => r.status === "pending");
+  useEffect(() => {
+    if (!anyPending) return undefined;
+    const timer = setInterval(refreshRepos, 3000);
+    return () => clearInterval(timer);
+  }, [anyPending, refreshRepos]);
+
+  const selectedRepo = [...repos, ...demoRepos].find((r) => r.id === selectedRepoId) || null;
+  const selectedStatus = selectedRepo?.status;
+
   const loadRepoData = useCallback(() => {
-    if (!selectedRepoId || !username) return;
+    if (!selectedRepoId) return;
     apiFetch(`/api/repos/${selectedRepoId}/graph`, username)
-      .then((res) => {
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await errorMessage(res));
         return res.json();
       })
       .then(setGraph)
-      .catch((err) => setError(String(err)));
+      .catch((err) => setError(err.message || String(err)));
     apiFetch(`/api/repos/${selectedRepoId}/narratives`, username)
       .then((res) => (res.ok ? res.json() : {}))
       .then(setNarratives)
       .catch(() => setNarratives({}));
+    apiFetch(`/api/repos/${selectedRepoId}/migration`, username)
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setMigration)
+      .catch(() => setMigration(null));
   }, [selectedRepoId, username]);
 
   useEffect(() => {
-    if (!selectedRepoId || !username) return;
     setGraph(null);
     setNarratives({});
+    setMigration(null);
+    setSelectedNode(null);
+    setView("map");
     setSearchQuery("");
     setFocusedCluster(null);
-    loadRepoData();
+    setError(null);
+    if (selectedRepoId && selectedStatus === "ready") loadRepoData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedRepoId, username]);
+  }, [selectedRepoId, selectedStatus, username]);
+
+  // On narrow screens the repo list gets out of the way once a repo is chosen.
+  const selectRepo = useCallback((repoId) => {
+    setSelectedRepoId(repoId);
+    if (window.innerWidth < 900) setShowSidebar(false);
+  }, []);
 
   const handleRepoAdded = useCallback(
     (repoId) => {
       refreshRepos();
-      setSelectedRepoId(repoId);
+      selectRepo(repoId);
     },
-    [refreshRepos]
+    [refreshRepos, selectRepo]
   );
 
   const { flowNodes, flowEdges } = useMemo(() => {
     if (!graph) return { flowNodes: [], flowEdges: [] };
-    const rawNodes = graph.nodes.map(toFlowNode);
-    const rawEdges = graph.edges.map(toFlowEdge);
-    const positioned = layoutGraph(rawNodes, graph.edges);
+    const hidden = showUnresolved ? new Set() : new Set(graph.nodes.filter((n) => n.kind === "unresolved").map((n) => n.id));
+    const visibleNodes = graph.nodes.filter((n) => !hidden.has(n.id));
+    const visibleEdges = graph.edges.filter((e) => !hidden.has(e.source) && !hidden.has(e.target));
+    const rawNodes = visibleNodes.map(toFlowNode);
+    const focusSet = focusedCluster === null
+      ? null
+      : new Set(visibleNodes.filter((n) => n.cluster === focusedCluster).map((n) => n.id));
+    const rawEdges = visibleEdges.map((edge, index) => {
+      const flowEdge = toFlowEdge(edge, index);
+      const touchesFocus = !focusSet || focusSet.has(edge.source) || focusSet.has(edge.target);
+      return touchesFocus ? flowEdge : { ...flowEdge, style: { ...flowEdge.style, opacity: 0.05 } };
+    });
+    const positioned = layoutGraph(rawNodes, visibleEdges);
 
     const query = searchQuery.trim().toLowerCase();
     const styled = positioned.map((n) => {
@@ -349,7 +416,17 @@ export default function App() {
     });
 
     return { flowNodes: styled, flowEdges: rawEdges };
-  }, [graph, searchQuery, focusedCluster]);
+  }, [graph, searchQuery, focusedCluster, showUnresolved]);
+
+  // Zoom to the focused subsystem so "Show on blueprint" actually shows it.
+  useEffect(() => {
+    if (!flowInstance || focusedCluster === null) return;
+    const focused = flowNodes.filter((n) => n.data.raw.cluster === focusedCluster);
+    if (focused.length) flowInstance.fitView({ nodes: focused, padding: 0.35, duration: 400, maxZoom: 1.1 });
+  }, [flowInstance, focusedCluster, flowNodes]);
+
+  // The map and the plan need a migration plan; fall back to the graph without one.
+  const activeView = !migration && view !== "blueprint" ? "blueprint" : view;
 
   const onNodeClick = useCallback((_, node) => setSelectedNode(node.data.raw), []);
 
@@ -365,58 +442,115 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <h2>ReArch — Blueprint (dev)</h2>
-        <p className="hint">Each user only ever sees their own repos. Dev-only identity: just an X-User header, no real auth.</p>
+      <aside className={`sidebar ${showSidebar ? "" : "collapsed"}`}>
+        <h2>ReArch</h2>
+        <p className="hint">
+          {publicMode
+            ? "Reverse-engineer a codebase into a blueprint and a migration plan. Your analyses are private to this browser."
+            : "Local mode. Each username only sees its own repos (no real auth)."}
+        </p>
         <RepoPanel
+          showUsername={publicMode === false}
+          typedName={typedName}
+          setTypedName={setTypedName}
           username={username}
-          setUsername={setUsername}
           repos={repos}
+          demoRepos={demoRepos}
           selectedRepoId={selectedRepoId}
-          onSelectRepo={setSelectedRepoId}
+          onSelectRepo={selectRepo}
           onRepoAdded={handleRepoAdded}
         />
-        {selectedRepoId && (
-          <HistoryPanel
-            username={username}
-            repoId={selectedRepoId}
-            onReanalyzed={() => {
-              refreshRepos();
-              loadRepoData();
-            }}
-          />
+        {selectedRepo && !selectedRepo.demo && selectedRepo.status !== "pending" && (
+          <HistoryPanel username={username} repoId={selectedRepoId} onReanalyzed={refreshRepos} />
+        )}
+        {selectedRepo?.demo && (
+          <p className="hint">This is a pre-analyzed example, so it is read-only. Paste a GitHub URL above to analyze your own repository.</p>
         )}
       </aside>
 
       <div className="canvas">
-        {error && <div className="status error">{error}</div>}
-        {!error && !graph && <div className="status">{selectedRepoId ? "Loading blueprint..." : "Select or add a repo to view its blueprint."}</div>}
-        {graph && (
-          <>
-            <div className="canvas-toolbar">
-              <input
-                className="search-box"
-                type="text"
-                placeholder="Search nodes by name..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {focusedCluster !== null && (
-                <button className="clear-focus" onClick={() => setFocusedCluster(null)}>
-                  Clear cluster focus (#{focusedCluster})
-                </button>
-              )}
+        <div className="view-tabs">
+          <button className="panel-toggle" onClick={() => setShowSidebar(!showSidebar)} title="Show or hide the repo list">
+            {showSidebar ? "Hide repos" : "Repos"}
+          </button>
+          {selectedRepoId && graph && (
+            <>
+              {migration && <button className={activeView === "map" ? "active" : ""} onClick={() => setView("map")}>Subsystem map</button>}
+              <button className={activeView === "blueprint" ? "active" : ""} onClick={() => setView("blueprint")}>Detailed graph</button>
+              {migration && <button className={activeView === "migration" ? "active" : ""} onClick={() => setView("migration")}>Migration plan</button>}
+            </>
+          )}
+          {selectedRepoId && graph && activeView === "blueprint" && (
+            <button className="panel-toggle push-right" onClick={() => setShowInspector(!showInspector)}>
+              {showInspector ? "Hide inspector" : "Inspector"}
+            </button>
+          )}
+        </div>
+        <div className="canvas-body">
+          {error && <div className="status error">{error}</div>}
+          {!error && !graph && (
+            <div className="status">
+              {!selectedRepo && "Pick an example on the left, or paste a public GitHub repository to analyze."}
+              {selectedRepo?.status === "pending" && "Analyzing this repository (cloning, parsing, clustering, writing the plan). This usually takes 1 to 3 minutes."}
+              {selectedRepo?.status === "error" && `Analysis failed: ${selectedRepo.error || "unknown error"}`}
+              {selectedRepo?.status === "ready" && "Loading blueprint..."}
             </div>
-            <ReactFlow nodes={flowNodes} edges={flowEdges} onNodeClick={onNodeClick} fitView>
-              <Background />
-              <Controls />
-              <MiniMap pannable zoomable />
-            </ReactFlow>
-          </>
-        )}
+          )}
+          {graph && activeView === "map" && (
+            <SubsystemMap
+              plan={migration}
+              onShowSubsystem={(id) => {
+                setFocusedCluster(id);
+                setView("blueprint");
+              }}
+            />
+          )}
+          {graph && activeView === "migration" && (
+            migration ? (
+              <MigrationPanel
+                plan={migration}
+                repoId={selectedRepoId}
+                username={username}
+                onShowSubsystem={(id) => {
+                  setFocusedCluster(id);
+                  setView("blueprint");
+                }}
+              />
+            ) : (
+              <div className="status">No migration plan for this analysis yet. Press "Re-analyze now" to generate one.</div>
+            )
+          )}
+          {graph && activeView === "blueprint" && (
+            <>
+              <div className="canvas-toolbar">
+                <input
+                  className="search-box"
+                  type="text"
+                  placeholder="Search nodes by name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <label className="toggle">
+                  <input type="checkbox" checked={showUnresolved} onChange={(e) => setShowUnresolved(e.target.checked)} />
+                  show unresolved calls
+                </label>
+                {focusedCluster !== null && (
+                  <button className="clear-focus" onClick={() => setFocusedCluster(null)}>
+                    Clear cluster focus (#{focusedCluster})
+                  </button>
+                )}
+              </div>
+              <ReactFlow nodes={flowNodes} edges={flowEdges} onNodeClick={onNodeClick} onInit={setFlowInstance} colorMode="dark" minZoom={0.05} fitView>
+                <Background />
+                <Controls />
+                <MiniMap pannable zoomable style={{ width: 150, height: 100 }} nodeColor={(n) => n.style?.background || "#475569"} />
+              </ReactFlow>
+            </>
+          )}
+        </div>
       </div>
 
-      <aside className="inspector">
+      <aside className={`inspector ${showInspector && activeView === "blueprint" ? "" : "collapsed"}`}>
         <h3>Inspector</h3>
         <p className="hint">Click a node. Dashed edges are dynamic/inferred, not certain.</p>
         {selectedNode ? (

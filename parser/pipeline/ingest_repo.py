@@ -9,6 +9,7 @@ Cloudflare Queues, GitHub OAuth) are exactly the two functions below.
 Usage:
     .venv/Scripts/python parser/pipeline/ingest_repo.py <git_url> <work_dir>
 """
+import os
 import shutil
 import subprocess
 import sys
@@ -16,18 +17,46 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from parser.pipeline.extract_symbols import main as extract_symbols_main
+from parser.pipeline.extract_symbols import EXTENSION_TO_EXTRACTOR, main as extract_symbols_main
+from parser.pipeline.repo_walk import iter_code_files
 from parser.pipeline.link_calls import main as link_calls_main
 from parser.pipeline.cluster_nodes import main as cluster_nodes_main
 from parser.pipeline.generate_narratives import main as generate_narratives_main
+from parser.pipeline.migration_plan import main as migration_plan_main
+
+
+GIT_TIMEOUT_SECONDS = 180
+MAX_CODE_FILES = int(os.environ.get("REARCH_MAX_CODE_FILES", "3000"))
+# Never let git stop and wait for a password on a private/typo'd repo.
+GIT_ENV = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
 
 
 def clone_or_update(git_url: str, dest: Path) -> None:
+    """Shallow-clone (or fast-forward) an untrusted repository.
+
+    `--` stops a URL like `--upload-pack=...` being read as a git option,
+    core.symlinks=false stops symlinks in the repo pointing at server files,
+    and the error is rewritten so server paths never reach the user.
+    """
     if dest.exists():
-        subprocess.run(["git", "-C", str(dest), "pull", "--ff-only"], check=True)
+        command = ["git", "-C", str(dest), "pull", "--ff-only"]
     else:
         dest.parent.mkdir(parents=True, exist_ok=True)
-        subprocess.run(["git", "clone", "--depth", "1", git_url, str(dest)], check=True)
+        command = ["git", "-c", "core.symlinks=false", "clone", "--depth", "1", "--single-branch", "--no-tags", "--", git_url, str(dest)]
+    try:
+        subprocess.run(command, check=True, capture_output=True, timeout=GIT_TIMEOUT_SECONDS, env=GIT_ENV)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"Cloning took longer than {GIT_TIMEOUT_SECONDS}s; the repository is too large for this server.") from None
+    except subprocess.CalledProcessError:
+        raise RuntimeError("Could not clone the repository. Check the URL and that the repository is public.") from None
+
+
+def check_repo_size(repo_dir: Path) -> None:
+    count = sum(1 for _ in iter_code_files(repo_dir, set(EXTENSION_TO_EXTRACTOR)))
+    if count == 0:
+        raise RuntimeError("No Python or JavaScript files found. ReArch currently analyzes those two languages.")
+    if count > MAX_CODE_FILES:
+        raise RuntimeError(f"The repository has {count} analyzable files; this server's limit is {MAX_CODE_FILES}.")
 
 
 def current_commit_sha(repo_dir: Path) -> str:
@@ -49,6 +78,7 @@ def main(git_url: str, work_dir: str) -> dict:
 
     print(f"Cloning/updating {git_url} -> {repo_dir}")
     clone_or_update(git_url, repo_dir)
+    check_repo_size(repo_dir)
     commit_sha = current_commit_sha(repo_dir)
 
     print("Extracting symbol tables...")
@@ -62,6 +92,9 @@ def main(git_url: str, work_dir: str) -> dict:
 
     print("Generating subsystem intent narratives (skipped if GROQ_API_KEY unset)...")
     generate_narratives_main(str(graph_path), str(repo_dir), str(narratives_path), str(narratives_cache_path))
+
+    print("Building the migration plan (metrics always; written plan only if GROQ_API_KEY set)...")
+    migration_plan_main(str(graph_path), str(work_path / "migration.json"), str(narratives_path), str(work_path / "migration_cache.json"))
 
     snapshots_dir.mkdir(parents=True, exist_ok=True)
     snapshot_path = snapshots_dir / f"{commit_sha}.json"

@@ -7,6 +7,7 @@ means rewriting this file only, per the project plan's stated migration path.
 Query shapes here are intentionally plain Cypher so that swap stays cheap.
 """
 import json
+import threading
 from pathlib import Path
 
 import kuzu
@@ -44,6 +45,8 @@ class GraphStore:
     def __init__(self, db_path: str):
         self.db = kuzu.Database(db_path)
         self.conn = kuzu.Connection(self.db)
+        # One Kuzu connection is shared by FastAPI's request threads; serialize use of it.
+        self._lock = threading.RLock()
         for stmt in SCHEMA_STATEMENTS:
             self.conn.execute(stmt)
 
@@ -56,6 +59,10 @@ class GraphStore:
         self.db.close()
 
     def load_graph_json(self, graph_json_path: str) -> None:
+        with self._lock:
+            self._load_graph_json(graph_json_path)
+
+    def _load_graph_json(self, graph_json_path: str) -> None:
         graph = json.loads(Path(graph_json_path).read_text(encoding="utf-8"))
         known_ids = {n["id"] for n in graph["nodes"]}
 
@@ -107,11 +114,12 @@ class GraphStore:
             )
 
     def query(self, cypher: str, params: dict | None = None) -> list[list]:
-        result = self.conn.execute(cypher, params or {})
-        rows = []
-        while result.has_next():
-            rows.append(result.get_next())
-        return rows
+        with self._lock:
+            result = self.conn.execute(cypher, params or {})
+            rows = []
+            while result.has_next():
+                rows.append(result.get_next())
+            return rows
 
     def callers_of(self, qualified_name_substring: str) -> list[list]:
         return self.query(

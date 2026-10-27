@@ -72,7 +72,38 @@ def cluster_cache_key(cluster_id: int, members: list[dict]) -> str:
     return hashlib.sha256(basis.encode()).hexdigest()
 
 
-def call_groq(prompt: str, api_key: str, model: str, system: str = SYSTEM_PROMPT, max_tokens: int = 220) -> str:
+class NarrationBudgetExceeded(RuntimeError):
+    """The time allowed for writing prose ran out. Not a failure of the analysis: the measured facts stand."""
+
+
+class NarrationQuotaExhausted(NarrationBudgetExceeded):
+    """Groq's free tier also has a *daily* token allowance (200,000 for gpt-oss-120b). Once it is spent, every
+    request is refused until it frees up, and waiting a minute and retrying (right for the per-minute limit) only
+    burns time, so this is a hard stop."""
+
+
+_quota_seen = False
+
+
+def take_quota_flag() -> bool:
+    """True if a call since the last check found the daily allowance spent. Narration runs one at a time, so a
+    process-wide flag is enough; it lets the caller say *why* no prose was written."""
+    global _quota_seen
+    seen, _quota_seen = _quota_seen, False
+    return seen
+
+
+def _is_daily_limit(resp) -> bool:
+    try:
+        message = str(resp.json().get("error", {}).get("message", ""))
+    except Exception:
+        return False
+    return "per day" in message.lower() or "(TPD)" in message
+
+
+def call_groq(prompt: str, api_key: str, model: str, system: str = SYSTEM_PROMPT, max_tokens: int = 220, deadline: float | None = None) -> str:
+    """`deadline` is a time.monotonic() value. A rate-limited call would otherwise sleep up to a minute per
+    retry (five retries), so the wait is checked against it *before* sleeping."""
     payload = {
         "model": model,
         "messages": [
@@ -89,11 +120,21 @@ def call_groq(prompt: str, api_key: str, model: str, system: str = SYSTEM_PROMPT
         payload["include_reasoning"] = False
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
     for attempt in range(5):
-        resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=60)
+        remaining = None if deadline is None else deadline - time.monotonic()
+        if remaining is not None and remaining <= 1:
+            raise NarrationBudgetExceeded("out of time before the request")
+        resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=60 if remaining is None else max(2, min(60, remaining)))
+        if resp.status_code == 429 and _is_daily_limit(resp):
+            global _quota_seen
+            _quota_seen = True
+            raise NarrationQuotaExhausted("the free daily token allowance is used up")
         if resp.status_code == 429 and attempt < 4:
             # Free tier allows ~8K tokens a minute; a burst of calls can exhaust it. Wait as
             # long as Groq asks (a full window can be ~60s), then retry.
-            time.sleep(min(float(resp.headers.get("retry-after", 10)), 60))
+            wait = min(float(resp.headers.get("retry-after", 10)), 60)
+            if deadline is not None and time.monotonic() + wait > deadline:
+                raise NarrationBudgetExceeded(f"rate limited for {wait:.0f}s with less time than that left")
+            time.sleep(wait)
             continue
         resp.raise_for_status()
         content = (resp.json()["choices"][0]["message"].get("content") or "").strip()
@@ -111,10 +152,11 @@ TYPOGRAPHY_TO_ASCII = str.maketrans({chr(0x202F): " ", chr(0x00A0): " ", chr(0x2
 FAILURE_MARKER = "(narrative generation failed"
 # Subsystem ids are numbered biggest-first, so on a large repo the largest ones get
 # narratives and the long tail does not cost an LLM call each.
-MAX_NARRATED_CLUSTERS = 20
+# REARCH_MAX_NARRATED_CLUSTERS lowers it on a host that shares a small daily token allowance among visitors.
+MAX_NARRATED_CLUSTERS = int(os.environ.get("REARCH_MAX_NARRATED_CLUSTERS", "20"))
 
 
-def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | None = None) -> None:
+def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | None = None, deadline: float | None = None) -> None:
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         print("GROQ_API_KEY not set; skipping narrative generation (this is optional).")
@@ -150,6 +192,7 @@ def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | Non
     narratives: dict = {}
     calls_made = 0
     failed = 0
+    budget_stopped = False
 
     for cluster_id, members in sorted(by_cluster.items())[:MAX_NARRATED_CLUSTERS]:
         member_ids = {m["id"] for m in members}
@@ -179,7 +222,13 @@ def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | Non
         prompt = build_cluster_prompt(cluster_id, members, calls_out, calls_in, excerpt_node, excerpt_text)
 
         try:
-            text = call_groq(prompt, api_key, model, max_tokens=900)
+            text = call_groq(prompt, api_key, model, max_tokens=900, deadline=deadline)
+        except NarrationBudgetExceeded as exc:
+            # Out of time: keep what exists, stop spending the rest. Subsystems are numbered biggest
+            # first, so the ones that got a narrative are the ones that matter most.
+            print(f"  stopping at cluster {cluster_id}: {exc}")
+            budget_stopped = True
+            break
         except Exception as exc:
             # Leave this cluster without a narrative (and out of the cache) so
             # the next run retries it, rather than storing the error as an answer.
@@ -206,7 +255,8 @@ def main(graph_path: str, repo_dir: str, output_path: str, cache_path: str | Non
 
     Path(output_path).write_text(json.dumps(narratives, indent=2), encoding="utf-8")
     cached = len(narratives) - calls_made
-    print(f"Generated {calls_made} new narratives ({cached} from cache, {failed} failed) for {len(by_cluster)} clusters.")
+    print(f"Generated {calls_made} new narratives ({cached} from cache, {failed} failed) for {len(by_cluster)} clusters."
+          + (" Stopped early: out of time." if budget_stopped else ""))
 
 
 if __name__ == "__main__":

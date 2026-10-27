@@ -24,6 +24,9 @@ ENV HOME=/home/user \
     REARCH_CLUSTERING=graph \
     # Measured on real repos: ~12 MB of RAM per 1,000 edges on top of a ~55 MB base; 500 files stays well under 512 MB.
     REARCH_MAX_CODE_FILES=500 \
+    # Prose is written after the analysis is usable, inside this budget (Groq's free tier is ~8K tokens/minute,
+    # shared by every visitor). Past it, what is already written is kept and the rest is skipped.
+    REARCH_NARRATION_BUDGET_SECONDS=90 \
     REARCH_KUZU_BUFFER_MB=64 \
     REARCH_MAX_OPEN_GRAPHS=2 \
     REARCH_DATA_DIR=/home/user/data

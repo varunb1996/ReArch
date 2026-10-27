@@ -165,7 +165,8 @@ def test_webhook_rejects_a_bad_signature(client, monkeypatch):
 # --- background analysis -------------------------------------------------------
 
 def stub_pipeline(monkeypatch, fail_with=None):
-    def fake_ingest(git_url, work_dir):
+    def fake_ingest(git_url, work_dir, narrate=True, narration_budget=0):
+        assert narrate is False, "the API must ask for the structural phase only; prose is written afterwards"
         if fail_with:
             raise fail_with
         work = Path(work_dir)

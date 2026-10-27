@@ -9,10 +9,12 @@ Cloudflare Queues, GitHub OAuth) are exactly the two functions below.
 Usage:
     .venv/Scripts/python parser/pipeline/ingest_repo.py <git_url> <work_dir>
 """
+import json
 import os
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
@@ -80,7 +82,10 @@ def current_commit_sha(repo_dir: Path) -> str:
     return result.stdout.strip()
 
 
-def main(git_url: str, work_dir: str) -> dict:
+def main(git_url: str, work_dir: str, narrate: bool = True, narration_budget: float = 0) -> dict:
+    """The whole pipeline. With narrate=False it stops short of anything that needs an LLM: the graph,
+    subsystems and migration metrics are complete and final, and the prose is added afterwards by
+    narrate_repo(). A server uses that so a visitor sees the result in seconds, not after Groq's rate limit."""
     work_path = Path(work_dir)
     repo_dir = work_path / "repo"
     symbols_dir = work_path / "symbols"
@@ -103,11 +108,21 @@ def main(git_url: str, work_dir: str) -> dict:
     print("Embedding and clustering nodes into candidate subsystems...")
     cluster_nodes_main(str(graph_path), str(graph_path))
 
-    print("Generating subsystem intent narratives (skipped if GROQ_API_KEY unset)...")
-    generate_narratives_main(str(graph_path), str(repo_dir), str(narratives_path), str(narratives_cache_path))
+    deadline = time.monotonic() + narration_budget if narration_budget else None
+    if narrate:
+        print("Generating subsystem intent narratives (skipped if GROQ_API_KEY unset)...")
+        generate_narratives_main(str(graph_path), str(repo_dir), str(narratives_path), str(narratives_cache_path), deadline=deadline)
 
-    print("Building the migration plan (metrics always; written plan only if GROQ_API_KEY set)...")
-    migration_plan_main(str(graph_path), str(work_path / "migration.json"), str(narratives_path), str(work_path / "migration_cache.json"))
+        print("Building the migration plan (metrics always; written plan only if GROQ_API_KEY set)...")
+        migration_plan_main(str(graph_path), str(work_path / "migration.json"), str(narratives_path), str(work_path / "migration_cache.json"), deadline=deadline)
+    else:
+        # An already-expired deadline makes this a cache-only pass: narratives for subsystems whose members are
+        # unchanged since an earlier run are reused for free, and nothing is sent to the LLM. Without it the
+        # previous run's narratives.json would be left behind, numbered for a clustering that no longer exists.
+        print("Applying cached narratives (no LLM calls)...")
+        generate_narratives_main(str(graph_path), str(repo_dir), str(narratives_path), str(narratives_cache_path), deadline=time.monotonic())
+        print("Building the migration plan from measured facts...")
+        migration_plan_main(str(graph_path), str(work_path / "migration.json"), str(narratives_path), None, use_llm=False)
 
     snapshots_dir.mkdir(parents=True, exist_ok=True)
     snapshot_path = snapshots_dir / f"{commit_sha}.json"
@@ -115,6 +130,61 @@ def main(git_url: str, work_dir: str) -> dict:
     print(f"Snapshotted graph at commit {commit_sha[:12]} -> {snapshot_path}")
 
     return {"graph_path": graph_path, "commit_sha": commit_sha, "snapshot_path": snapshot_path}
+
+
+def narrate_repo(work_dir: str, budget_seconds: float = 0, still_current=lambda: True) -> str:
+    """Phase two: the prose. Returns "done", "partial" (ran out of time part-way) or "skipped".
+
+    The written plan goes first: it is the most useful piece and one call, whereas subsystem notes are one call
+    each and the free tier allows ~8K tokens a minute. Whatever time is left goes to the notes, largest
+    subsystems first. `still_current` is checked before every write so that a re-analysis which started
+    meanwhile (new clustering, new numbering) is never overwritten by this older run's prose.
+    """
+    from parser.pipeline.generate_narratives import MAX_NARRATED_CLUSTERS, take_quota_flag
+    from parser.pipeline.migration_plan import analyze, check_references
+
+    if not os.environ.get("GROQ_API_KEY"):
+        return "skipped"
+    take_quota_flag()  # forget anything a previous run saw
+    work_path = Path(work_dir)
+    graph_path = work_path / "graph.json"
+    migration_path = work_path / "migration.json"
+    narratives_path = work_path / "narratives.json"
+    deadline = time.monotonic() + budget_seconds if budget_seconds else None
+
+    # 1. the written plan, from the measured facts alone
+    plan_path = work_path / "migration.writing.json"
+    cached_notes = str(narratives_path) if narratives_path.exists() else None  # purposes already known from an earlier run
+    migration_plan_main(str(graph_path), str(plan_path), cached_notes, str(work_path / "migration_cache.json"), deadline=deadline)
+    written = json.loads(plan_path.read_text(encoding="utf-8"))
+    plan_path.unlink(missing_ok=True)
+
+    # 2. subsystem notes with the time that is left
+    generate_narratives_main(str(graph_path), str(work_path / "repo"), str(work_path / "narratives.writing.json"),
+                             str(work_path / "narratives_cache.json"), deadline=deadline)
+    notes_path = work_path / "narratives.writing.json"
+    notes = json.loads(notes_path.read_text(encoding="utf-8"))
+    notes_path.unlink(missing_ok=True)
+
+    if not still_current():
+        return "skipped"
+    if notes:
+        narratives_path.write_text(json.dumps(notes, indent=2), encoding="utf-8")
+    # Rebuild the plan so each subsystem carries its inferred purpose; the prose is the one already written.
+    graph = json.loads(graph_path.read_text(encoding="utf-8"))
+    final = analyze(graph, notes or None)
+    final["narrative"] = written.get("narrative")
+    final["narrative_warnings"] = check_references(final["narrative"], final) if final["narrative"] else []
+    migration_path.write_text(json.dumps(final, indent=2), encoding="utf-8")
+
+    clusters = len({n["cluster"] for n in graph["nodes"] if n.get("cluster", -1) >= 0})
+    wanted = min(clusters, MAX_NARRATED_CLUSTERS)
+    if final["narrative"] and len(notes) >= wanted:
+        return "done"
+    if final["narrative"] or notes:
+        return "partial"
+    # Nothing was written: say whether that is because the day's free allowance is spent, which is useful to know.
+    return "quota" if take_quota_flag() else "skipped"
 
 
 if __name__ == "__main__":

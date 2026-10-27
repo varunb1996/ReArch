@@ -392,6 +392,36 @@ export default function App() {
     [refreshRepos, selectRepo]
   );
 
+  // The analysis is usable as soon as its structure is done; the written plan and subsystem notes arrive
+  // afterwards. While they are being written, ask for them again until the server says it has finished.
+  const narrationRunning = migration?.narration === "running";
+  useEffect(() => {
+    if (!narrationRunning || !selectedRepoId) return undefined;
+    let attempts = 0;
+    let stopped = false;
+    const timer = setInterval(async () => {
+      attempts += 1;
+      try {
+        const res = await apiFetch(`/api/repos/${selectedRepoId}/migration`, username);
+        if (!res.ok || stopped) return;
+        const next = await res.json();
+        if (stopped) return;
+        setMigration(next);
+        if (next.narration !== "running") {
+          const notes = await apiFetch(`/api/repos/${selectedRepoId}/narratives`, username);
+          if (notes.ok && !stopped) setNarratives(await notes.json());
+        }
+      } catch {
+        /* the next tick tries again */
+      }
+      if (attempts >= 120) clearInterval(timer);
+    }, 6000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [narrationRunning, selectedRepoId, username]);
+
   // The map and the plan need a migration plan; fall back to the graph without one.
   const activeView = !migration && view !== "blueprint" ? "blueprint" : view;
 

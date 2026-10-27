@@ -108,6 +108,8 @@ export default function MigrationPanel({ plan, repoId, username, onShowSubsystem
             <strong>Written plan</strong>
             <span className="hint">Written by an AI from the measured facts below; names are checked against them.</span>
           </div>
+          {plan.narration === "running" && <div className="mig-pending">Subsystem notes are still being written. They appear in the code map's field notes when ready.</div>}
+          {plan.narration === "partial" && <div className="mig-pending">Some subsystem notes were skipped because the AI service ran out of time.</div>}
           {plan.narrative_warnings?.length > 0 && (
             <div className="mig-warning">
               Unverified references in this summary: {plan.narrative_warnings.join(", ")}. Treat them as suggestions, not facts.
@@ -115,9 +117,23 @@ export default function MigrationPanel({ plan, repoId, username, onShowSubsystem
           )}
           <Markdown text={plan.narrative} />
         </section>
+      ) : plan.narration === "running" ? (
+        <section className="mig-narrative writing" aria-live="polite">
+          <div className="mig-narrative-head">
+            <strong>Written plan</strong>
+            <span className="hint">Being written now</span>
+          </div>
+          <p>The map and every number on this page are final. The written plan, and a note on what each subsystem is for, are still being written. They usually appear within a minute or two, and this page updates by itself.</p>
+        </section>
       ) : (
         <section className="mig-narrative">
-          <p className="hint">No written plan: the metrics below are complete, but no LLM key was available to turn them into prose.</p>
+          <p className="hint">
+            {plan.narration === "quota"
+              ? "No written plan today: the free AI allowance for the day is used up. Everything measured is complete below, and written plans return when the allowance resets."
+              : plan.narration === "skipped"
+                ? "The written plan was skipped because the AI service was busy or out of time. The measured plan below is complete."
+                : "No written plan: the metrics below are complete, but no AI key was available to turn them into prose."}
+          </p>
         </section>
       )}
 

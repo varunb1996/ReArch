@@ -551,21 +551,21 @@ def build_plan_prompt(plan: dict) -> str:
     return "\n".join(lines)
 
 
-def narrate_plan(plan: dict, api_key: str, model: str, cache: dict) -> str:
+def narrate_plan(plan: dict, api_key: str, model: str, cache: dict, deadline: float | None = None) -> str:
     from parser.pipeline.generate_narratives import call_groq
 
     prompt = build_plan_prompt(plan)
     key = hashlib.sha256("|".join([model, PLAN_SYSTEM_PROMPT, prompt]).encode()).hexdigest()
     if key in cache:
         return cache[key]
-    text = call_groq(prompt, api_key, model, system=PLAN_SYSTEM_PROMPT, max_tokens=2500)
+    text = call_groq(prompt, api_key, model, system=PLAN_SYSTEM_PROMPT, max_tokens=2500, deadline=deadline)
     problems = check_references(text, plan)
     if problems:
         correction = (
             f"{prompt}\n\nYour previous answer referred to names that are NOT in the facts above: "
             f"{', '.join(problems)}. Rewrite the whole plan without inventing any identifier or number."
         )
-        text = call_groq(correction, api_key, model, system=PLAN_SYSTEM_PROMPT, max_tokens=2500)
+        text = call_groq(correction, api_key, model, system=PLAN_SYSTEM_PROMPT, max_tokens=2500, deadline=deadline)
     cache[key] = text
     return text
 
@@ -623,7 +623,8 @@ def render_markdown(plan: dict, repo_name: str = "repository") -> str:
     return "\n".join(out) + "\n"
 
 
-def main(graph_path: str, output_path: str, narratives_path: str | None = None, cache_path: str | None = None) -> None:
+def main(graph_path: str, output_path: str, narratives_path: str | None = None, cache_path: str | None = None,
+         use_llm: bool = True, deadline: float | None = None) -> None:
     graph = json.loads(Path(graph_path).read_text(encoding="utf-8"))
     narratives = None
     if narratives_path and Path(narratives_path).exists():
@@ -632,13 +633,15 @@ def main(graph_path: str, output_path: str, narratives_path: str | None = None, 
     plan = analyze(graph, narratives)
 
     api_key = os.environ.get("GROQ_API_KEY")
-    if api_key and plan["subsystems"]:
+    if not use_llm:
+        print("Written plan deferred: the measured plan is complete without it.")
+    elif api_key and plan["subsystems"]:
         from parser.pipeline.generate_narratives import DEFAULT_MODEL
 
         cache_file = Path(cache_path) if cache_path else None
         cache = json.loads(cache_file.read_text(encoding="utf-8")) if cache_file and cache_file.exists() else {}
         try:
-            plan["narrative"] = narrate_plan(plan, api_key, os.environ.get("GROQ_MODEL", DEFAULT_MODEL), cache)
+            plan["narrative"] = narrate_plan(plan, api_key, os.environ.get("GROQ_MODEL", DEFAULT_MODEL), cache, deadline)
         except Exception as exc:
             print(f"Migration narrative skipped: {exc}")
         if cache_file:

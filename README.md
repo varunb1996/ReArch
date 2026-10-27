@@ -86,6 +86,8 @@ To refresh or add the bundled examples: `.venv/Scripts/python scripts/build_demo
 | `REARCH_SEED_DEMO` | API | `0` skips loading the bundled examples at startup (the hybrid site serves them statically). Default: on in public mode. |
 | `REARCH_KUZU_BUFFER_MB` | API | Caps each graph database's buffer pool (default: Kùzu's 80% of host RAM). |
 | `REARCH_MAX_OPEN_GRAPHS` | API | Keeps at most this many graph databases open, closing the least recently used (default: unlimited). |
+| `REARCH_NARRATION_BUDGET_SECONDS` | API | Time allowed for writing the plan and subsystem notes *after* the analysis is already usable. `0` (default) is no limit; the Docker image uses 90. |
+| `REARCH_MAX_NARRATED_CLUSTERS` | API / scripts | Most subsystems that get a written note (default 20). Lower it to spend fewer LLM tokens per analysis. |
 | `REARCH_CORS_ORIGINS` | API | Comma-separated allowed browser origins. |
 | `REARCH_DATA_DIR` | API | Where analyses and the user database are stored. |
 | `REARCH_MAX_CODE_FILES` | API | Largest repository accepted (default 3000 analyzable files). |

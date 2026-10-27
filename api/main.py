@@ -17,6 +17,7 @@ import logging
 import os
 import shutil
 import threading
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -33,7 +34,7 @@ from api.security import (
 from api.services.graph_store import GraphStore
 from api.services.user_store import UserStore
 from parser.pipeline.diff_graphs import diff_graphs
-from parser.pipeline.ingest_repo import main as ingest_repo_main
+from parser.pipeline.ingest_repo import main as ingest_repo_main, narrate_repo
 from parser.pipeline.migration_plan import render_markdown
 
 load_dotenv()
@@ -51,6 +52,11 @@ _graph_stores_lock = threading.Lock()
 # Each open Kùzu database holds its own buffer pool, so on a small host the number kept open is bounded
 # (least recently used are closed and reopen on demand). 0 keeps every store open, the old behaviour.
 MAX_OPEN_GRAPHS = int(os.environ.get("REARCH_MAX_OPEN_GRAPHS", "0"))
+# The prose (written plan, subsystem notes) is added after the analysis is already usable, inside this many
+# seconds. Groq's free tier allows ~8K tokens a minute and is shared by every visitor, so unbounded narration
+# once turned a 10 s analysis into minutes. 0 = no limit (local use).
+NARRATION_BUDGET = float(os.environ.get("REARCH_NARRATION_BUDGET_SECONDS", "0"))
+_narration_gate = threading.Semaphore(1)  # one narration at a time: they share one rate-limited key
 
 
 def get_user_store() -> UserStore:
@@ -172,24 +178,76 @@ def require_repo(repo_id: str, user_id: str, *, write: bool = False) -> dict:
     return repo
 
 
-def run_reanalysis(repo_id: str, git_url: str, *, fresh_db: bool) -> None:
+def narration_file(repo_id: str) -> Path:
+    return REPOS_ROOT / repo_id / "narration.json"
+
+
+def get_narration(repo_id: str) -> dict:
+    """{"state": running | done | partial | skipped | unavailable, "run": id}. Analyses without a marker predate
+    this (or are bundled examples) and are complete as they are."""
+    path = narration_file(repo_id)
+    if not path.exists():
+        return {"state": "done", "run": None}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {"state": "skipped", "run": None}
+
+
+def set_narration(repo_id: str, state: str, run: str | None) -> None:
+    narration_file(repo_id).write_text(json.dumps({"state": state, "run": run}), encoding="utf-8")
+
+
+def run_reanalysis(repo_id: str, git_url: str, *, fresh_db: bool) -> str | None:
     """Shared by the manual reanalyze endpoint, initial repo creation, and
     the git webhook — one place that runs the pipeline and updates status,
-    so all three trigger paths behave identically."""
+    so all three trigger paths behave identically.
+
+    Returns as soon as the structural analysis is usable (the graph, subsystems and migration metrics are
+    final); the prose is written afterwards by narrate_job. The return value is that narration's run id, or
+    None if the analysis failed or there is nothing to narrate."""
     store = get_user_store()
     work_dir = REPOS_ROOT / repo_id
     store.set_repo_status(repo_id, "pending")
     try:
-        result = ingest_repo_main(git_url, str(work_dir))
+        result = ingest_repo_main(git_url, str(work_dir), narrate=False)
         store_fn = reset_graph_store if fresh_db else get_graph_store
         store_fn(repo_id).load_graph_json(str(result["graph_path"]))
+        # The marker is written before "ready" so that anyone who sees the repo ready also sees prose is pending.
+        run = uuid.uuid4().hex if os.environ.get("GROQ_API_KEY") else None
+        set_narration(repo_id, "running" if run else "unavailable", run)
         store.set_repo_status(repo_id, "ready")
+        return run
     except Exception as exc:
         log.exception("analysis failed for repo %s", repo_id)
         # RuntimeErrors are our own curated messages ("repository too large");
         # anything else may contain server paths, so public mode hides it.
         shown = str(exc) if isinstance(exc, RuntimeError) or not public_mode() else "Analysis failed unexpectedly. Try another repository."
         store.set_repo_status(repo_id, "error", shown)
+        return None
+
+
+def narrate_job(repo_id: str, run: str) -> None:
+    """Write the prose for an analysis that is already ready. Never raises and never delays the next analysis:
+    it holds no analysis slot. If a newer analysis of the same repo started meanwhile (its marker has another
+    run id), this one stops writing, because its subsystem numbering is out of date."""
+    def current() -> bool:
+        return get_narration(repo_id).get("run") == run
+
+    waited = _narration_gate.acquire(timeout=NARRATION_BUDGET) if NARRATION_BUDGET else _narration_gate.acquire()
+    if not waited:  # another narration is using the shared key and ours would get no time
+        if current():
+            set_narration(repo_id, "skipped", run)
+        return
+    state = "skipped"
+    try:
+        state = narrate_repo(str(REPOS_ROOT / repo_id), NARRATION_BUDGET, still_current=current)
+    except Exception:
+        log.exception("narration failed for repo %s", repo_id)
+    finally:
+        _narration_gate.release()
+    if current():
+        set_narration(repo_id, state, run)
 
 
 def normalize_git_url(url: str) -> str:
@@ -228,10 +286,13 @@ def list_demo_repos():
 
 
 def analysis_job(repo_id: str, git_url: str, fresh_db: bool) -> None:
+    run = None
     try:
-        run_reanalysis(repo_id, git_url, fresh_db=fresh_db)
+        run = run_reanalysis(repo_id, git_url, fresh_db=fresh_db)
     finally:
-        release_slot()
+        release_slot()  # the result is usable now; the next visitor's analysis need not wait for prose
+    if run:
+        narrate_job(repo_id, run)
 
 
 def claim_analysis(user_id: str, request: Request) -> None:
@@ -277,9 +338,14 @@ def reanalyze_repo(repo_id: str, request: Request, background: BackgroundTasks, 
 
 
 def reanalyze_all(targets: list[tuple[str, str]]) -> None:
+    runs = []
     with analysis_slot(wait=True):
         for repo_id, git_url in targets:
-            run_reanalysis(repo_id, git_url, fresh_db=True)
+            run = run_reanalysis(repo_id, git_url, fresh_db=True)
+            if run:
+                runs.append((repo_id, run))
+    for repo_id, run in runs:
+        narrate_job(repo_id, run)
 
 
 @app.post("/api/webhooks/github", status_code=202)
@@ -346,7 +412,8 @@ def load_migration_plan(repo_id: str) -> dict:
     plan = read_json_file(repo_id, "migration.json", None)
     if plan is None:
         raise HTTPException(404, "no migration plan yet; re-analyze this repo to generate one")
-    return plan
+    # Lets the UI show "writing the plan" while the numbers are already final, and fetch the prose when it lands.
+    return {**plan, "narration": get_narration(repo_id)["state"]}
 
 
 @app.get("/api/repos/{repo_id}/migration")

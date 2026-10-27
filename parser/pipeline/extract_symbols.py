@@ -13,11 +13,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from parser.pipeline.repo_walk import iter_code_files
 from parser.resolvers.python.extract import extract as extract_python
 from parser.resolvers.javascript.extract import extract as extract_javascript
+from parser.resolvers.java.extract import extract as extract_java
+from parser.resolvers.csharp.extract import extract as extract_csharp
+from parser.resolvers.php.extract import extract as extract_php
 
 EXTENSION_TO_EXTRACTOR = {
     ".py": extract_python,
     ".js": extract_javascript,
     ".jsx": extract_javascript,
+    ".java": extract_java,
+    ".cs": extract_csharp,
+    ".php": extract_php,
 }
 
 
@@ -29,6 +35,9 @@ def main(repo_dir: str, output_dir: str) -> None:
     extracted = 0
     errors = []
     for file_path in iter_code_files(repo_path, set(EXTENSION_TO_EXTRACTOR)):
+        # The repo-relative path is stored inside the file. Using it as the file name too would hit
+        # the OS path limit (260 characters on Windows) on deep Java/C# package trees, so the name is
+        # just a sortable index plus a readable tail.
         extractor = EXTENSION_TO_EXTRACTOR[file_path.suffix]
         rel = file_path.relative_to(repo_path)
         try:
@@ -36,7 +45,7 @@ def main(repo_dir: str, output_dir: str) -> None:
         except Exception as exc:
             errors.append((str(rel), str(exc)))
             continue
-        out_file = out_path / (str(rel).replace("\\", "__").replace("/", "__") + ".symbols.json")
+        out_file = out_path / f"{extracted:06d}-{file_path.name[:60]}.symbols.json"
         out_file.write_text(json.dumps(result, indent=2), encoding="utf-8")
         extracted += 1
 

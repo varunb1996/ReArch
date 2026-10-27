@@ -16,18 +16,30 @@ from pathlib import Path
 # Test code describes how a system is checked, not how it is built. On psf/requests
 # 60% of all symbols were tests, which drowned the real subsystems in hundreds of
 # tiny "test_x" clusters, so tests are skipped by default.
-TEST_DIRS = {"tests", "test", "__tests__", "spec", "specs", "testing"}
-TEST_FILE = re.compile(r"(test_.*\.py|.*_test\.py|conftest\.py|.*\.(test|spec)\.jsx?)")
+TEST_DIRS = {"tests", "test", "__tests__", "spec", "specs", "testing", "integrationtests", "unittests"}
+TEST_FILE = re.compile(
+    r"(test_.*\.py|.*_test\.py|conftest\.py|.*\.(test|spec)\.jsx?"
+    r"|.*(Test|Tests|IT|TestCase)\.(java|php)|.*(Test|Tests)\.cs)"  # JUnit/PHPUnit/xUnit naming
+)
+# .NET test projects are whole directories named Foo.Tests / Foo.UnitTests.
+TEST_DIR_SUFFIXES = (".tests", ".test", ".unittests", ".integrationtests")
 
 EXCLUDED_DIRS = {
     ".git", "node_modules", ".venv", "venv", "dist", "build",
     "__pycache__", ".next", ".cache", "coverage", ".pytest_cache", ".mypy_cache",
+    "vendor", "target", ".gradle", ".idea", ".vs", "obj",  # Composer/Maven/Gradle/IDE/MSBuild output
 } | TEST_DIRS
+# Compiled-output directories whose names are legitimate source folders in other languages
+# (`bin/` scripts in a Python repo), so they only count for the languages that compile into them.
+EXCLUDED_DIRS_BY_SUFFIX = {".cs": {"bin"}, ".java": {"bin", "out"}}
 
 # Minified bundles and giant generated files are slow to parse and carry no
 # architecture; real legacy repos are full of them.
 MAX_FILE_BYTES = 400_000
-SKIPPED_SUFFIXES = (".min.js", ".bundle.js")
+# Hand-written Java/C#/PHP classes can be large (commons-lang's StringUtils.java is over 400 KB) and
+# are not minified, so the limit that suits JS bundles would silently drop core classes.
+MAX_FILE_BYTES_BY_SUFFIX = {".java": 2_000_000, ".cs": 2_000_000, ".php": 2_000_000}
+SKIPPED_SUFFIXES = (".min.js", ".bundle.js", ".Designer.cs", ".g.cs", ".generated.cs", ".g.i.cs")
 
 
 def load_ignore_prefixes(repo_path: Path) -> list[str]:
@@ -53,12 +65,14 @@ def iter_code_files(repo_path: Path, extensions: set[str]):
         if path.is_symlink() or not path.is_file() or path.suffix not in extensions:
             continue
         relative = path.relative_to(repo_path)
-        if any(part in EXCLUDED_DIRS for part in relative.parts[:-1]):
+        directories = relative.parts[:-1]
+        excluded = EXCLUDED_DIRS | EXCLUDED_DIRS_BY_SUFFIX.get(path.suffix, set())
+        if any(part in excluded or part.lower().endswith(TEST_DIR_SUFFIXES) for part in directories):
             continue
         if is_ignored(relative.as_posix(), prefixes):
             continue
         if TEST_FILE.fullmatch(path.name):
             continue
-        if path.name.endswith(SKIPPED_SUFFIXES) or path.stat().st_size > MAX_FILE_BYTES:
+        if path.name.endswith(SKIPPED_SUFFIXES) or path.stat().st_size > MAX_FILE_BYTES_BY_SUFFIX.get(path.suffix, MAX_FILE_BYTES):
             continue
         yield path

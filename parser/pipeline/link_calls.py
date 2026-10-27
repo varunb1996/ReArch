@@ -18,6 +18,10 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from parser.pipeline.link_nominal import NOMINAL, NominalLinker
+
 PY_STDLIB = set(sys.stdlib_module_names)
 PY_BUILTINS = set(dir(builtins))
 NODE_CORE = {
@@ -305,10 +309,13 @@ def main(symbols_dir: str, output_path: str) -> None:
         all_nodes.extend(table["nodes"])
 
     node_lookup = {n["id"]: n for n in all_nodes}
-    ctx = {t["path"]: (t, build_import_bindings(t, file_index)) for t in tables}
-    edges = []
+    # Java, C# and PHP link by class name, not module path: see link_nominal.py.
+    nominal_tables = [t for t in tables if t["language"] in NOMINAL]
+    module_tables = [t for t in tables if t["language"] not in NOMINAL]
+    ctx = {t["path"]: (t, build_import_bindings(t, file_index)) for t in module_tables}
+    edges = NominalLinker(nominal_tables, node_lookup).link() if nominal_tables else []
 
-    for table in tables:
+    for table in module_tables:
         file_path = table["path"]
         bindings = ctx[file_path][1]
 

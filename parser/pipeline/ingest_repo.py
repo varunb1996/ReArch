@@ -36,25 +36,38 @@ def clone_or_update(git_url: str, dest: Path) -> None:
 
     `--` stops a URL like `--upload-pack=...` being read as a git option,
     core.symlinks=false stops symlinks in the repo pointing at server files,
-    and the error is rewritten so server paths never reach the user.
+    core.longpaths lets Windows check out deep Java/C# package paths (past 260
+    characters git otherwise fails with "Filename too long"), and the error is
+    rewritten so server paths never reach the user.
     """
     if dest.exists():
         command = ["git", "-C", str(dest), "pull", "--ff-only"]
     else:
         dest.parent.mkdir(parents=True, exist_ok=True)
-        command = ["git", "-c", "core.symlinks=false", "clone", "--depth", "1", "--single-branch", "--no-tags", "--", git_url, str(dest)]
+        command = ["git", "-c", "core.symlinks=false", "-c", "core.longpaths=true", "clone", "--depth", "1", "--single-branch", "--no-tags", "--", git_url, str(dest)]
+    fresh_clone = not dest.exists()
     try:
-        subprocess.run(command, check=True, capture_output=True, timeout=GIT_TIMEOUT_SECONDS, env=GIT_ENV)
+        subprocess.run(command, check=True, capture_output=True, timeout=GIT_TIMEOUT_SECONDS, env=GIT_ENV, stdin=subprocess.DEVNULL)
     except subprocess.TimeoutExpired:
+        discard_partial_clone(dest, fresh_clone)
         raise RuntimeError(f"Cloning took longer than {GIT_TIMEOUT_SECONDS}s; the repository is too large for this server.") from None
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as exc:
+        # The user only sees the curated message below; the real reason goes to the server log.
+        print(f"git failed ({exc.returncode}): {exc.stderr.decode(errors='replace').strip()[-400:]}")
+        discard_partial_clone(dest, fresh_clone)
         raise RuntimeError("Could not clone the repository. Check the URL and that the repository is public.") from None
+
+
+def discard_partial_clone(dest: Path, fresh_clone: bool) -> None:
+    """A failed clone leaves a half-written directory; the next attempt would then try `git pull` on it."""
+    if fresh_clone and dest.exists():
+        shutil.rmtree(dest, ignore_errors=True)
 
 
 def check_repo_size(repo_dir: Path) -> None:
     count = sum(1 for _ in iter_code_files(repo_dir, set(EXTENSION_TO_EXTRACTOR)))
     if count == 0:
-        raise RuntimeError("No Python or JavaScript files found. ReArch currently analyzes those two languages.")
+        raise RuntimeError("No Python, JavaScript, Java, C# or PHP files found. ReArch analyzes those five languages.")
     if count > MAX_CODE_FILES:
         raise RuntimeError(f"The repository has {count} analyzable files; this server's limit is {MAX_CODE_FILES}.")
 

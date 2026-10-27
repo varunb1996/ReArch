@@ -1,0 +1,1316 @@
+{
+  "summary": {
+    "subsystems": 7,
+    "cycle_groups": 1,
+    "waves": 2,
+    "coverage": 1.0,
+    "overall_confidence": 0.95,
+    "readiness": {
+      "needs-prep": 6,
+      "ready": 1
+    },
+    "third_party": [
+      {
+        "package": "org.springframework",
+        "uses": 181
+      },
+      {
+        "package": "jakarta.persistence",
+        "uses": 38
+      },
+      {
+        "package": "jakarta.validation",
+        "uses": 11
+      },
+      {
+        "package": "jakarta.xml",
+        "uses": 3
+      }
+    ]
+  },
+  "subsystems": [
+    {
+      "id": 0,
+      "label": "src/main/java/org/springframework/samples/petclinic/owner \u00b7 PetController.PetController.processUpdateForm",
+      "purpose": "The subsystem groups the domain model for owners, pets and visits together with the web-layer that creates, updates and validates pet data. It contains the `Owner` entity (address, city, telephone, collection of pets), the `Visit` entity, a `PetController` that handles form-binding, duplicate-name checks and birth-date validation, a `PetValidator`, a `PetTypeFormatter` and a repository for pet types \u2013 all of which are tightly coupled through calls to the same model classes and Spring MVC binding infrastructure. Because these classes share the same data structures and are invoked together when a user adds or edits a pet, they naturally form a cohesive unit that implements the \u201cmanage a pet for an owner\u201d use-case in the PetClinic sample application.",
+      "members": 42,
+      "files": 6,
+      "loc": 413,
+      "languages": [
+        "java"
+      ],
+      "afferent": 8.0,
+      "efferent": 39.5,
+      "instability": 0.83,
+      "cohesion": 0.32,
+      "confidence": 0.91,
+      "in_cycle": true,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 32% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Owner.java:Owner",
+          "name": "Owner",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+          "weight": 2.0,
+          "called_from": [
+            1,
+            6
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Visit.java:Visit",
+          "name": "Visit",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+          "weight": 2.0,
+          "called_from": [
+            3,
+            6
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Visit.java:Visit.getDate",
+          "name": "Visit.getDate",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Visit.java",
+          "weight": 2.0,
+          "called_from": [
+            6
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Owner.java:Owner.addVisit",
+          "name": "Owner.addVisit",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+          "weight": 1.0,
+          "called_from": [
+            6
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Owner.java:Owner.getPet",
+          "name": "Owner.getPet",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java",
+          "weight": 1.0,
+          "called_from": [
+            6
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 3,
+          "weight": 22.0,
+          "edges": 24,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Pet",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Owner.addVisit",
+              "target": "Pet.addVisit",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Pet",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 4,
+          "weight": 15.0,
+          "edges": 15,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Person",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Owner",
+              "target": "Person",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Owner.addPet",
+              "target": "BaseEntity.isNew",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 2.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "OwnerRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PetController.findOwner",
+              "target": "OwnerRepository.findById",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "PetController.findPet",
+              "target": "OwnerRepository.findById",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 6,
+          "weight": 6.0,
+          "edges": 7
+        },
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 3,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "org.springframework",
+          "uses": 53
+        },
+        {
+          "package": "jakarta.persistence",
+          "uses": 11
+        },
+        {
+          "package": "jakarta.validation",
+          "uses": 6
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "java.util",
+          "uses": 17
+        },
+        {
+          "package": "java.time",
+          "uses": 6
+        },
+        {
+          "package": "java.text",
+          "uses": 2
+        }
+      ],
+      "top_members": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/PetController.java:PetController.processCreationForm",
+          "name": "PetController.processCreationForm",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/PetController.java:PetController.processUpdateForm",
+          "name": "PetController.processUpdateForm",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Owner.java:Owner.addPet",
+          "name": "Owner.addPet",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Owner.java:Owner.toString",
+          "name": "Owner.toString",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Owner.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/PetController.java:PetController.updatePetDetails",
+          "name": "PetController.updatePetDetails",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/PetController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java:PetValidator.validate",
+          "name": "PetValidator.validate",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/PetValidator.java"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "label": "src/main/java/org/springframework/samples/petclinic/owner \u00b7 OwnerController.OwnerController.processFindForm",
+      "purpose": "The subsystem groups the **OwnerController** class together with the **OwnerRepository** interface and all of their public methods. Structurally it handles HTTP requests that create, read, update, and search for *Owner* domain objects: it binds request parameters, validates them, builds pagination information, invokes repository queries such as `findByLastNameStartingWith` and `findById`, and returns view names or redirects with model attributes. Because the controller\u2019s methods are tightly coupled to the repository\u2019s query methods and to the `Owner` entity (e.g., accessing `owner.getLastName()`, `BaseEntity.getId()`), they form a cohesive unit that implements the \u201cowner management\u201d use-case of the PetClinic sample application. The unit exists to isolate the web-layer handling of owner-related CRUD and search operations from other concerns (pets, visits, etc.), keeping the routing, validation, pagination, and data-access logic for owners together.",
+      "members": 16,
+      "files": 2,
+      "loc": 168,
+      "languages": [
+        "java"
+      ],
+      "afferent": 4.0,
+      "efferent": 6.5,
+      "instability": 0.62,
+      "cohesion": 0.34,
+      "confidence": 1.0,
+      "in_cycle": true,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 34% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java:OwnerRepository.findById",
+          "name": "OwnerRepository.findById",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java",
+          "weight": 3.0,
+          "called_from": [
+            0,
+            6
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java:OwnerRepository",
+          "name": "OwnerRepository",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java",
+          "weight": 1.0,
+          "called_from": [
+            0,
+            6
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 4,
+          "weight": 5.0,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "OwnerController.processCreationForm",
+              "target": "BaseEntity.getId",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "OwnerController.processFindForm",
+              "target": "Person.getLastName",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "OwnerController.processFindForm",
+              "target": "BaseEntity.getId",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Owner",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "OwnerController.findOwner",
+              "target": "Owner",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 2.5,
+          "edges": 3
+        },
+        {
+          "subsystem": 6,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "org.springframework",
+          "uses": 46
+        },
+        {
+          "package": "jakarta.validation",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "java.util",
+          "uses": 6
+        }
+      ],
+      "top_members": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:OwnerController.processFindForm",
+          "name": "OwnerController.processFindForm",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:OwnerController.processUpdateOwnerForm",
+          "name": "OwnerController.processUpdateOwnerForm",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:OwnerController.addPaginationModel",
+          "name": "OwnerController.addPaginationModel",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:OwnerController.processCreationForm",
+          "name": "OwnerController.processCreationForm",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java:OwnerController.showOwner",
+          "name": "OwnerController.showOwner",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java:OwnerRepository.findById",
+          "name": "OwnerRepository.findById",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/OwnerRepository.java"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "label": "src/main/java/org/springframework/samples/petclinic/vet \u00b7 VetController.VetController.addPaginationModel",
+      "purpose": "The subsystem groups the domain model for veterinarians (the **Vet** entity and its collection wrapper **Vets**) together with the data-access layer (**VetRepository**) and the web MVC controller (**VetController**) that presents paginated lists of vets. All of the classes share the same package (`org.springframework.samples.petclinic.vet`) and the controller\u2019s methods call repository queries, manipulate `Page<Vet>` objects, and add pagination attributes to a `Model`, indicating that the unit\u2019s purpose is to retrieve, store, and display veterinarian information in a paginated view. Because the classes are tightly coupled through these calls and share the same concern (handling vet data and its UI representation), they form a cohesive subsystem that isolates the \u201cvet\u201d feature of the PetClinic sample application. The code shown only demonstrates the pagination model preparation; the rest of the subsystem manages the underlying collection of specialties and basic CRUD access for vets.",
+      "members": 16,
+      "files": 4,
+      "loc": 113,
+      "languages": [
+        "java"
+      ],
+      "afferent": 0.5,
+      "efferent": 3.0,
+      "instability": 0.86,
+      "cohesion": 0.74,
+      "confidence": 1.0,
+      "in_cycle": true,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/vet/Vet.java:Vet",
+          "name": "Vet",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java",
+          "weight": 0.5,
+          "called_from": [
+            4
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 4,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Person",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Vet",
+              "target": "Person",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 3,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "NamedEntity",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Specialty",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "org.springframework",
+          "uses": 26
+        },
+        {
+          "package": "jakarta.persistence",
+          "uses": 6
+        },
+        {
+          "package": "jakarta.xml",
+          "uses": 3
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "java.util",
+          "uses": 13
+        }
+      ],
+      "top_members": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/vet/VetController.java:VetController.addPaginationModel",
+          "name": "VetController.addPaginationModel",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/vet/Vet.java:Vet.getSpecialties",
+          "name": "Vet.getSpecialties",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/vet/VetController.java:VetController.showVetList",
+          "name": "VetController.showVetList",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/vet/Vet.java:Vet.getSpecialtiesInternal",
+          "name": "Vet.getSpecialtiesInternal",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/vet/Vet.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/vet/VetController.java:VetController.findPaginated",
+          "name": "VetController.findPaginated",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/vet/VetController.java:VetController.showResourcesVetList",
+          "name": "VetController.showResourcesVetList",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/vet/VetController.java"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "label": "src/main/java/org/springframework/samples/petclinic/owner \u00b7 Pet.Pet",
+      "purpose": "The subsystem groups a small hierarchy of domain objects that share a simple \u201cnamed\u201d characteristic. `NamedEntity` provides a `name` field with getter, setter and a `toString` that returns the name, and several concrete entities (`Pet`, `PetType`, `Specialty`) extend it (or at least use the same pattern) to represent core business concepts in the Pet-Clinic sample \u2013 a pet, its type, and a veterinarian\u2019s specialty. These classes expose only basic state-accessors (birth-date, type, a collection of `Visit`s, and methods to add a visit) and therefore are used by many controllers and validators that need to read or modify these attributes. Because they encapsulate the same minimal data model and are tightly coupled through inheritance/composition, they form a cohesive unit that isolates the core \u201cnamed entity\u201d domain model from the rest of the application.",
+      "members": 13,
+      "files": 4,
+      "loc": 74,
+      "languages": [
+        "java"
+      ],
+      "afferent": 24.5,
+      "efferent": 2.0,
+      "instability": 0.08,
+      "cohesion": 0.24,
+      "confidence": 1.0,
+      "in_cycle": true,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 24% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "large public surface (11 entry points used by other subsystems)"
+      ],
+      "exposed_api": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java:NamedEntity.getName",
+          "name": "NamedEntity.getName",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+          "weight": 6.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet.getBirthDate",
+          "name": "Pet.getBirthDate",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+          "weight": 6.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet",
+          "name": "Pet",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+          "weight": 4.0,
+          "called_from": [
+            0,
+            6
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet.addVisit",
+          "name": "Pet.addVisit",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+          "weight": 2.0,
+          "called_from": [
+            0,
+            6
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet.getType",
+          "name": "Pet.getType",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+          "weight": 2.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java:NamedEntity.setName",
+          "name": "NamedEntity.setName",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet.setBirthDate",
+          "name": "Pet.setBirthDate",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet.setType",
+          "name": "Pet.setType",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 4,
+          "weight": 1.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "NamedEntity",
+              "target": "BaseEntity",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Visit",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 22.0,
+          "edges": 24
+        },
+        {
+          "subsystem": 6,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.0,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "jakarta.persistence",
+          "uses": 15
+        },
+        {
+          "package": "jakarta.validation",
+          "uses": 1
+        },
+        {
+          "package": "org.springframework",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "java.util",
+          "uses": 4
+        },
+        {
+          "package": "java.time",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java:NamedEntity",
+          "name": "NamedEntity",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet",
+          "name": "Pet",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java:NamedEntity.getName",
+          "name": "NamedEntity.getName",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet.getBirthDate",
+          "name": "Pet.getBirthDate",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/Pet.java:Pet.addVisit",
+          "name": "Pet.addVisit",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/Pet.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/PetType.java:PetType",
+          "name": "PetType",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/PetType.java"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "label": "src/main/java/org/springframework/samples/petclinic/model \u00b7 PetClinicRuntimeHints.PetClinicRuntimeHints.registerHints",
+      "purpose": "The subsystem groups the core domain model classes (`BaseEntity` and its subclass `Person`) together with the application bootstrap (`PetClinicApplication`) and a Spring Boot runtime-hints provider (`PetClinicRuntimeHints`). Its primary function is to expose these model types for reflection-based serialization and to register static resource patterns (database scripts, message bundles, MySQL config) that the native-image compiler or other runtime-optimisation tools need to know about. By keeping the entity definitions, the main entry point, and the hint registration in one cluster, the build process can treat them as a unit that must be available at startup and during serialization, while the rest of the code (controllers, validators, etc.) simply depends on these classes. The exact business purpose of the entities (e.g., representing a person in the pet-clinic domain) is evident from their names, but the subsystem\u2019s cohesion is driven by the technical requirement to register them for reflection and resource access.",
+      "members": 13,
+      "files": 4,
+      "loc": 73,
+      "languages": [
+        "java"
+      ],
+      "afferent": 23.5,
+      "efferent": 0.5,
+      "instability": 0.02,
+      "cohesion": 0.09,
+      "confidence": 1.0,
+      "in_cycle": true,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 9% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java:BaseEntity.getId",
+          "name": "BaseEntity.getId",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+          "weight": 8.0,
+          "called_from": [
+            0,
+            1
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java:BaseEntity.isNew",
+          "name": "BaseEntity.isNew",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+          "weight": 4.0,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/Person.java:Person",
+          "name": "Person",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+          "weight": 4.0,
+          "called_from": [
+            0,
+            2
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java:BaseEntity",
+          "name": "BaseEntity",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+          "weight": 3.5,
+          "called_from": [
+            0,
+            3
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/Person.java:Person.getLastName",
+          "name": "Person.getLastName",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+          "weight": 2.0,
+          "called_from": [
+            0,
+            1
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java:BaseEntity.setId",
+          "name": "BaseEntity.setId",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java",
+          "weight": 1.0,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/Person.java:Person.getFirstName",
+          "name": "Person.getFirstName",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/Person.java",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Vet",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 15.0,
+          "edges": 15
+        },
+        {
+          "subsystem": 1,
+          "weight": 5.0,
+          "edges": 5
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 3,
+          "weight": 1.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "org.springframework",
+          "uses": 21
+        },
+        {
+          "package": "jakarta.persistence",
+          "uses": 6
+        },
+        {
+          "package": "jakarta.validation",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "java.io",
+          "uses": 2
+        }
+      ],
+      "top_members": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/PetClinicRuntimeHints.java:PetClinicRuntimeHints.registerHints",
+          "name": "PetClinicRuntimeHints.registerHints",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/PetClinicRuntimeHints.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java:BaseEntity.getId",
+          "name": "BaseEntity.getId",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java:BaseEntity",
+          "name": "BaseEntity",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/Person.java:Person",
+          "name": "Person",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/Person.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java:BaseEntity.isNew",
+          "name": "BaseEntity.isNew",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/BaseEntity.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/model/Person.java:Person.getLastName",
+          "name": "Person.getLastName",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/model/Person.java"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "label": "src/main/java/org/springframework/samples/petclinic/system \u00b7 WebConfiguration.WebConfiguration.localeChangeInterceptor",
+      "purpose": "The five-member subsystem groups together the few Spring Boot configuration and controller classes that provide the *infrastructure* of the Petclinic sample application. `CacheConfiguration` defines a JCache (`javax.cache`) bean (using a `MutableConfiguration` with statistics enabled) that other parts of the app can inject; `WebConfiguration` sets up web-level beans such as a `SessionLocaleResolver` and a `LocaleChangeInterceptor` and registers the interceptor with the MVC interceptor registry, thereby enabling locale-aware request handling. `WelcomeController` supplies a simple endpoint that returns the home page, while `CrashController` deliberately throws a `RuntimeException` (via `triggerException`) to let developers test the application\u2019s error-handling and monitoring pipelines. These classes are clustered together because they all contribute to the \u201csystem\u201d layer \u2013 configuring cross-cutting concerns (caching, locale resolution, MVC interceptors) and exposing minimal diagnostic controllers \u2013 and they do not depend on any domain-specific services, making them a cohesive unit of application-wide infrastructure.",
+      "members": 11,
+      "files": 4,
+      "loc": 80,
+      "languages": [
+        "java"
+      ],
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null,
+      "cohesion": 1.0,
+      "confidence": 1.0,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [],
+      "depends_on": [],
+      "depended_on_by": [],
+      "third_party": [
+        {
+          "package": "org.springframework",
+          "uses": 21
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "javax.cache",
+          "uses": 2
+        },
+        {
+          "package": "java.util",
+          "uses": 1
+        }
+      ],
+      "top_members": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java:CacheConfiguration.cacheConfiguration",
+          "name": "CacheConfiguration.cacheConfiguration",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java:WebConfiguration.localeChangeInterceptor",
+          "name": "WebConfiguration.localeChangeInterceptor",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java:CacheConfiguration.petclinicCacheConfigurationCustomizer",
+          "name": "CacheConfiguration.petclinicCacheConfigurationCustomizer",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java:WebConfiguration.localeResolver",
+          "name": "WebConfiguration.localeResolver",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java:WebConfiguration.addInterceptors",
+          "name": "WebConfiguration.addInterceptors",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/system/WebConfiguration.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/system/CrashController.java:CrashController.triggerException",
+          "name": "CrashController.triggerException",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/system/CrashController.java"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "label": "src/main/java/org/springframework/samples/petclinic/owner \u00b7 VisitController.VisitController.processNewVisitForm",
+      "purpose": "The six classes in this subsystem are all the methods of **VisitController**, a Spring MVC controller that handles web requests related to creating and editing a veterinary **Visit** for a pet owned by an **Owner**.  \nThe controller\u2019s `loadPetWithVisit` method (shown) fetches an `Owner` from `OwnerRepository`, retrieves the requested `Pet` from that owner, puts both objects into the model, and creates a new `Visit` instance that will be bound to the form. The other methods (`initNewVisitForm`, `processNewVisitForm`, `setAllowedFields`, `minVisitDate`, the constructor) together configure data-binding, enforce validation rules (e.g., disallowing certain fields, ensuring the visit date is not before today), display the form for a new visit, and persist the submitted visit by calling `Owner.addVisit` / `Pet.addVisit`.  \n\nBecause all of these operations revolve around the same request-handling flow\u2014pre-loading the domain objects, preparing the model, validating input, and saving a new `Visit`\u2014they are grouped into a single cohesive unit (the controller) that encapsulates the \u201cadd-visit-to-pet\u201d use case in the PetClinic application.",
+      "members": 7,
+      "files": 1,
+      "loc": 73,
+      "languages": [
+        "java"
+      ],
+      "afferent": 0,
+      "efferent": 9.0,
+      "instability": 1.0,
+      "cohesion": 0.0,
+      "confidence": 1.0,
+      "in_cycle": false,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "weak boundary: only 0% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 6.0,
+          "edges": 7,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Owner",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Visit",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "VisitController.loadPetWithVisit",
+              "target": "Owner.getPet",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "OwnerRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "VisitController.loadPetWithVisit",
+              "target": "OwnerRepository.findById",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 3,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Pet",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "VisitController.loadPetWithVisit",
+              "target": "Pet.addVisit",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [],
+      "third_party": [
+        {
+          "package": "org.springframework",
+          "uses": 13
+        },
+        {
+          "package": "jakarta.validation",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "java.util",
+          "uses": 5
+        },
+        {
+          "package": "java.time",
+          "uses": 4
+        }
+      ],
+      "top_members": [
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:VisitController.loadPetWithVisit",
+          "name": "VisitController.loadPetWithVisit",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:VisitController.processNewVisitForm",
+          "name": "VisitController.processNewVisitForm",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:VisitController.minVisitDate",
+          "name": "VisitController.minVisitDate",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:VisitController.setAllowedFields",
+          "name": "VisitController.setAllowedFields",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:VisitController",
+          "name": "VisitController",
+          "kind": "class",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+        },
+        {
+          "id": "java:src/main/java/org/springframework/samples/petclinic/owner/VisitController.java:VisitController.VisitController",
+          "name": "VisitController.VisitController",
+          "kind": "method",
+          "path": "src/main/java/org/springframework/samples/petclinic/owner/VisitController.java"
+        }
+      ]
+    }
+  ],
+  "waves": [
+    {
+      "index": 0,
+      "units": [
+        {
+          "subsystems": [
+            5
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "cyclic": true
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "units": [
+        {
+          "subsystems": [
+            6
+          ],
+          "cyclic": false
+        }
+      ]
+    }
+  ],
+  "cycles": [
+    {
+      "members": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "order_after_cuts": [
+        [
+          4
+        ],
+        [
+          1,
+          3
+        ],
+        [
+          0,
+          2
+        ]
+      ],
+      "cut_candidates": [
+        {
+          "from": 3,
+          "to": 0,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Visit",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 4,
+          "to": 2,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Vet",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 1,
+          "to": 0,
+          "weight": 1.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Owner",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "OwnerController.findOwner",
+              "target": "Owner",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "narrative": "## Target shape  \nThe migration will produce two extraction waves. Wave 0 contains the five tightly-coupled subsystems that currently form a dependency cycle; after cutting the three cheapest links they can be extracted in the order #4 \u2192 #1 + #3 \u2192 #0 + #2. Wave 1 holds the remaining subsystem, which depends only on wave 0 components. All interfaces will be introduced at the entry points already listed in the facts.\n\n## Migration sequence  \n- **Wave 0** \u2013 cut the three cheapest cycle links and then extract:  \n  1. **#4** \u2013 expose its `registerHints` entry point as a fa\u00e7ade over the runtime-hint registration logic; the only blocker is the need to cut the link from #4 to #2.  \n  2. **#1** and **#3** \u2013 each gets a fa\u00e7ade over its public entry points (`processFindForm` for #1 and the `Pet` class API for #3). Both are blocked by the link from #1 to #0, which must be cut before they can be extracted.  \n  3. **#0** and **#2** \u2013 each receives a fa\u00e7ade over its primary entry points (`processUpdateForm` for #0 and `addPaginationModel` for #2). Their blockers are the remaining cut links (#3 \u2192 #0 and #4 \u2192 #2).  \n\n- **Wave 1** \u2013 **#6** can be extracted after wave 0 is complete; it will expose its `processNewVisitForm` method behind a fa\u00e7ade. The only blocker is its weak boundary (no internal dependencies), so no additional cut is required.\n\n## Biggest risks  \n- Cutting the link #3 \u2192 #0 may break existing callers that rely on the direct `Pet`-to-`PetController` interaction.  \n- Removing the link #4 \u2192 #2 could affect the runtime-hint registration that the Vet subsystem expects.  \n- The link #1 \u2192 #0 is the most expensive to cut; failing to replace it cleanly may cause Owner-related requests to break.  \n- Low cohesion in several subsystems (especially #0, #1, #3, #4) means the extracted modules may have large public surfaces, increasing maintenance overhead.  \n- Instability scores above 0.8 for #0, #2, and #6 indicate they are likely to change frequently, which could cause churn in the newly created interfaces.\n\n## What this analysis cannot tell you  \n- The functional impact of the introduced fa\u00e7ades on runtime behavior or performance.  \n- Whether the cut links can be replaced with simple delegations or require more extensive refactoring.  \n- The exact effort needed to rewrite tests that currently cross the cycle boundaries.  \n- Any hidden runtime configuration (e.g., Spring bean wiring) that may depend on the current package structure.",
+  "narrative_warnings": []
+}

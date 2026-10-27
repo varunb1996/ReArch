@@ -1,0 +1,460 @@
+{
+  "0": {
+    "text": "The members of this cluster form the **catalog-and-authentication API layer** of the application.  \n* It contains domain-level exceptions, guard helpers, repository interfaces, EF Core data-access classes ( `CatalogContext`, `EfRepository`, seed data logic ), and a set of specification objects used to filter catalog entities.  \n* Around the same area are the public-API endpoint classes (`AuthenticateEndpoint`, the various `CatalogItem*Endpoint` and `CatalogType*Endpoint` types) together with request/response DTOs, a mapping profile, pagination helpers and image-validation utilities. All of these classes depend on the same data model (`CatalogItem`, `CatalogBrand`, `CatalogType`) and on the repository abstractions, and they are wired together by the same ASP.NET routing/handler infrastructure.  \n\nBecause they share the same data-access layer, the same exception/guard infrastructure, and expose CRUD operations plus authentication for catalog items, they are grouped together as a cohesive subsystem that implements the **catalog management and security surface of the system**. The seed routine shown simply populates the `CatalogContext` with initial brand data, confirming that this subsystem is responsible for initializing and serving catalog data.",
+    "member_count": 109,
+    "grounded_in": {
+      "calls_out": [
+        "CatalogItem",
+        "CatalogItem.UpdatePictureUri",
+        "ITokenClaimsService.GetTokenAsync",
+        "IUriComposer.ComposePicUri",
+        "unresolved:Assembly.GetExecutingAssembly",
+        "unresolved:CreateMap",
+        "unresolved:CreateMap<CatalogBrand, CatalogBrandDto>().ForMember",
+        "unresolved:CreateMap<CatalogType, CatalogTypeDto>().ForMember",
+        "unresolved:Guid.NewGuid",
+        "unresolved:JsonSerializer.Deserialize",
+        "unresolved:JsonSerializer.Serialize",
+        "unresolved:JsonSerializerOptions",
+        "unresolved:List",
+        "unresolved:Math.Ceiling",
+        "unresolved:Math.Ceiling((decimal)totalItems / request.PageSize).ToString"
+      ],
+      "calls_in": [
+        "<module>",
+        "CatalogViewModelService.GetCatalogItems"
+      ],
+      "excerpt_source": "CatalogContextSeed.SeedAsync (src/Infrastructure/Data/CatalogContextSeed.cs)"
+    }
+  },
+  "1": {
+    "text": "The members of this cluster are all the types that build and expose the data needed for the public-facing pages of the web site: view-model interfaces, concrete services that assemble catalog and basket view models, Razor-page models (Index, Privacy, Error), a shared view component that renders the shopping-basket widget, and a handful of helper/extension classes for caching keys, URL generation and e-mail confirmation.  \n\nThe core responsibility of the subsystem is to retrieve domain entities (catalog items, brands, types, basket contents) from repositories, apply filtering and pagination specifications, map the results into lightweight view-model objects, cache the catalog look-ups, and expose the resulting models to the MVC/Razor pages. It also provides cross-cutting utilities (email sending, cache-key generation, URL helpers) that the page models use for actions such as sending a confirmation e-mail.  \n\nBecause all of these classes collaborate through the same set of interfaces (e.g., ICatalogViewModelService, IBasketViewModelService) and are only referenced by the page-level code (IndexModel, CheckoutModel, etc.), they form a cohesive \u201cpresentation-layer\u201d subsystem that isolates UI-specific data shaping and auxiliary services from the underlying application core. The clustering reflects this logical boundary rather than any deeper business domain.",
+    "member_count": 54,
+    "grounded_in": {
+      "calls_out": [
+        "Basket",
+        "BasketWithItemsSpecification",
+        "CatalogFilterPaginatedSpecification",
+        "CatalogFilterSpecification",
+        "CatalogItemViewModel",
+        "CatalogItemsSpecification",
+        "IBasketQueryService.CountTotalBasketItems",
+        "IUriComposer.ComposePicUri",
+        "PaginationInfoViewModel",
+        "unresolved:(await GetBrands()).ToList",
+        "unresolved:(await GetTypes()).ToList",
+        "unresolved:Guard.Against.Null",
+        "unresolved:Guid.TryParse",
+        "unresolved:HtmlEncoder.Default.Encode",
+        "unresolved:Items.Sum"
+      ],
+      "calls_in": [
+        "CheckoutModel",
+        "CheckoutModel.SetBasketModelAsync",
+        "IndexModel",
+        "IndexModel.OnGet",
+        "IndexModel.OnPost",
+        "IndexModel.OnPostUpdate"
+      ],
+      "excerpt_source": "CatalogViewModelService.GetCatalogItems (src/Web/Services/CatalogViewModelService.cs)"
+    }
+  },
+  "2": {
+    "text": "The subsystem groups the core domain entities (Basket, BasketItem, Order, OrderItem, CatalogItem, CatalogBrand, CatalogType, Buyer, PaymentMethod, Address) together with the aggregate-root marker interface and a set of specifications, and provides two application services \u2013 BasketService and OrderService \u2013 that orchestrate those entities. Its primary responsibility is to model and manage the e-commerce shopping flow: building a basket, adding or removing items, validating the basket, and converting a validated basket into an order with shipping information. The cohesion comes from the shared aggregate-root pattern, the use of Guard checks and specifications, and the fact that all callers (view-model services, checkout page, catalog endpoints) interact with the basket or order through these services. Because the code only shows entity construction, quantity handling, and order-creation logic, the subsystem\u2019s purpose is limited to the business rules around catalog items, baskets, and orders rather than any UI or persistence concerns.",
+    "member_count": 51,
+    "grounded_in": {
+      "calls_out": [
+        "BasketWithItemsSpecification",
+        "IAppLogger.LogInformation",
+        "IUriComposer.ComposePicUri",
+        "unresolved:DateTime",
+        "unresolved:Guard.Against.EmptyBasketOnCheckout",
+        "unresolved:Guard.Against.NegativeOrZero",
+        "unresolved:Guard.Against.Null",
+        "unresolved:Guard.Against.NullOrEmpty",
+        "unresolved:Guard.Against.OutOfRange",
+        "unresolved:Guard.Against.Zero",
+        "unresolved:Items.Any",
+        "unresolved:Items.First",
+        "unresolved:List",
+        "unresolved:Query.Where",
+        "unresolved:Result<Basket>.NotFound"
+      ],
+      "calls_in": [
+        "BasketViewModelService.CreateBasketForUser",
+        "BasketViewModelService.GetBasketItems",
+        "CheckoutModel.OnPost",
+        "CreateCatalogItemEndpoint.HandleAsync"
+      ],
+      "excerpt_source": "OrderService.CreateOrderAsync (src/ApplicationCore/Services/OrderService.cs)"
+    }
+  },
+  "3": {
+    "text": "The subsystem groups together the services that perform CRUD operations on \u201ccatalog\u201d data and the infrastructure that caches those results in the browser\u2019s local storage. `CatalogItemService` and `CatalogLookupDataService` implement the core HTTP-based calls (via `HttpService`) defined by the shared interfaces (`ICatalogItemService`, `ICatalogLookupDataService`), while the corresponding `Cached\u2026Decorator` classes wrap those services, read/write a `CacheEntry<T>` from `ILocalStorageService`, and fall back to the underlying service when the cached value is missing or stale (as shown in the `List` method). `CacheEntry` simply stores a value together with a creation timestamp, and `ToastService` provides UI feedback that the other services can invoke. Together these types form a cohesive caching layer for catalog data, isolating the caching concern from the raw HTTP logic and allowing the rest of the application to request catalog items without worrying about network latency or persistence.",
+    "member_count": 51,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:(await List()).FirstOrDefault",
+        "unresolved:Countdown.Start",
+        "unresolved:Countdown.Stop",
+        "unresolved:Countdown?.Dispose",
+        "unresolved:JsonSerializer.Deserialize",
+        "unresolved:JsonSerializer.Serialize",
+        "unresolved:JsonSerializerOptions",
+        "unresolved:OnHide?.Invoke",
+        "unresolved:OnShow?.Invoke",
+        "unresolved:StringContent",
+        "unresolved:Task.WhenAll",
+        "unresolved:Timer",
+        "unresolved:_httpClient.DeleteAsync",
+        "unresolved:_httpClient.GetAsync",
+        "unresolved:_httpClient.GetFromJsonAsync"
+      ],
+      "calls_in": [
+        "List.OnAfterRenderAsync",
+        "List.ReloadCatalogItems"
+      ],
+      "excerpt_source": "CachedCatalogItemServiceDecorator.List (src/BlazorAdmin/Services/CachedCatalogItemServiceDecorator.cs)"
+    }
+  },
+  "4": {
+    "text": "The members in this cluster are all centered on user-account management and authentication. The **ClaimValue**, **Constants.Roles**, and **UserInfo** types define the data structures used to represent a user\u2019s claims and role information, while the **ManageController** and **UserController** expose MVC actions for viewing and editing the current user\u2019s profile, passwords, external logins, and two-factor authentication (including enabling an authenticator app, generating recovery codes, and handling login linking). The accompanying view-model classes provide the strongly-typed payloads for those actions.  \n\nBecause these classes share the same namespace (`BlazorShared.Authorization` and `Web.Controllers/Manage`) and call the same services (e.g., `_userManager`, `_signInManager`, `ITokenClaimsService`, logging, and token generation), they are grouped together as a cohesive subsystem that implements the application\u2019s account-maintenance UI and the underlying claim-based security model. The subsystem exists to isolate all user-self-service and security-related endpoints, keeping authentication-related data structures, controller logic, and view models together.",
+    "member_count": 46,
+    "grounded_in": {
+      "calls_out": [
+        "IAppLogger.LogInformation",
+        "ITokenClaimsService.GetTokenAsync",
+        "unresolved:(await _signInManager.GetExternalAuthenticationSchemesAsync()) .Where(auth => model.CurrentLogins.All(ul => auth.Name !=",
+        "unresolved:(await _signInManager.GetExternalAuthenticationSchemesAsync()).Where",
+        "unresolved:ApplicationException",
+        "unresolved:ChallengeResult",
+        "unresolved:DateTime.Now.AddMinutes",
+        "unresolved:Guard.Against.Null",
+        "unresolved:HttpContext.SignOutAsync",
+        "unresolved:List",
+        "unresolved:MemoryCacheEntryOptions",
+        "unresolved:ModelState.AddModelError",
+        "unresolved:Ok",
+        "unresolved:RedirectToAction",
+        "unresolved:StringBuilder"
+      ],
+      "calls_in": [],
+      "excerpt_source": "ManageController.EnableAuthenticator (src/Web/Controllers/ManageController.cs)"
+    }
+  },
+  "5": {
+    "text": "The subsystem groups together everything needed for ASP.NET Core Identity handling and JWT generation. It defines the EF Core `AppIdentityDbContext` (including seeding), the `ApplicationUser` entity, and the `IdentityTokenClaimService` that looks up a user, gathers its roles and builds a signed JWT (using `JwtSecurityTokenHandler`, a secret key, and claim objects). It also contains the Razor-Page models for the standard account UI (register, login, confirm-email, logout) and a custom `UserNotFoundException`, all of which depend on the same identity services (`UserManager`, `SignInManager`, `IBasketService` for anonymous-basket transfer). Because these types all share the same data model and authentication infrastructure, they are clustered together as a cohesive \u201cidentity\u201d module that provides user persistence, UI flows, and token-based authentication for the rest of the application.",
+    "member_count": 31,
+    "grounded_in": {
+      "calls_out": [
+        "IBasketService.TransferBasketAsync",
+        "unresolved:(await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList",
+        "unresolved:Claim",
+        "unresolved:ClaimsIdentity",
+        "unresolved:DateTime.Now.AddMinutes",
+        "unresolved:DateTime.UtcNow.AddDays",
+        "unresolved:Encoding.ASCII.GetBytes",
+        "unresolved:Guard.Against.Null",
+        "unresolved:Guard.Against.NullOrEmpty",
+        "unresolved:Guid.TryParse",
+        "unresolved:HtmlEncoder.Default.Encode",
+        "unresolved:HttpContext.SignOutAsync",
+        "unresolved:IdentityRole",
+        "unresolved:InvalidOperationException",
+        "unresolved:JwtSecurityTokenHandler"
+      ],
+      "calls_in": [
+        "<module>",
+        "AuthenticateEndpoint.HandleAsync",
+        "UserController.CreateUserInfo"
+      ],
+      "excerpt_source": "IdentityTokenClaimService.GetTokenAsync (src/Infrastructure/Identity/IdentityTokenClaimService.cs)"
+    }
+  },
+  "6": {
+    "text": "The six-member subsystem groups together the **basket-checkout workflow** and the **logging abstraction** that supports it.  \n* The `IBasketService` and `IOrderService` interfaces define the core domain operations for manipulating a shopping basket (add items, set quantities, transfer a basket, delete it) and for turning a basket into an order (`CreateOrderAsync`).  \n* `CheckoutModel`, `IndexModel`, and `SuccessModel` are Razor-Page page-models that drive the UI for viewing the basket, updating it, and completing the purchase; they call the basket service methods, read/write a cookie that stores a temporary basket identifier, and use `Guard.Against.Null` to validate the HTTP context.  \n* `IAppLogger` and its concrete `LoggerAdapter` provide a thin, application-wide logging contract (information and warning levels) that the page-models and services can use without depending on a specific logging framework.  \n\nBecause all of these types collaborate to present, modify, and finalize a user\u2019s shopping basket while recording diagnostic events, they naturally cluster together as a cohesive \u201cbasket/checkout + logging\u201d subsystem. The exact business purpose (e.g., e-commerce) is inferred from the naming, but the structural facts only guarantee that the code handles basket state, order creation, and logging.",
+    "member_count": 28,
+    "grounded_in": {
+      "calls_out": [
+        "Address",
+        "BasketViewModel",
+        "IBasketViewModelService.GetOrCreateBasketForUser",
+        "IBasketViewModelService.Map",
+        "unresolved:BadRequest",
+        "unresolved:CookieOptions",
+        "unresolved:DateTime.Today.AddYears",
+        "unresolved:Guard.Against.Null",
+        "unresolved:Guid.NewGuid",
+        "unresolved:Guid.NewGuid().ToString",
+        "unresolved:Guid.TryParse",
+        "unresolved:RedirectToPage",
+        "unresolved:Request.Cookies.ContainsKey",
+        "unresolved:Response.Cookies.Append",
+        "unresolved:_itemRepository.GetByIdAsync"
+      ],
+      "calls_in": [
+        "BasketService.SetQuantities",
+        "LoginModel.TransferAnonymousBasketToUserAsync",
+        "ManageController.ChangePassword",
+        "ManageController.Disable2fa",
+        "ManageController.EnableAuthenticator",
+        "ManageController.GenerateRecoveryCodes",
+        "ManageController.ResetAuthenticator"
+      ],
+      "excerpt_source": "IndexModel.GetOrSetBasketCookieAndUserName (src/Web/Pages/Basket/Index.cshtml.cs)"
+    }
+  },
+  "7": {
+    "text": "The subsystem groups together a set of **query specifications**, **mediator-based request/handler classes**, **view-model DTOs**, and an **MVC controller** that all revolve around reading order-related data.  \n* The specification classes (e.g., `BasketWithItemsSpecification`, `CustomerOrdersSpecification`, `OrderWithItemsByIdSpec`) encapsulate EF Core query logic for loading orders, baskets and their items with the appropriate `Include` clauses.  \n* The \u201cfeature\u201d classes (`GetMyOrders`, `GetMyOrdersHandler`, `GetOrderDetails`, `GetOrderDetailsHandler`) implement the application-layer request-response pattern (likely MediatR), using the specifications to fetch data from an `IOrderRepository` and then mapping the domain entities to simple view-model objects (`OrderViewModel`, `OrderDetailViewModel`, `OrderItemViewModel`).  \n* `OrderController` exposes HTTP endpoints (`MyOrders`, `Detail`) that forward the incoming request to the mediator (`_mediator.Send`) and return the resulting view models to the UI.\n\nBecause all of these types share the same concern\u2014**retrieving and presenting order or basket information for a given user or order id**\u2014they are clustered together as a cohesive unit that isolates read-only order queries from other parts of the system (e.g., order creation or payment). The subsystem therefore exists to provide a clean, reusable way to query, transform, and serve order data to the web layer.",
+    "member_count": 26,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:BadRequest",
+        "unresolved:Guard.Against.Null",
+        "unresolved:Query .Where(b => b.BuyerId == buyerId).Include",
+        "unresolved:Query .Where(b => b.Id == basketId).Include",
+        "unresolved:Query .Where(order => order.Id == orderId) .Include(o => o.OrderItems).ThenInclude",
+        "unresolved:Query .Where(order => order.Id == orderId).Include",
+        "unresolved:Query.Where",
+        "unresolved:Query.Where(o => o.BuyerId == buyerId) .Include(o => o.OrderItems).ThenInclude",
+        "unresolved:Query.Where(o => o.BuyerId == buyerId).Include",
+        "unresolved:View",
+        "unresolved:_mediator.Send",
+        "unresolved:_orderRepository.FirstOrDefaultAsync",
+        "unresolved:_orderRepository.ListAsync",
+        "unresolved:nameof",
+        "unresolved:o.Total"
+      ],
+      "calls_in": [
+        "BasketService.AddItemToBasket",
+        "BasketService.SetQuantities",
+        "BasketService.TransferBasketAsync",
+        "BasketViewModelService.GetOrCreateBasketForUser",
+        "OrderService.CreateOrderAsync"
+      ],
+      "excerpt_source": "GetOrderDetailsHandler.Handle (src/Web/Features/OrderDetails/GetOrderDetailsHandler.cs)"
+    }
+  },
+  "8": {
+    "text": "The eight-member subsystem groups a set of small Blazor helper classes together with a page-level component that derives from them. The three base classes \u2013 **BlazorComponent**, **BlazorLayoutComponent**, and **RefreshBroadcast** \u2013 each expose a `CallRequestRefresh` / `DoRefresh` pattern that lets a component raise a refresh event and react to it, while **ToastComponent** provides a reusable UI for showing transient messages (show/hide and configuration). The **List** page class inherits from **BlazorComponent** and uses those refresh mechanisms (e.g., `RefreshRequested?.Invoke`, `StateHasChanged`) together with injected catalog services to load, display and manipulate catalog items, brands, and types.  \n\nStructurally, the subsystem exists as a cohesive unit because all members share the same concern: providing common UI-behaviour (initialisation, refresh broadcasting, toast notifications) for Blazor pages in the admin area, and the page component (`List`) composes these helpers to implement its CRUD-style catalog listing. The clustering reflects this shared responsibility rather than any business-logic domain.",
+    "member_count": 24,
+    "grounded_in": {
+      "calls_out": [
+        "ICatalogItemService.List",
+        "ICatalogLookupDataService.List",
+        "unresolved:CreateComponent.Open",
+        "unresolved:DeleteComponent.Open",
+        "unresolved:DetailsComponent.Open",
+        "unresolved:EditComponent.Open",
+        "unresolved:Lazy",
+        "unresolved:RefreshRequested?.Invoke",
+        "unresolved:StateHasChanged",
+        "unresolved:base.OnAfterRenderAsync",
+        "unresolved:base.OnInitialized"
+      ],
+      "calls_in": [],
+      "excerpt_source": "List (src/BlazorAdmin/Pages/CatalogItemPage/List.razor.cs)"
+    }
+  },
+  "9": {
+    "text": "The nine-plus classes in this cluster implement the **admin-side editing flow for catalog items** and the small JavaScript helpers that the Razor pages use.  \n* The `CatalogItemViewModel`, `ICatalogItemViewModelService`, `CatalogItemViewModelService`, and the page models `IndexModel` / `EditCatalogItemModel` work together to retrieve a catalog item, expose it to a Razor page, accept posted changes, and persist them via `_catalogItemRepository`. The `UpdateCatalogItem` method shown validates the retrieved entity, builds a `CatalogItemDetails` DTO from the view-model, calls the domain entity\u2019s `UpdateDetails`, and saves the changes.  \n* The `Cookies`, `Css`, `Route`, and `JSInteropConstants` classes are thin wrappers around browser-side operations (reading/writing cookies, toggling body overflow, navigating routes, invoking JS via Blazor\u2019s `IJSRuntime`). They are grouped with the admin pages because those pages need client-side state (e.g., remembering UI preferences or handling navigation) while performing catalog edits.  \n\nTogether they form a cohesive subsystem that provides a **full stack \u201cedit catalog item\u201d feature**: server-side view-model handling and persistence, plus client-side utilities accessed through Blazor JS interop. The grouping reflects the shared responsibility of these types for the admin UI\u2019s data flow and browser interactions.",
+    "member_count": 24,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:Guard.Against.Null",
+        "unresolved:RedirectToPage",
+        "unresolved:_catalogItemRepository.GetByIdAsync",
+        "unresolved:_catalogItemRepository.UpdateAsync",
+        "unresolved:_jsRuntime.InvokeAsync",
+        "unresolved:existingCatalogItem.UpdateDetails",
+        "unresolved:nameof"
+      ],
+      "calls_in": [
+        "CatalogViewModelService.GetCatalogItems"
+      ],
+      "excerpt_source": "CatalogItemViewModelService.UpdateCatalogItem (src/Web/Services/CatalogItemViewModelService.cs)"
+    }
+  },
+  "10": {
+    "text": "The ten-member subsystem groups together everything that defines and manipulates the **catalog-related Entity Framework Core model** and the **basket-query service** that reads basket data.  \n* The migration classes (`InitialModel`, `FixBuyerId`, `FixShipToAddress`) and the snapshot (`CatalogContextModelSnapshot`) contain the fluent-API calls that create tables, keys, indexes and sequences for the catalog domain (brands, products, etc.) and also adjust columns such as `BuyerId` and `ShipToAddress`.  \n* `BasketQueryService` implements the `IBasketQueryService` interface and uses the same `CatalogContext` (`_dbContext`) to run LINQ-to-SQL queries that filter `Baskets` by `BuyerId` and sum the quantities of the basket items (`CountTotalBasketItems`).  \n* Supporting types (`Constants`, `BaseApiController`, `SlugifyParameterTransformer`, `FileViewModel`) are infrastructure helpers used by the web layer but do not introduce new business logic; they are co-located because they all depend on the same data-access project.  \n\nTogether these files form a cohesive unit that **encapsulates the data-model definition (migrations and snapshot) and the read-only query service that operates on that model**, allowing the rest of the application to retrieve basket totals without needing to know the underlying EF Core schema. The subsystem exists to keep all persistence-related definitions and queries in one place, ensuring schema evolution and query logic stay synchronized.",
+    "member_count": 21,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:Regex.Replace",
+        "unresolved:Regex.Replace(str, \"([a-z])([A-Z])\", \"$1-$2\").ToLower",
+        "unresolved:SqlServerModelBuilderExtensions.UseIdentityColumns",
+        "unresolved:SqlServerPropertyBuilderExtensions.UseHiLo",
+        "unresolved:SqlServerPropertyBuilderExtensions.UseIdentityColumn",
+        "unresolved:_dbContext.Baskets .Where(basket => basket.BuyerId == username) .SelectMany(item => item.Items).SumAsync",
+        "unresolved:_dbContext.Baskets .Where(basket => basket.BuyerId == username).SelectMany",
+        "unresolved:_dbContext.Baskets.Where",
+        "unresolved:b.HasIndex",
+        "unresolved:b.HasKey",
+        "unresolved:b.HasOne",
+        "unresolved:b.HasOne(\"Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate.Basket\", null) .WithMany(\"Items\") .HasForeignKey(\"",
+        "unresolved:b.HasOne(\"Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate.Basket\", null) .WithMany(\"Items\").HasForeignKey",
+        "unresolved:b.HasOne(\"Microsoft.eShopWeb.ApplicationCore.Entities.BasketAggregate.Basket\", null).WithMany",
+        "unresolved:b.HasOne(\"Microsoft.eShopWeb.ApplicationCore.Entities.CatalogBrand\", \"CatalogBrand\") .WithMany() .HasForeignKey(\"Catalog"
+      ],
+      "calls_in": [
+        "<module>",
+        "BasketViewModelService.CountTotalBasketItems"
+      ],
+      "excerpt_source": "CatalogContextModelSnapshot.BuildModel (src/Infrastructure/Data/Migrations/CatalogContextModelSnapshot.cs)"
+    }
+  },
+  "11": {
+    "text": "The subsystem groups together a set of DTO-style model classes (CatalogItem, CatalogBrand, CatalogType, their \u201cResponse\u201d variants, paging and lookup wrappers) together with a small error-handling infrastructure (ErrorDetails and an ExceptionMiddleware that catches exceptions, formats them as JSON and writes the appropriate HTTP status code).  \n\nStructurally, the middleware is responsible for intercepting unhandled exceptions in the public API pipeline, distinguishing a specific `DuplicateException` (returning 409 Conflict) from other errors, and serializing an `ErrorDetails` object to the response body using `JsonSerializer`. The model classes provide the shape of data that the API returns or receives (catalog items, brands, types, paged results, lookup data) and include helper methods for validating image extensions and converting image data to/from Base64 strings.  \n\nBecause all of these types are used by the same API layer\u2014models that are sent over HTTP and a middleware that formats error responses\u2014they naturally form a cohesive unit that isolates the public-facing contract and its error-handling logic from the rest of the application.",
+    "member_count": 20,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:Convert.FromBase64String",
+        "unresolved:Convert.ToBase64String",
+        "unresolved:JsonSerializer.Serialize",
+        "unresolved:List",
+        "unresolved:MemoryStream",
+        "unresolved:Path.GetExtension",
+        "unresolved:StreamReader",
+        "unresolved:_next",
+        "unresolved:context.Response.WriteAsync",
+        "unresolved:memStream.ToArray",
+        "unresolved:new ErrorDetails() { StatusCode = context.Response.StatusCode, Message = duplicationException.Message }.ToString",
+        "unresolved:new ErrorDetails() { StatusCode = context.Response.StatusCode, Message = exception.Message }.ToString",
+        "unresolved:reader.BaseStream.CopyToAsync",
+        "unresolved:string.Equals",
+        "unresolved:string.IsNullOrEmpty"
+      ],
+      "calls_in": [],
+      "excerpt_source": "ExceptionMiddleware.HandleExceptionAsync (src/PublicApi/Middleware/ExceptionMiddleware.cs)"
+    }
+  },
+  "12": {
+    "text": "The twelve-member subsystem is the **Identity/authorization infrastructure** of the application.  \nIt groups together the Entity Framework Core migration that creates the ASP.NET Core Identity tables (`InitialIdentityModel`, `AppIdentityDbContextModelSnapshot`), the `ApplicationUser`-derived `AppIdentityDbContext` configuration (`BuildModel`), the startup hook that registers the Identity services (`IdentityHostingStartup.Configure` and `Dependencies.ConfigureServices`), a set of constant values used for permission checks (`AuthorizationConstants`), and the view-models that drive the UI for login, registration and password reset.  \n\nThe presence of the `EndpointAttribute` and the custom Blazor input component (`CustomInputSelect`) suggests the same package also supplies UI helpers that need the same Identity services, so they are kept together to ensure the authentication system is initialized, its database schema is versioned, and the UI can bind to the corresponding view-models.  \n\nAll of these pieces depend on the same external EF Core/Identity APIs (e.g., `HasKey`, `HasIndex`, `HasOne`), which is why they form a cohesive unit: they collectively define, configure, and expose the user-account data model and the surrounding UI scaffolding.",
+    "member_count": 17,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:b.HasIndex",
+        "unresolved:b.HasIndex(\"NormalizedEmail\").HasDatabaseName",
+        "unresolved:b.HasIndex(\"NormalizedName\") .IsUnique() .HasDatabaseName(\"RoleNameIndex\").HasFilter",
+        "unresolved:b.HasIndex(\"NormalizedName\") .IsUnique().HasDatabaseName",
+        "unresolved:b.HasIndex(\"NormalizedName\").IsUnique",
+        "unresolved:b.HasIndex(\"NormalizedUserName\") .IsUnique() .HasDatabaseName(\"UserNameIndex\").HasFilter",
+        "unresolved:b.HasIndex(\"NormalizedUserName\") .IsUnique().HasDatabaseName",
+        "unresolved:b.HasIndex(\"NormalizedUserName\").IsUnique",
+        "unresolved:b.HasKey",
+        "unresolved:b.HasOne",
+        "unresolved:b.HasOne(\"Microsoft.AspNetCore.Identity.IdentityRole\", null) .WithMany() .HasForeignKey(\"RoleId\") .OnDelete(DeleteBehavi",
+        "unresolved:b.HasOne(\"Microsoft.AspNetCore.Identity.IdentityRole\", null) .WithMany() .HasForeignKey(\"RoleId\").OnDelete",
+        "unresolved:b.HasOne(\"Microsoft.AspNetCore.Identity.IdentityRole\", null) .WithMany().HasForeignKey",
+        "unresolved:b.HasOne(\"Microsoft.AspNetCore.Identity.IdentityRole\", null).WithMany",
+        "unresolved:b.HasOne(\"Microsoft.eShopWeb.Infrastructure.Identity.ApplicationUser\", null) .WithMany() .HasForeignKey(\"UserId\") .OnDel"
+      ],
+      "calls_in": [
+        "<module>"
+      ],
+      "excerpt_source": "AppIdentityDbContextModelSnapshot.BuildModel (src/Infrastructure/Identity/Migrations/AppIdentityDbContextModelSnapshot.cs)"
+    }
+  },
+  "13": {
+    "text": "The subsystem groups together the configuration- and composition-logic that wires the application\u2019s core services into the ASP.NET DI container and provides a small utility for building absolute picture URLs.  \n* `ConfigureCoreServices.AddCoreServices` registers generic repositories, basket/order services, logging, email and, importantly, reads a `CatalogSettings` section from configuration and registers a singleton `IUriComposer` implementation (`UriComposer`) that uses those settings to compose picture URIs via `ComposePicUri`.  \n* `ConfigureWebServices`, `ConfigureCookieSettings` and `RevokeAuthenticationEvents` contain related ASP.NET Core startup code for cookie authentication and other web-level services, all of which are invoked from `Program` during application boot-strapping.  \n\nBecause all of these classes are only called during application start-up and share the same concern\u2014setting up dependency-injection, authentication cookies, and the URI-composer helper\u2014they form a cohesive \u201capplication-initialisation\u201d subsystem. The exact business purpose of the URI composer (e.g., serving catalog images) is inferred from the name and its use in catalog-related endpoints, but the subsystem\u2019s primary role is structural configuration rather than domain logic.",
+    "member_count": 16,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:CookieBuilder",
+        "unresolved:TimeSpan.FromMinutes",
+        "unresolved:_cache.TryGetValue",
+        "unresolved:_logger.LogDebug",
+        "unresolved:cfg.RegisterServicesFromAssembly",
+        "unresolved:configuration.Get",
+        "unresolved:context.HttpContext.SignOutAsync",
+        "unresolved:context.Principal?.Claims.First",
+        "unresolved:context.RejectPrincipal",
+        "unresolved:services.AddMediatR",
+        "unresolved:services.AddScoped",
+        "unresolved:services.AddSingleton",
+        "unresolved:services.AddTransient",
+        "unresolved:services.Configure",
+        "unresolved:services.ConfigureApplicationCookie"
+      ],
+      "calls_in": [
+        "<module>",
+        "BasketViewModelService.GetBasketItems",
+        "CatalogItemGetByIdEndpoint.HandleAsync",
+        "CatalogItemListPagedEndpoint.HandleAsync",
+        "CatalogViewModelService.GetCatalogItems",
+        "CreateCatalogItemEndpoint.HandleAsync",
+        "OrderService.CreateOrderAsync",
+        "UpdateCatalogItemEndpoint.HandleAsync"
+      ],
+      "excerpt_source": "ConfigureCoreServices.AddCoreServices (src/Web/Configuration/ConfigureCoreServices.cs)"
+    }
+  },
+  "14": {
+    "text": "The members of this cluster implement the client-side authentication and health-monitoring support for the Blazor-based admin UI. The `CustomAuthStateProvider` class (and its async `GetAuthenticationStateAsync`, `GetUser`, and `FetchUser` methods) supplies a `AuthenticationStateProvider` that queries a backend \u201cUser\u201d endpoint via `HttpClient`, builds a `ClaimsPrincipal` from the returned `UserInfo`, and caches the result (e.g., via `ClearLocalStorageCache`). `ServicesConfiguration.AddBlazorServices` and `BaseUrlConfiguration` are used to register this provider and related HTTP settings with the DI container, while the two `HealthCheck` classes (`ApiHealthCheck` and `HomePageHealthCheck`) expose simple liveness probes that call the same HTTP client to verify that the API and home page are reachable, returning `HealthCheckResult.Healthy` or `Unhealthy`. Together these pieces form a cohesive subsystem that centralises authentication state retrieval and basic service health reporting for the Blazor admin application.",
+    "member_count": 15,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:AuthenticationHeaderValue",
+        "unresolved:AuthenticationState",
+        "unresolved:Claim",
+        "unresolved:ClaimsIdentity",
+        "unresolved:ClaimsPrincipal",
+        "unresolved:DateTimeOffset.FromUnixTimeSeconds",
+        "unresolved:HealthCheckResult.Healthy",
+        "unresolved:HealthCheckResult.Unhealthy",
+        "unresolved:HttpClient",
+        "unresolved:TimeSpan.FromSeconds",
+        "unresolved:_httpClient.GetFromJsonAsync",
+        "unresolved:_logger.LogInformation",
+        "unresolved:_logger.LogWarning",
+        "unresolved:client.GetAsync",
+        "unresolved:identity.AddClaim"
+      ],
+      "calls_in": [],
+      "excerpt_source": "CustomAuthStateProvider.FetchUser (src/BlazorAdmin/CustomAuthStateProvider.cs)"
+    }
+  },
+  "15": {
+    "text": "The subsystem groups together the HTTP-GET endpoint that returns all catalog brands and the view-helper that renders navigation links for the \u201cManage\u201d area of the web UI.  \n* The `CatalogBrandListEndpoint` class registers a route (`app.MapGet(\"api/catalog-brands\", \u2026)`) and its `HandleAsync` method queries an `IRepository<CatalogBrand>` for all brand entities, maps each entity to a `CatalogBrandDto` with an injected mapper, puts the DTOs into a `ListCatalogBrandsResponse`, and returns the response with `Results.Ok`.  \n* The `CatalogBrandDto` and `ListCatalogBrandsResponse` types are simple data-transfer objects used only by this endpoint.  \n* The `ManageNavPages` class provides a set of static helpers that compute CSS classes for the various pages under the \u201cManage\u201d section (e.g., Index, ChangePassword, ExternalLogins, TwoFactorAuthentication) and a method to add an \u201cactive\u201d class to the current page.\n\nTogether these files form a cohesive unit because they encapsulate the public API for listing catalog brands (request handling, DTO definition, and response shaping) and the UI-side navigation helpers that are part of the same feature area (catalog brand management) in the web application. The grouping reflects a logical feature boundary: exposing catalog brand data via a REST endpoint and supporting the related management UI.",
+    "member_count": 15,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:List",
+        "unresolved:Results.Ok",
+        "unresolved:app.MapGet",
+        "unresolved:app.MapGet(\"api/catalog-brands\", async (IRepository<CatalogBrand> catalogBrandRepository) => { return await HandleAsync(",
+        "unresolved:catalogBrandRepository.ListAsync",
+        "unresolved:items.Select",
+        "unresolved:response.CatalogBrands.AddRange",
+        "unresolved:string.Equals"
+      ],
+      "calls_in": [],
+      "excerpt_source": "CatalogBrandListEndpoint.HandleAsync (src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.cs)"
+    }
+  },
+  "16": {
+    "text": "The fourteen classes in this subsystem are all Entity Framework Core configuration types that map domain entities (Basket, BasketItem, CatalogBrand, CatalogItem, CatalogType, Order, OrderItem) to database tables. Each class implements a Configure method that uses an EntityTypeBuilder to declare primary keys, relationships ( HasOne/WithMany ), owned value objects (e.g., Order.ShipToAddress), and column constraints such as IsRequired and HasMaxLength for address fields. Because they all live in the *Infrastructure/Data/Config* folder and are only referenced by the EF Core model-building pipeline, they form a cohesive \u201centity-mapping\u201d subsystem whose purpose is to define the schema, constraints, and navigation behavior for the persistence layer of the application. No other parts of the codebase call them directly, which is typical for configuration classes that are discovered and applied automatically when the DbContext is constructed.",
+    "member_count": 14,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:a.Property",
+        "unresolved:a.Property(a => a.City) .HasMaxLength(100).IsRequired",
+        "unresolved:a.Property(a => a.City).HasMaxLength",
+        "unresolved:a.Property(a => a.Country) .HasMaxLength(90).IsRequired",
+        "unresolved:a.Property(a => a.Country).HasMaxLength",
+        "unresolved:a.Property(a => a.State).HasMaxLength",
+        "unresolved:a.Property(a => a.Street) .HasMaxLength(180).IsRequired",
+        "unresolved:a.Property(a => a.Street).HasMaxLength",
+        "unresolved:a.Property(a => a.ZipCode) .HasMaxLength(18).IsRequired",
+        "unresolved:a.Property(a => a.ZipCode).HasMaxLength",
+        "unresolved:a.WithOwner",
+        "unresolved:builder.HasKey",
+        "unresolved:builder.HasOne",
+        "unresolved:builder.HasOne(ci => ci.CatalogBrand) .WithMany().HasForeignKey",
+        "unresolved:builder.HasOne(ci => ci.CatalogBrand).WithMany"
+      ],
+      "calls_in": [],
+      "excerpt_source": "OrderConfiguration.Configure (src/Infrastructure/Data/Config/OrderConfiguration.cs)"
+    }
+  }
+}

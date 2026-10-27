@@ -1,0 +1,177 @@
+{
+  "0": {
+    "text": "The subsystem groups the domain model for owners, pets and visits together with the web-layer that creates, updates and validates pet data. It contains the `Owner` entity (address, city, telephone, collection of pets), the `Visit` entity, a `PetController` that handles form-binding, duplicate-name checks and birth-date validation, a `PetValidator`, a `PetTypeFormatter` and a repository for pet types \u2013 all of which are tightly coupled through calls to the same model classes and Spring MVC binding infrastructure. Because these classes share the same data structures and are invoked together when a user adds or edits a pet, they naturally form a cohesive unit that implements the \u201cmanage a pet for an owner\u201d use-case in the PetClinic sample application.",
+    "member_count": 42,
+    "grounded_in": {
+      "calls_out": [
+        "BaseEntity.getId",
+        "BaseEntity.isNew",
+        "NamedEntity.getName",
+        "NamedEntity.setName",
+        "OwnerRepository.findById",
+        "Person.getFirstName",
+        "Person.getLastName",
+        "Pet",
+        "Pet.addVisit",
+        "Pet.getBirthDate",
+        "Pet.getType",
+        "Pet.setBirthDate",
+        "Pet.setType",
+        "unresolved:ArrayList",
+        "unresolved:Assert.notNull"
+      ],
+      "calls_in": [
+        "OwnerController.findOwner",
+        "VisitController.loadPetWithVisit",
+        "VisitController.processNewVisitForm"
+      ],
+      "excerpt_source": "PetController.processCreationForm (src/main/java/org/springframework/samples/petclinic/owner/PetController.java)"
+    }
+  },
+  "1": {
+    "text": "The subsystem groups the **OwnerController** class together with the **OwnerRepository** interface and all of their public methods. Structurally it handles HTTP requests that create, read, update, and search for *Owner* domain objects: it binds request parameters, validates them, builds pagination information, invokes repository queries such as `findByLastNameStartingWith` and `findById`, and returns view names or redirects with model attributes. Because the controller\u2019s methods are tightly coupled to the repository\u2019s query methods and to the `Owner` entity (e.g., accessing `owner.getLastName()`, `BaseEntity.getId()`), they form a cohesive unit that implements the \u201cowner management\u201d use-case of the PetClinic sample application. The unit exists to isolate the web-layer handling of owner-related CRUD and search operations from other concerns (pets, visits, etc.), keeping the routing, validation, pagination, and data-access logic for owners together.",
+    "member_count": 16,
+    "grounded_in": {
+      "calls_out": [
+        "BaseEntity.getId",
+        "BaseEntity.setId",
+        "Owner",
+        "Person.getLastName",
+        "unresolved:IllegalArgumentException",
+        "unresolved:Math.max",
+        "unresolved:ModelAndView",
+        "unresolved:Objects.equals",
+        "unresolved:PageRequest.of",
+        "unresolved:dataBinder.setDisallowedFields",
+        "unresolved:lastName.isEmpty",
+        "unresolved:lastName.strip",
+        "unresolved:mav.addObject",
+        "unresolved:model.addAttribute",
+        "unresolved:optionalOwner.orElseThrow"
+      ],
+      "calls_in": [
+        "PetController.findOwner",
+        "PetController.findPet",
+        "VisitController.loadPetWithVisit"
+      ],
+      "excerpt_source": "OwnerController.processFindForm (src/main/java/org/springframework/samples/petclinic/owner/OwnerController.java)"
+    }
+  },
+  "2": {
+    "text": "The subsystem groups the domain model for veterinarians (the **Vet** entity and its collection wrapper **Vets**) together with the data-access layer (**VetRepository**) and the web MVC controller (**VetController**) that presents paginated lists of vets. All of the classes share the same package (`org.springframework.samples.petclinic.vet`) and the controller\u2019s methods call repository queries, manipulate `Page<Vet>` objects, and add pagination attributes to a `Model`, indicating that the unit\u2019s purpose is to retrieve, store, and display veterinarian information in a paginated view. Because the classes are tightly coupled through these calls and share the same concern (handling vet data and its UI representation), they form a cohesive subsystem that isolates the \u201cvet\u201d feature of the PetClinic sample application. The code shown only demonstrates the pagination model preparation; the rest of the subsystem manages the underlying collection of specialties and basic CRUD access for vets.",
+    "member_count": 16,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:ArrayList",
+        "unresolved:Collectors.toList",
+        "unresolved:Comparator.comparing",
+        "unresolved:HashSet",
+        "unresolved:Math.max",
+        "unresolved:PageRequest.of",
+        "unresolved:getSpecialtiesInternal().add",
+        "unresolved:getSpecialtiesInternal().size",
+        "unresolved:getSpecialtiesInternal().stream",
+        "unresolved:getSpecialtiesInternal().stream() .sorted(Comparator.comparing(NamedEntity::getName)).collect",
+        "unresolved:getSpecialtiesInternal().stream().sorted",
+        "unresolved:model.addAttribute",
+        "unresolved:paginated.getContent",
+        "unresolved:paginated.getTotalElements",
+        "unresolved:paginated.getTotalPages"
+      ],
+      "calls_in": [],
+      "excerpt_source": "VetController.addPaginationModel (src/main/java/org/springframework/samples/petclinic/vet/VetController.java)"
+    }
+  },
+  "3": {
+    "text": "The subsystem groups a small hierarchy of domain objects that share a simple \u201cnamed\u201d characteristic. `NamedEntity` provides a `name` field with getter, setter and a `toString` that returns the name, and several concrete entities (`Pet`, `PetType`, `Specialty`) extend it (or at least use the same pattern) to represent core business concepts in the Pet-Clinic sample \u2013 a pet, its type, and a veterinarian\u2019s specialty. These classes expose only basic state-accessors (birth-date, type, a collection of `Visit`s, and methods to add a visit) and therefore are used by many controllers and validators that need to read or modify these attributes. Because they encapsulate the same minimal data model and are tightly coupled through inheritance/composition, they form a cohesive unit that isolates the core \u201cnamed entity\u201d domain model from the rest of the application.",
+    "member_count": 13,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:LinkedHashSet",
+        "unresolved:getVisits().add"
+      ],
+      "calls_in": [
+        "Owner.addVisit",
+        "PetController.findPet",
+        "PetController.initCreationForm",
+        "PetController.processCreationForm",
+        "PetController.processUpdateForm",
+        "PetController.updatePetDetails",
+        "PetTypeFormatter.print",
+        "PetValidator.validate",
+        "VisitController.loadPetWithVisit"
+      ],
+      "excerpt_source": "NamedEntity.getName (src/main/java/org/springframework/samples/petclinic/model/NamedEntity.java)"
+    }
+  },
+  "4": {
+    "text": "The subsystem groups the core domain model classes (`BaseEntity` and its subclass `Person`) together with the application bootstrap (`PetClinicApplication`) and a Spring Boot runtime-hints provider (`PetClinicRuntimeHints`). Its primary function is to expose these model types for reflection-based serialization and to register static resource patterns (database scripts, message bundles, MySQL config) that the native-image compiler or other runtime-optimisation tools need to know about. By keeping the entity definitions, the main entry point, and the hint registration in one cluster, the build process can treat them as a unit that must be available at startup and during serialization, while the rest of the code (controllers, validators, etc.) simply depends on these classes. The exact business purpose of the entities (e.g., representing a person in the pet-clinic domain) is evident from their names, but the subsystem\u2019s cohesion is driven by the technical requirement to register them for reflection and resource access.",
+    "member_count": 13,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:SpringApplication.run",
+        "unresolved:hints.reflection",
+        "unresolved:hints.reflection().registerType",
+        "unresolved:hints.resources",
+        "unresolved:hints.resources().registerPattern",
+        "unresolved:typeHint.withJavaSerialization"
+      ],
+      "calls_in": [
+        "Owner.addPet",
+        "Owner.toString",
+        "OwnerController.processCreationForm",
+        "OwnerController.processFindForm",
+        "OwnerController.processUpdateOwnerForm",
+        "PetController.processCreationForm",
+        "PetController.processUpdateForm",
+        "PetController.updatePetDetails",
+        "PetValidator.validate"
+      ],
+      "excerpt_source": "PetClinicRuntimeHints.registerHints (src/main/java/org/springframework/samples/petclinic/PetClinicRuntimeHints.java)"
+    }
+  },
+  "5": {
+    "text": "The five-member subsystem groups together the few Spring Boot configuration and controller classes that provide the *infrastructure* of the Petclinic sample application. `CacheConfiguration` defines a JCache (`javax.cache`) bean (using a `MutableConfiguration` with statistics enabled) that other parts of the app can inject; `WebConfiguration` sets up web-level beans such as a `SessionLocaleResolver` and a `LocaleChangeInterceptor` and registers the interceptor with the MVC interceptor registry, thereby enabling locale-aware request handling. `WelcomeController` supplies a simple endpoint that returns the home page, while `CrashController` deliberately throws a `RuntimeException` (via `triggerException`) to let developers test the application\u2019s error-handling and monitoring pipelines. These classes are clustered together because they all contribute to the \u201csystem\u201d layer \u2013 configuring cross-cutting concerns (caching, locale resolution, MVC interceptors) and exposing minimal diagnostic controllers \u2013 and they do not depend on any domain-specific services, making them a cohesive unit of application-wide infrastructure.",
+    "member_count": 11,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:LocaleChangeInterceptor",
+        "unresolved:MutableConfiguration",
+        "unresolved:RuntimeException",
+        "unresolved:SessionLocaleResolver",
+        "unresolved:cm.createCache",
+        "unresolved:interceptor.setParamName",
+        "unresolved:new MutableConfiguration<>().setStatisticsEnabled",
+        "unresolved:registry.addInterceptor",
+        "unresolved:resolver.setDefaultLocale"
+      ],
+      "calls_in": [],
+      "excerpt_source": "CacheConfiguration.cacheConfiguration (src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java)"
+    }
+  },
+  "6": {
+    "text": "The six classes in this subsystem are all the methods of **VisitController**, a Spring MVC controller that handles web requests related to creating and editing a veterinary **Visit** for a pet owned by an **Owner**.  \nThe controller\u2019s `loadPetWithVisit` method (shown) fetches an `Owner` from `OwnerRepository`, retrieves the requested `Pet` from that owner, puts both objects into the model, and creates a new `Visit` instance that will be bound to the form. The other methods (`initNewVisitForm`, `processNewVisitForm`, `setAllowedFields`, `minVisitDate`, the constructor) together configure data-binding, enforce validation rules (e.g., disallowing certain fields, ensuring the visit date is not before today), display the form for a new visit, and persist the submitted visit by calling `Owner.addVisit` / `Pet.addVisit`.  \n\nBecause all of these operations revolve around the same request-handling flow\u2014pre-loading the domain objects, preparing the model, validating input, and saving a new `Visit`\u2014they are grouped into a single cohesive unit (the controller) that encapsulates the \u201cadd-visit-to-pet\u201d use case in the PetClinic application.",
+    "member_count": 7,
+    "grounded_in": {
+      "calls_out": [
+        "Owner.addVisit",
+        "Owner.getPet",
+        "OwnerRepository.findById",
+        "Pet.addVisit",
+        "Visit",
+        "Visit.getDate",
+        "unresolved:IllegalArgumentException",
+        "unresolved:LocalDate.now",
+        "unresolved:LocalDate.now().plusDays",
+        "unresolved:dataBinder.setDisallowedFields",
+        "unresolved:model.put",
+        "unresolved:optionalOwner.orElseThrow",
+        "unresolved:redirectAttributes.addFlashAttribute",
+        "unresolved:result.hasErrors",
+        "unresolved:result.rejectValue"
+      ],
+      "calls_in": [],
+      "excerpt_source": "VisitController.loadPetWithVisit (src/main/java/org/springframework/samples/petclinic/owner/VisitController.java)"
+    }
+  }
+}

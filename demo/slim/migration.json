@@ -1,0 +1,3115 @@
+{
+  "summary": {
+    "subsystems": 14,
+    "cycle_groups": 1,
+    "waves": 6,
+    "coverage": 1.0,
+    "overall_confidence": 0.94,
+    "readiness": {
+      "needs-prep": 8,
+      "caution": 1,
+      "ready": 5
+    },
+    "third_party": [
+      {
+        "package": "Psr",
+        "uses": 181
+      },
+      {
+        "package": "FastRoute",
+        "uses": 10
+      }
+    ]
+  },
+  "subsystems": [
+    {
+      "id": 0,
+      "label": "Slim/Interfaces \u00b7 RouteCollectorInterface.RouteCollectorInterface",
+      "purpose": "The members of this cluster are all interfaces that define the core routing-related contracts of the Slim PHP framework: callable resolution, PSR-17 factories, route collection, individual route objects, and route parsing. Together they describe how routes are registered, looked-up, grouped, named, and turned into concrete request-handling pipelines, as well as how URLs are generated from those routes. Because they are pure interface definitions with no concrete implementations, the subsystem exists as a cohesive abstraction layer that lets the rest of the framework (e.g., `App`, `Dispatcher`, `RouteResolver`, `RouteRunner`) depend on a stable contract while allowing different implementations (or user-provided containers) to be swapped in. The cluster therefore provides the structural backbone for Slim\u2019s routing and URL-generation functionality.",
+      "members": 64,
+      "files": 6,
+      "loc": 388,
+      "languages": [
+        "php"
+      ],
+      "afferent": 38.0,
+      "efferent": 2.5,
+      "instability": 0.06,
+      "cohesion": 0.0,
+      "confidence": 1.0,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 0% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "large public surface (19 entry points used by other subsystems)"
+      ],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Interfaces/RouteCollectorInterface.php:RouteCollectorInterface",
+          "name": "RouteCollectorInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteCollectorInterface.php",
+          "weight": 5.0,
+          "called_from": [
+            1,
+            5,
+            10,
+            11,
+            13
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteInterface.php:RouteInterface",
+          "name": "RouteInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteInterface.php",
+          "weight": 4.0,
+          "called_from": [
+            1,
+            5,
+            13
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteParserInterface.php:RouteParserInterface",
+          "name": "RouteParserInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteParserInterface.php",
+          "weight": 4.0,
+          "called_from": [
+            1,
+            5,
+            9,
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/AdvancedCallableResolverInterface.php:AdvancedCallableResolverInterface",
+          "name": "AdvancedCallableResolverInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/AdvancedCallableResolverInterface.php",
+          "weight": 3.5,
+          "called_from": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteCollectorProxyInterface.php:RouteCollectorProxyInterface",
+          "name": "RouteCollectorProxyInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteCollectorProxyInterface.php",
+          "weight": 3.5,
+          "called_from": [
+            1,
+            2,
+            5,
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteCollectorInterface.php:RouteCollectorInterface.getBasePath",
+          "name": "RouteCollectorInterface.getBasePath",
+          "kind": "method",
+          "path": "Slim/Interfaces/RouteCollectorInterface.php",
+          "weight": 3.0,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/Psr17FactoryInterface.php:Psr17FactoryInterface",
+          "name": "Psr17FactoryInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/Psr17FactoryInterface.php",
+          "weight": 2.0,
+          "called_from": [
+            3
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteInterface.php:RouteInterface.getIdentifier",
+          "name": "RouteInterface.getIdentifier",
+          "kind": "method",
+          "path": "Slim/Interfaces/RouteInterface.php",
+          "weight": 2.0,
+          "called_from": [
+            5
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 2,
+          "weight": 1.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "AdvancedCallableResolverInterface",
+              "target": "CallableResolverInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 12,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "InvocationStrategyInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "InvocationStrategyInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 19.5,
+          "edges": 23
+        },
+        {
+          "subsystem": 5,
+          "weight": 6.5,
+          "edges": 8
+        },
+        {
+          "subsystem": 10,
+          "weight": 3.5,
+          "edges": 5
+        },
+        {
+          "subsystem": 2,
+          "weight": 3.5,
+          "edges": 5
+        },
+        {
+          "subsystem": 3,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 13,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 11,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 9
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 5
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Interfaces/RouteCollectorInterface.php:RouteCollectorInterface",
+          "name": "RouteCollectorInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteCollectorInterface.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/AdvancedCallableResolverInterface.php:AdvancedCallableResolverInterface",
+          "name": "AdvancedCallableResolverInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/AdvancedCallableResolverInterface.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteInterface.php:RouteInterface",
+          "name": "RouteInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteInterface.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteParserInterface.php:RouteParserInterface",
+          "name": "RouteParserInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteParserInterface.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteCollectorProxyInterface.php:RouteCollectorProxyInterface",
+          "name": "RouteCollectorProxyInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteCollectorProxyInterface.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteCollectorInterface.php:RouteCollectorInterface.getBasePath",
+          "name": "RouteCollectorInterface.getBasePath",
+          "kind": "method",
+          "path": "Slim/Interfaces/RouteCollectorInterface.php"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "label": "Slim/Routing \u00b7 Dispatcher.Dispatcher.createDispatcher",
+      "purpose": "The classes in this cluster implement the **routing layer** of the Slim PHP framework. `Dispatcher` and its concrete `FastRouteDispatcher` translate the collection of `Route` objects (which hold HTTP methods, URL patterns, callables, middleware, etc.) into a FastRoute data-structure and then use it at request time to match an incoming URI, retrieve the matched route identifier and the allowed HTTP methods. `Route`, `RouteCollectorProxy`, `RouteParser` and `RouteContext` provide the API for defining routes, grouping them, generating URLs, and exposing routing results to handlers.  \n\nAll of these pieces call and are called by the same surrounding components (`App`, `RouteCollector`, `RouteResolver`), and they share the same external dependencies (callable resolver, middleware dispatcher, request/response objects). Therefore they form a cohesive subsystem whose sole purpose is to **register, store, match, and dispatch HTTP routes** within the application.",
+      "members": 63,
+      "files": 6,
+      "loc": 839,
+      "languages": [
+        "php"
+      ],
+      "afferent": 12.5,
+      "efferent": 37.5,
+      "instability": 0.75,
+      "cohesion": 0.28,
+      "confidence": 0.93,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 28% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "large public surface (9 entry points used by other subsystems)"
+      ],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Routing/RouteCollectorProxy.php:RouteCollectorProxy",
+          "name": "RouteCollectorProxy",
+          "kind": "class",
+          "path": "Slim/Routing/RouteCollectorProxy.php",
+          "weight": 3.5,
+          "called_from": [
+            5,
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/Dispatcher.php:Dispatcher",
+          "name": "Dispatcher",
+          "kind": "class",
+          "path": "Slim/Routing/Dispatcher.php",
+          "weight": 1.5,
+          "called_from": [
+            13
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/Route.php:Route",
+          "name": "Route",
+          "kind": "class",
+          "path": "Slim/Routing/Route.php",
+          "weight": 1.5,
+          "called_from": [
+            5
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteParser.php:RouteParser",
+          "name": "RouteParser",
+          "kind": "class",
+          "path": "Slim/Routing/RouteParser.php",
+          "weight": 1.5,
+          "called_from": [
+            5
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollectorProxy.php:RouteCollectorProxy.__construct",
+          "name": "RouteCollectorProxy.__construct",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollectorProxy.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollectorProxy.php:RouteCollectorProxy.getCallableResolver",
+          "name": "RouteCollectorProxy.getCallableResolver",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollectorProxy.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollectorProxy.php:RouteCollectorProxy.getResponseFactory",
+          "name": "RouteCollectorProxy.getResponseFactory",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollectorProxy.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollectorProxy.php:RouteCollectorProxy.getRouteCollector",
+          "name": "RouteCollectorProxy.getRouteCollector",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollectorProxy.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 19.5,
+          "edges": 23,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteCollectorInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Dispatcher.createDispatcher",
+              "target": "RouteCollectorInterface.getBasePath",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Dispatcher.createDispatcher",
+              "target": "RouteCollectorInterface.getRoutes",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 7.5,
+          "edges": 9,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "MiddlewareDispatcher",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Route.__construct",
+              "target": "MiddlewareDispatcher",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 12,
+          "weight": 4.0,
+          "edges": 6,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestHandler",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RequestResponse",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "InvocationStrategyInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 2.5,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteGroupInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteGroupInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteCollector",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 13,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "DispatcherInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Dispatcher",
+              "target": "DispatcherInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RoutingResults",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Dispatcher.dispatch",
+              "target": "RoutingResults",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RoutingResults",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 10,
+          "weight": 6.0,
+          "edges": 6
+        },
+        {
+          "subsystem": 5,
+          "weight": 4.5,
+          "edges": 6
+        },
+        {
+          "subsystem": 13,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 19
+        },
+        {
+          "package": "FastRoute",
+          "uses": 10
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 27
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Routing/Dispatcher.php:Dispatcher.createDispatcher",
+          "name": "Dispatcher.createDispatcher",
+          "kind": "method",
+          "path": "Slim/Routing/Dispatcher.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteParser.php:RouteParser.relativeUrlFor",
+          "name": "RouteParser.relativeUrlFor",
+          "kind": "method",
+          "path": "Slim/Routing/RouteParser.php"
+        },
+        {
+          "id": "php:Slim/Routing/Route.php:Route.handle",
+          "name": "Route.handle",
+          "kind": "method",
+          "path": "Slim/Routing/Route.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollectorProxy.php:RouteCollectorProxy.map",
+          "name": "RouteCollectorProxy.map",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollectorProxy.php"
+        },
+        {
+          "id": "php:Slim/Routing/FastRouteDispatcher.php:FastRouteDispatcher.dispatch",
+          "name": "FastRouteDispatcher.dispatch",
+          "kind": "method",
+          "path": "Slim/Routing/FastRouteDispatcher.php"
+        },
+        {
+          "id": "php:Slim/Routing/FastRouteDispatcher.php:FastRouteDispatcher.routingResults",
+          "name": "FastRouteDispatcher.routingResults",
+          "kind": "method",
+          "path": "Slim/Routing/FastRouteDispatcher.php"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "label": "Slim \u00b7 MiddlewareDispatcher.MiddlewareDispatcher.addDeferred.handle",
+      "purpose": "The classes in this cluster implement the **routing-and-middleware execution pipeline** of the Slim framework. `CallableResolver` (and its interface) turn user-supplied strings, arrays or objects into real PHP callables, distinguishing between route handlers and middleware; the various `resolve*` methods handle Slim\u2019s \u201cclass:method\u201d notation, container binding, and predicate-based resolution. `MiddlewareDispatcher` (and its interface) builds a stack of those callables, supports adding middleware immediately, lazily (deferred), or as plain callables, and walks the stack by invoking each middleware with the current request and a \u201cnext\u201d handler. `ResponseEmitter` takes the final `ResponseInterface` produced by the dispatcher and streams its status line, headers and body to the PHP SAPI. `RouteGroup` groups routes under a common URI prefix and aggregates group-level middleware, feeding them into the dispatcher.  \n\nTogether these 46 members form a cohesive subsystem that resolves, orders, and runs middleware and route handlers, then emits the resulting HTTP response\u2014i.e., the core request-handling engine of the Slim micro-framework.",
+      "members": 46,
+      "files": 6,
+      "loc": 661,
+      "languages": [
+        "php"
+      ],
+      "afferent": 29.0,
+      "efferent": 5.5,
+      "instability": 0.16,
+      "cohesion": 0.43,
+      "confidence": 0.9,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 43% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "large public surface (14 entry points used by other subsystems)"
+      ],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Interfaces/CallableResolverInterface.php:CallableResolverInterface.resolve",
+          "name": "CallableResolverInterface.resolve",
+          "kind": "method",
+          "path": "Slim/Interfaces/CallableResolverInterface.php",
+          "weight": 7.0,
+          "called_from": [
+            1,
+            4,
+            8
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/CallableResolverInterface.php:CallableResolverInterface",
+          "name": "CallableResolverInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/CallableResolverInterface.php",
+          "weight": 5.0,
+          "called_from": [
+            0,
+            1,
+            4,
+            5,
+            8,
+            10,
+            11
+          ]
+        },
+        {
+          "id": "php:Slim/MiddlewareDispatcher.php:MiddlewareDispatcher",
+          "name": "MiddlewareDispatcher",
+          "kind": "class",
+          "path": "Slim/MiddlewareDispatcher.php",
+          "weight": 4.5,
+          "called_from": [
+            1,
+            5,
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/CallableResolver.php:CallableResolver",
+          "name": "CallableResolver",
+          "kind": "class",
+          "path": "Slim/CallableResolver.php",
+          "weight": 1.5,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/ResponseEmitter.php:ResponseEmitter",
+          "name": "ResponseEmitter",
+          "kind": "class",
+          "path": "Slim/ResponseEmitter.php",
+          "weight": 1.5,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteGroup.php:RouteGroup",
+          "name": "RouteGroup",
+          "kind": "class",
+          "path": "Slim/Routing/RouteGroup.php",
+          "weight": 1.5,
+          "called_from": [
+            5
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/MiddlewareDispatcherInterface.php:MiddlewareDispatcherInterface",
+          "name": "MiddlewareDispatcherInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/MiddlewareDispatcherInterface.php",
+          "weight": 1.0,
+          "called_from": [
+            10,
+            11
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/MiddlewareDispatcherInterface.php:MiddlewareDispatcherInterface.add",
+          "name": "MiddlewareDispatcherInterface.add",
+          "kind": "method",
+          "path": "Slim/Interfaces/MiddlewareDispatcherInterface.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 3.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "AdvancedCallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CallableResolver",
+              "target": "AdvancedCallableResolverInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "AdvancedCallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteGroupInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteGroup",
+              "target": "RouteGroupInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 10,
+          "weight": 9.5,
+          "edges": 12
+        },
+        {
+          "subsystem": 1,
+          "weight": 7.5,
+          "edges": 9
+        },
+        {
+          "subsystem": 4,
+          "weight": 4.5,
+          "edges": 5
+        },
+        {
+          "subsystem": 8,
+          "weight": 2.5,
+          "edges": 3
+        },
+        {
+          "subsystem": 5,
+          "weight": 2.5,
+          "edges": 4
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 11,
+          "weight": 1.0,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 28
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 71
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/MiddlewareDispatcher.php:MiddlewareDispatcher.addDeferred.handle",
+          "name": "MiddlewareDispatcher.addDeferred.handle",
+          "kind": "method",
+          "path": "Slim/MiddlewareDispatcher.php"
+        },
+        {
+          "id": "php:Slim/ResponseEmitter.php:ResponseEmitter.emitBody",
+          "name": "ResponseEmitter.emitBody",
+          "kind": "method",
+          "path": "Slim/ResponseEmitter.php"
+        },
+        {
+          "id": "php:Slim/CallableResolver.php:CallableResolver.resolveByPredicate",
+          "name": "CallableResolver.resolveByPredicate",
+          "kind": "method",
+          "path": "Slim/CallableResolver.php"
+        },
+        {
+          "id": "php:Slim/CallableResolver.php:CallableResolver.resolveSlimNotation",
+          "name": "CallableResolver.resolveSlimNotation",
+          "kind": "method",
+          "path": "Slim/CallableResolver.php"
+        },
+        {
+          "id": "php:Slim/CallableResolver.php:CallableResolver.assertCallable",
+          "name": "CallableResolver.assertCallable",
+          "kind": "method",
+          "path": "Slim/CallableResolver.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/CallableResolverInterface.php:CallableResolverInterface",
+          "name": "CallableResolverInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/CallableResolverInterface.php"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "label": "Slim/Factory/Psr17 \u00b7 Psr17Factory.Psr17Factory",
+      "purpose": "The classes in this cluster are all concerned with locating, instantiating and decorating **PSR-17 factories** (response, stream and server-request factories) and a **ServerRequestCreator** that can build a `ServerRequest` from PHP globals. The subsystem provides a pluggable abstraction (`Psr17FactoryProviderInterface`, `ServerRequestCreatorInterface`) that can discover which concrete PSR-17 implementation is available at runtime (Guzzle, HttpSoft, Laminas-Diactoros, Nyholm, Slim-Http, etc.), expose its factories via `Psr17FactoryProvider`, and optionally wrap them with Slim-specific decorators (`SlimHttpServerRequestCreator`, `SlimHttpPsr17Factory`).  \n\nIt exists as a cohesive unit because the rest of the framework (e.g., `App.run`, `AppFactory`) needs a reliable way to obtain a PSR-17-compliant request/response stack without hard-coding a particular library; the subsystem isolates the detection logic, the factory-selection loop, and the decoration steps in one place, making the HTTP-message creation interchangeable and extensible.",
+      "members": 40,
+      "files": 13,
+      "loc": 361,
+      "languages": [
+        "php"
+      ],
+      "afferent": 8.5,
+      "efferent": 2.0,
+      "instability": 0.19,
+      "cohesion": 0.77,
+      "confidence": 0.95,
+      "in_cycle": false,
+      "wave": 2,
+      "readiness": "caution",
+      "blockers": [],
+      "risks": [
+        "large public surface (10 entry points used by other subsystems)"
+      ],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Factory/Psr17/Psr17FactoryProvider.php:Psr17FactoryProvider",
+          "name": "Psr17FactoryProvider",
+          "kind": "class",
+          "path": "Slim/Factory/Psr17/Psr17FactoryProvider.php",
+          "weight": 1.5,
+          "called_from": [
+            11
+          ]
+        },
+        {
+          "id": "php:Slim/Factory/Psr17/Psr17Factory.php:Psr17Factory.isResponseFactoryAvailable",
+          "name": "Psr17Factory.isResponseFactoryAvailable",
+          "kind": "method",
+          "path": "Slim/Factory/Psr17/Psr17Factory.php",
+          "weight": 1.0,
+          "called_from": [
+            11
+          ]
+        },
+        {
+          "id": "php:Slim/Factory/Psr17/SlimHttpPsr17Factory.php:SlimHttpPsr17Factory.createDecoratedResponseFactory",
+          "name": "SlimHttpPsr17Factory.createDecoratedResponseFactory",
+          "kind": "method",
+          "path": "Slim/Factory/Psr17/SlimHttpPsr17Factory.php",
+          "weight": 1.0,
+          "called_from": [
+            11
+          ]
+        },
+        {
+          "id": "php:Slim/Factory/ServerRequestCreatorFactory.php:ServerRequestCreatorFactory.create",
+          "name": "ServerRequestCreatorFactory.create",
+          "kind": "method",
+          "path": "Slim/Factory/ServerRequestCreatorFactory.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/Psr17FactoryProviderInterface.php:Psr17FactoryProviderInterface.getFactories",
+          "name": "Psr17FactoryProviderInterface.getFactories",
+          "kind": "method",
+          "path": "Slim/Interfaces/Psr17FactoryProviderInterface.php",
+          "weight": 1.0,
+          "called_from": [
+            11
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/ServerRequestCreatorInterface.php:ServerRequestCreatorInterface.createServerRequestFromGlobals",
+          "name": "ServerRequestCreatorInterface.createServerRequestFromGlobals",
+          "kind": "method",
+          "path": "Slim/Interfaces/ServerRequestCreatorInterface.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Factory/Psr17/Psr17Factory.php:Psr17Factory",
+          "name": "Psr17Factory",
+          "kind": "class",
+          "path": "Slim/Factory/Psr17/Psr17Factory.php",
+          "weight": 0.5,
+          "called_from": [
+            11
+          ]
+        },
+        {
+          "id": "php:Slim/Factory/Psr17/SlimHttpPsr17Factory.php:SlimHttpPsr17Factory",
+          "name": "SlimHttpPsr17Factory",
+          "kind": "class",
+          "path": "Slim/Factory/Psr17/SlimHttpPsr17Factory.php",
+          "weight": 0.5,
+          "called_from": [
+            11
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Psr17FactoryInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "Psr17Factory",
+              "target": "Psr17FactoryInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 11,
+          "weight": 6.0,
+          "edges": 8
+        },
+        {
+          "subsystem": 10,
+          "weight": 2.5,
+          "edges": 3
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 7
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 25
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Factory/Psr17/Psr17Factory.php:Psr17Factory",
+          "name": "Psr17Factory",
+          "kind": "class",
+          "path": "Slim/Factory/Psr17/Psr17Factory.php"
+        },
+        {
+          "id": "php:Slim/Factory/ServerRequestCreatorFactory.php:ServerRequestCreatorFactory.determineServerRequestCreator",
+          "name": "ServerRequestCreatorFactory.determineServerRequestCreator",
+          "kind": "method",
+          "path": "Slim/Factory/ServerRequestCreatorFactory.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/ServerRequestCreatorInterface.php:ServerRequestCreatorInterface",
+          "name": "ServerRequestCreatorInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/ServerRequestCreatorInterface.php"
+        },
+        {
+          "id": "php:Slim/Factory/Psr17/Psr17FactoryProvider.php:Psr17FactoryProvider",
+          "name": "Psr17FactoryProvider",
+          "kind": "class",
+          "path": "Slim/Factory/Psr17/Psr17FactoryProvider.php"
+        },
+        {
+          "id": "php:Slim/Factory/Psr17/ServerRequestCreator.php:ServerRequestCreator",
+          "name": "ServerRequestCreator",
+          "kind": "class",
+          "path": "Slim/Factory/Psr17/ServerRequestCreator.php"
+        },
+        {
+          "id": "php:Slim/Factory/Psr17/SlimHttpServerRequestCreator.php:SlimHttpServerRequestCreator.createServerRequestFromGlobals",
+          "name": "SlimHttpServerRequestCreator.createServerRequestFromGlobals",
+          "kind": "method",
+          "path": "Slim/Factory/Psr17/SlimHttpServerRequestCreator.php"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "label": "Slim/Middleware \u00b7 MethodOverrideMiddleware.MethodOverrideMiddleware.process",
+      "purpose": "The four classes in this cluster are all **Slim Framework middleware** that sit in the HTTP request-processing pipeline.  \n\n* **BodyParsingMiddleware** registers a map of media-type \u2192 callable parsers (JSON, form-urlencoded, etc.), inspects the incoming `Content-Type` header, invokes the appropriate parser, and stores the resulting data on the request object.  \n* **ContentLengthMiddleware** calculates or validates the `Content-Length` header for responses.  \n* **MethodOverrideMiddleware** looks for special request parameters (e.g., `_METHOD` or the `X-Http-Method-Override` header) and rewrites the request method so that clients can tunnel verbs like PUT/DELETE through POST.  \n* **OutputBufferingMiddleware** starts an output buffer before the next handler runs and flushes it afterward, allowing the framework to capture and manipulate the response body.  \n\nTogether they form a cohesive \u201ccore HTTP-handling\u201d subsystem: each class implements a `process` method that conforms to the same middleware interface, and they are all added to the `App` via `addBodyParsingMiddleware` or `addErrorMiddleware`. Their purpose is to provide reusable, composable preprocessing and post-processing steps (parsing request bodies, normalising methods, managing response length, and buffering output) that are needed for every Slim request, which is why they are grouped together.",
+      "members": 26,
+      "files": 5,
+      "loc": 440,
+      "languages": [
+        "php"
+      ],
+      "afferent": 3.0,
+      "efferent": 7.0,
+      "instability": 0.7,
+      "cohesion": 0.6,
+      "confidence": 1.0,
+      "in_cycle": false,
+      "wave": 3,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Middleware/BodyParsingMiddleware.php:BodyParsingMiddleware",
+          "name": "BodyParsingMiddleware",
+          "kind": "class",
+          "path": "Slim/Middleware/BodyParsingMiddleware.php",
+          "weight": 1.5,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Middleware/ErrorMiddleware.php:ErrorMiddleware",
+          "name": "ErrorMiddleware",
+          "kind": "class",
+          "path": "Slim/Middleware/ErrorMiddleware.php",
+          "weight": 1.5,
+          "called_from": [
+            10
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 2,
+          "weight": 4.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ErrorMiddleware.getErrorHandler",
+              "target": "CallableResolverInterface.resolve",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ErrorMiddleware.getErrorHandler",
+              "target": "CallableResolverInterface.resolve",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 8,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "ErrorHandler",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ErrorHandlerInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ErrorMiddleware.getDefaultErrorHandler",
+              "target": "ErrorHandler",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 6,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HttpException",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 10,
+          "weight": 3.0,
+          "edges": 4
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 47
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 56
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Middleware/BodyParsingMiddleware.php:BodyParsingMiddleware.registerDefaultBodyParsers",
+          "name": "BodyParsingMiddleware.registerDefaultBodyParsers",
+          "kind": "method",
+          "path": "Slim/Middleware/BodyParsingMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Middleware/MethodOverrideMiddleware.php:MethodOverrideMiddleware.process",
+          "name": "MethodOverrideMiddleware.process",
+          "kind": "method",
+          "path": "Slim/Middleware/MethodOverrideMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Middleware/OutputBufferingMiddleware.php:OutputBufferingMiddleware.process",
+          "name": "OutputBufferingMiddleware.process",
+          "kind": "method",
+          "path": "Slim/Middleware/OutputBufferingMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Middleware/BodyParsingMiddleware.php:BodyParsingMiddleware.parseBody",
+          "name": "BodyParsingMiddleware.parseBody",
+          "kind": "method",
+          "path": "Slim/Middleware/BodyParsingMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Middleware/ErrorMiddleware.php:ErrorMiddleware.getErrorHandler",
+          "name": "ErrorMiddleware.getErrorHandler",
+          "kind": "method",
+          "path": "Slim/Middleware/ErrorMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Middleware/BodyParsingMiddleware.php:BodyParsingMiddleware.getMediaType",
+          "name": "BodyParsingMiddleware.getMediaType",
+          "kind": "method",
+          "path": "Slim/Middleware/BodyParsingMiddleware.php"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "label": "Slim/Routing \u00b7 RouteCollector.RouteCollector.setCacheFile",
+      "purpose": "The subsystem groups the **Slim routing core** \u2013 an interface that describes a route-group contract and a concrete `RouteCollector` class that builds, stores and looks up routes, groups, and their middleware. All members deal with creating route objects, parsing URL patterns, managing a base path, handling named-route lookup, and optionally persisting the compiled route table to a cache file (as shown by the `setCacheFile` checks for readability/writability). Because these responsibilities are tightly coupled \u2013 the collector must know the group interface, the route parser, the invocation strategy, and the cache location \u2013 they are clustered together as a single cohesive unit that encapsulates the definition, organization, and optional serialization of the application\u2019s routing map. The code does not reveal any business-logic beyond routing infrastructure, so the subsystem\u2019s purpose is purely to manage HTTP route registration and retrieval within Slim.",
+      "members": 24,
+      "files": 2,
+      "loc": 292,
+      "languages": [
+        "php"
+      ],
+      "afferent": 4.5,
+      "efferent": 15.5,
+      "instability": 0.78,
+      "cohesion": 0.25,
+      "confidence": 0.93,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 25% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Interfaces/RouteGroupInterface.php:RouteGroupInterface",
+          "name": "RouteGroupInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteGroupInterface.php",
+          "weight": 3.0,
+          "called_from": [
+            1,
+            2
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollector.php:RouteCollector",
+          "name": "RouteCollector",
+          "kind": "class",
+          "path": "Slim/Routing/RouteCollector.php",
+          "weight": 1.5,
+          "called_from": [
+            1
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 6.5,
+          "edges": 8,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteCollectorInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteCollectorProxyInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 4.5,
+          "edges": 6,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteParser",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteCollector.__construct",
+              "target": "RouteParser",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteCollectorProxy",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.5,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "MiddlewareDispatcher",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "CallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteGroup",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 12,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RequestResponse",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "InvocationStrategyInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteCollector.__construct",
+              "target": "RequestResponse",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 2.5,
+          "edges": 4
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.0,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 3
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 20
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Routing/RouteCollector.php:RouteCollector.setCacheFile",
+          "name": "RouteCollector.setCacheFile",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollector.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteGroupInterface.php:RouteGroupInterface",
+          "name": "RouteGroupInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteGroupInterface.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollector.php:RouteCollector.getNamedRoute",
+          "name": "RouteCollector.getNamedRoute",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollector.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollector.php:RouteCollector.map",
+          "name": "RouteCollector.map",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollector.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollector.php:RouteCollector",
+          "name": "RouteCollector",
+          "kind": "class",
+          "path": "Slim/Routing/RouteCollector.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteCollector.php:RouteCollector.__construct",
+          "name": "RouteCollector.__construct",
+          "kind": "method",
+          "path": "Slim/Routing/RouteCollector.php"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "label": "Slim/Exception \u00b7 HttpSpecializedException.HttpSpecializedException",
+      "purpose": "The subsystem is a hierarchy of exception classes that model HTTP error responses. All classes extend **HttpException**, which stores the originating PSR-7 request and provides getters/setters for a title and description; the base constructor simply forwards the message to the native **Exception** class and records the request object. Specialized subclasses (BadRequest, Forbidden, NotFound, etc.) represent individual HTTP status codes and, in a few cases, add extra data (e.g., `HttpMethodNotAllowedException` tracks the allowed methods). Because routing middleware (`RoutingMiddleware.performRouting`) throws these exceptions to signal specific HTTP error conditions, the classes are grouped together to provide a consistent, type-safe way for the framework to generate and handle HTTP error responses.",
+      "members": 20,
+      "files": 11,
+      "loc": 222,
+      "languages": [
+        "php"
+      ],
+      "afferent": 7.0,
+      "efferent": 0,
+      "instability": 0.0,
+      "cohesion": 0.7,
+      "confidence": 0.92,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Exception/HttpMethodNotAllowedException.php:HttpMethodNotAllowedException",
+          "name": "HttpMethodNotAllowedException",
+          "kind": "class",
+          "path": "Slim/Exception/HttpMethodNotAllowedException.php",
+          "weight": 2.5,
+          "called_from": [
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Exception/HttpNotFoundException.php:HttpNotFoundException",
+          "name": "HttpNotFoundException",
+          "kind": "class",
+          "path": "Slim/Exception/HttpNotFoundException.php",
+          "weight": 2.0,
+          "called_from": [
+            9,
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Exception/HttpException.php:HttpException",
+          "name": "HttpException",
+          "kind": "class",
+          "path": "Slim/Exception/HttpException.php",
+          "weight": 1.5,
+          "called_from": [
+            4,
+            7,
+            8
+          ]
+        },
+        {
+          "id": "php:Slim/Exception/HttpMethodNotAllowedException.php:HttpMethodNotAllowedException.setAllowedMethods",
+          "name": "HttpMethodNotAllowedException.setAllowedMethods",
+          "kind": "method",
+          "path": "Slim/Exception/HttpMethodNotAllowedException.php",
+          "weight": 1.0,
+          "called_from": [
+            9
+          ]
+        }
+      ],
+      "depends_on": [],
+      "depended_on_by": [
+        {
+          "subsystem": 9,
+          "weight": 4.0,
+          "edges": 5
+        },
+        {
+          "subsystem": 8,
+          "weight": 1.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 10,
+          "weight": 1.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 7,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 6
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Exception/HttpSpecializedException.php:HttpSpecializedException",
+          "name": "HttpSpecializedException",
+          "kind": "class",
+          "path": "Slim/Exception/HttpSpecializedException.php"
+        },
+        {
+          "id": "php:Slim/Exception/HttpException.php:HttpException",
+          "name": "HttpException",
+          "kind": "class",
+          "path": "Slim/Exception/HttpException.php"
+        },
+        {
+          "id": "php:Slim/Exception/HttpMethodNotAllowedException.php:HttpMethodNotAllowedException",
+          "name": "HttpMethodNotAllowedException",
+          "kind": "class",
+          "path": "Slim/Exception/HttpMethodNotAllowedException.php"
+        },
+        {
+          "id": "php:Slim/Exception/HttpNotFoundException.php:HttpNotFoundException",
+          "name": "HttpNotFoundException",
+          "kind": "class",
+          "path": "Slim/Exception/HttpNotFoundException.php"
+        },
+        {
+          "id": "php:Slim/Exception/HttpException.php:HttpException.__construct",
+          "name": "HttpException.__construct",
+          "kind": "method",
+          "path": "Slim/Exception/HttpException.php"
+        },
+        {
+          "id": "php:Slim/Exception/HttpMethodNotAllowedException.php:HttpMethodNotAllowedException.setAllowedMethods",
+          "name": "HttpMethodNotAllowedException.setAllowedMethods",
+          "kind": "method",
+          "path": "Slim/Exception/HttpMethodNotAllowedException.php"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "label": "Slim/Error/Renderers \u00b7 HtmlErrorRenderer.HtmlErrorRenderer.renderExceptionFragment",
+      "purpose": "The subsystem implements a family of **error-rendering components** for the Slim framework. It defines an `ErrorRendererInterface` and an abstract base (`AbstractErrorRenderer`) that provide common helpers such as `getErrorTitle` and `getErrorDescription`, while concrete renderers (`HtmlErrorRenderer`, `JsonErrorRenderer`, `PlainTextErrorRenderer`, `XmlErrorRenderer`) each implement `__invoke` to transform a caught `Throwable` into a response formatted for a specific media type (HTML, JSON, plain-text, XML). All of the classes share the same dependencies (exception introspection methods, `htmlentities`, `json_encode`, `sprintf`, etc.) and are never called from outside the cluster, indicating they are grouped together to allow the framework to plug-in the appropriate renderer based on the request\u2019s \u201cAccept\u201d header or configuration. Thus the subsystem exists as a cohesive unit to centralize and standardize how exceptions are presented to clients in different formats.",
+      "members": 18,
+      "files": 6,
+      "loc": 199,
+      "languages": [
+        "php"
+      ],
+      "afferent": 2.5,
+      "efferent": 0.5,
+      "instability": 0.17,
+      "cohesion": 0.88,
+      "confidence": 1.0,
+      "in_cycle": false,
+      "wave": 1,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Error/Renderers/HtmlErrorRenderer.php:HtmlErrorRenderer",
+          "name": "HtmlErrorRenderer",
+          "kind": "class",
+          "path": "Slim/Error/Renderers/HtmlErrorRenderer.php",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "php:Slim/Error/Renderers/JsonErrorRenderer.php:JsonErrorRenderer",
+          "name": "JsonErrorRenderer",
+          "kind": "class",
+          "path": "Slim/Error/Renderers/JsonErrorRenderer.php",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "php:Slim/Error/Renderers/PlainTextErrorRenderer.php:PlainTextErrorRenderer",
+          "name": "PlainTextErrorRenderer",
+          "kind": "class",
+          "path": "Slim/Error/Renderers/PlainTextErrorRenderer.php",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "php:Slim/Error/Renderers/XmlErrorRenderer.php:XmlErrorRenderer",
+          "name": "XmlErrorRenderer",
+          "kind": "class",
+          "path": "Slim/Error/Renderers/XmlErrorRenderer.php",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/ErrorRendererInterface.php:ErrorRendererInterface",
+          "name": "ErrorRendererInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/ErrorRendererInterface.php",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 6,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HttpException",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 8,
+          "weight": 2.5,
+          "edges": 5
+        }
+      ],
+      "third_party": [],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 70
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Error/Renderers/HtmlErrorRenderer.php:HtmlErrorRenderer.renderExceptionFragment",
+          "name": "HtmlErrorRenderer.renderExceptionFragment",
+          "kind": "method",
+          "path": "Slim/Error/Renderers/HtmlErrorRenderer.php"
+        },
+        {
+          "id": "php:Slim/Error/Renderers/PlainTextErrorRenderer.php:PlainTextErrorRenderer.formatExceptionFragment",
+          "name": "PlainTextErrorRenderer.formatExceptionFragment",
+          "kind": "method",
+          "path": "Slim/Error/Renderers/PlainTextErrorRenderer.php"
+        },
+        {
+          "id": "php:Slim/Error/AbstractErrorRenderer.php:AbstractErrorRenderer",
+          "name": "AbstractErrorRenderer",
+          "kind": "class",
+          "path": "Slim/Error/AbstractErrorRenderer.php"
+        },
+        {
+          "id": "php:Slim/Error/Renderers/XmlErrorRenderer.php:XmlErrorRenderer.__invoke",
+          "name": "XmlErrorRenderer.__invoke",
+          "kind": "method",
+          "path": "Slim/Error/Renderers/XmlErrorRenderer.php"
+        },
+        {
+          "id": "php:Slim/Error/Renderers/JsonErrorRenderer.php:JsonErrorRenderer.formatExceptionFragment",
+          "name": "JsonErrorRenderer.formatExceptionFragment",
+          "kind": "method",
+          "path": "Slim/Error/Renderers/JsonErrorRenderer.php"
+        },
+        {
+          "id": "php:Slim/Error/AbstractErrorRenderer.php:AbstractErrorRenderer.getErrorTitle",
+          "name": "AbstractErrorRenderer.getErrorTitle",
+          "kind": "method",
+          "path": "Slim/Error/AbstractErrorRenderer.php"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "label": "Slim/Handlers \u00b7 ErrorHandler.ErrorHandler.respond",
+      "purpose": "The subsystem is the **error-handling core of the Slim framework**. It groups the `ErrorHandler` class, its interface, and a simple `Logger` together because they all cooperate to turn an exception or PHP error into an HTTP response: they inspect the request\u2019s *Accept* header, pick a matching renderer (e.g., JSON, HTML, plain text), determine the appropriate status code and content-type, render the error body, write details to the log, and finally send the response. The methods `determineContentType`, `determineStatusCode`, `registerErrorRenderer`, etc., implement the logic for content-negotiation and renderer selection, while `Logger` provides a default logging implementation used by the handler. This collection is kept as a single unit because the error-handler needs both rendering and logging capabilities to fulfill its contract defined by `ErrorHandlerInterface`.",
+      "members": 18,
+      "files": 3,
+      "loc": 294,
+      "languages": [
+        "php"
+      ],
+      "afferent": 2.0,
+      "efferent": 6.0,
+      "instability": 0.75,
+      "cohesion": 0.57,
+      "confidence": 1.0,
+      "in_cycle": false,
+      "wave": 2,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Handlers/ErrorHandler.php:ErrorHandler",
+          "name": "ErrorHandler",
+          "kind": "class",
+          "path": "Slim/Handlers/ErrorHandler.php",
+          "weight": 1.5,
+          "called_from": [
+            4
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/ErrorHandlerInterface.php:ErrorHandlerInterface",
+          "name": "ErrorHandlerInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/ErrorHandlerInterface.php",
+          "weight": 0.5,
+          "called_from": [
+            4
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 7,
+          "weight": 2.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HtmlErrorRenderer",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "JsonErrorRenderer",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "PlainTextErrorRenderer",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ErrorHandler.determineRenderer",
+              "target": "CallableResolverInterface.resolve",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ErrorHandler.writeToErrorLog",
+              "target": "CallableResolverInterface.resolve",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 6,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HttpException",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "HttpMethodNotAllowedException",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 4,
+          "weight": 2.0,
+          "edges": 3
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 13
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 27
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Handlers/ErrorHandler.php:ErrorHandler.determineContentType",
+          "name": "ErrorHandler.determineContentType",
+          "kind": "method",
+          "path": "Slim/Handlers/ErrorHandler.php"
+        },
+        {
+          "id": "php:Slim/Handlers/ErrorHandler.php:ErrorHandler.respond",
+          "name": "ErrorHandler.respond",
+          "kind": "method",
+          "path": "Slim/Handlers/ErrorHandler.php"
+        },
+        {
+          "id": "php:Slim/Handlers/ErrorHandler.php:ErrorHandler.__invoke",
+          "name": "ErrorHandler.__invoke",
+          "kind": "method",
+          "path": "Slim/Handlers/ErrorHandler.php"
+        },
+        {
+          "id": "php:Slim/Handlers/ErrorHandler.php:ErrorHandler.writeToErrorLog",
+          "name": "ErrorHandler.writeToErrorLog",
+          "kind": "method",
+          "path": "Slim/Handlers/ErrorHandler.php"
+        },
+        {
+          "id": "php:Slim/Handlers/ErrorHandler.php:ErrorHandler",
+          "name": "ErrorHandler",
+          "kind": "class",
+          "path": "Slim/Handlers/ErrorHandler.php"
+        },
+        {
+          "id": "php:Slim/Handlers/ErrorHandler.php:ErrorHandler.determineRenderer",
+          "name": "ErrorHandler.determineRenderer",
+          "kind": "method",
+          "path": "Slim/Handlers/ErrorHandler.php"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "label": "Slim/Routing \u00b7 RoutingMiddleware.RoutingMiddleware.performRouting",
+      "purpose": "The subsystem implements the **routing layer** of the Slim framework. It defines a `RouteResolverInterface` for turning a route identifier into a concrete route object, a `RoutingMiddleware` that intercepts each incoming PSR-7 request, extracts the path and HTTP method, asks the resolver to compute a `RoutingResults` value, and then stores that result (including the matched route, its arguments, allowed methods, and status flags such as FOUND, NOT_FOUND, METHOD_NOT_ALLOWED) as request attributes for downstream middleware/handlers. `RoutingResults` is a simple data holder exposing getters used by the dispatcher and by error handling (e.g., throwing `HttpNotFoundException` or `HttpMethodNotAllowedException`).  \n\nThese classes are grouped together because they all cooperate to translate a raw request into a resolved route and to convey that information through the middleware pipeline, which is a distinct concern separate from request handling, response generation, or dependency injection.",
+      "members": 17,
+      "files": 3,
+      "loc": 176,
+      "languages": [
+        "php"
+      ],
+      "afferent": 10.0,
+      "efferent": 6.5,
+      "instability": 0.39,
+      "cohesion": 0.37,
+      "confidence": 0.95,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 37% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Interfaces/RouteResolverInterface.php:RouteResolverInterface",
+          "name": "RouteResolverInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteResolverInterface.php",
+          "weight": 3.5,
+          "called_from": [
+            10,
+            11,
+            13
+          ]
+        },
+        {
+          "id": "php:Slim/Middleware/RoutingMiddleware.php:RoutingMiddleware",
+          "name": "RoutingMiddleware",
+          "kind": "class",
+          "path": "Slim/Middleware/RoutingMiddleware.php",
+          "weight": 3.0,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RoutingResults.php:RoutingResults",
+          "name": "RoutingResults",
+          "kind": "class",
+          "path": "Slim/Routing/RoutingResults.php",
+          "weight": 2.5,
+          "called_from": [
+            1,
+            13
+          ]
+        },
+        {
+          "id": "php:Slim/Middleware/RoutingMiddleware.php:RoutingMiddleware.performRouting",
+          "name": "RoutingMiddleware.performRouting",
+          "kind": "method",
+          "path": "Slim/Middleware/RoutingMiddleware.php",
+          "weight": 1.0,
+          "called_from": [
+            10
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 6,
+          "weight": 4.0,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HttpMethodNotAllowedException",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "HttpNotFoundException",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RoutingMiddleware.performRouting",
+              "target": "HttpNotFoundException",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 13,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "DispatcherInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RoutingResults.getAllowedMethods",
+              "target": "DispatcherInterface.getAllowedMethods",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteParserInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteContext",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 10,
+          "weight": 5.0,
+          "edges": 7
+        },
+        {
+          "subsystem": 13,
+          "weight": 2.5,
+          "edges": 3
+        },
+        {
+          "subsystem": 1,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 11,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 12
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 2
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Middleware/RoutingMiddleware.php:RoutingMiddleware.performRouting",
+          "name": "RoutingMiddleware.performRouting",
+          "kind": "method",
+          "path": "Slim/Middleware/RoutingMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/RouteResolverInterface.php:RouteResolverInterface",
+          "name": "RouteResolverInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RouteResolverInterface.php"
+        },
+        {
+          "id": "php:Slim/Routing/RoutingResults.php:RoutingResults",
+          "name": "RoutingResults",
+          "kind": "class",
+          "path": "Slim/Routing/RoutingResults.php"
+        },
+        {
+          "id": "php:Slim/Middleware/RoutingMiddleware.php:RoutingMiddleware",
+          "name": "RoutingMiddleware",
+          "kind": "class",
+          "path": "Slim/Middleware/RoutingMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Middleware/RoutingMiddleware.php:RoutingMiddleware.resolveRoutingResultsFromRequest",
+          "name": "RoutingMiddleware.resolveRoutingResultsFromRequest",
+          "kind": "method",
+          "path": "Slim/Middleware/RoutingMiddleware.php"
+        },
+        {
+          "id": "php:Slim/Middleware/RoutingMiddleware.php:RoutingMiddleware.process",
+          "name": "RoutingMiddleware.process",
+          "kind": "method",
+          "path": "Slim/Middleware/RoutingMiddleware.php"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "label": "Slim \u00b7 RouteRunner.RouteRunner.handle",
+      "purpose": "The subsystem is the core of the Slim framework\u2019s HTTP-request handling pipeline. It defines the **App** class, which composes a response factory, a callable resolver, a route collector/resolver and a middleware dispatcher, and then provides high-level methods (`add`, `addMiddleware`, `addRoutingMiddleware`, `addErrorMiddleware`, `addBodyParsingMiddleware`, `run`, `handle`) that register middleware, configure routing, and finally dispatch a request through the **RouteRunner**. The **RouteRunner** class is a thin wrapper that receives the assembled dispatcher and invokes the appropriate route callback when the app is run.  \n\nBecause all of these pieces work together to build, configure, and execute the request-response lifecycle (routing \u2192 middleware stack \u2192 error handling \u2192 response emission), they are clustered together as a cohesive unit that represents the \u201capplication bootstrap and execution engine\u201d of Slim. The clustering reflects that they share many internal dependencies (middleware dispatcher, route resolver, response emitter) and are only used by the factory methods that create a ready-to-run Slim app.",
+      "members": 14,
+      "files": 2,
+      "loc": 242,
+      "languages": [
+        "php"
+      ],
+      "afferent": 2.5,
+      "efferent": 32.0,
+      "instability": 0.93,
+      "cohesion": 0.16,
+      "confidence": 0.94,
+      "in_cycle": false,
+      "wave": 4,
+      "readiness": "needs-prep",
+      "blockers": [
+        "weak boundary: only 16% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/App.php:App",
+          "name": "App",
+          "kind": "class",
+          "path": "Slim/App.php",
+          "weight": 2.5,
+          "called_from": [
+            11
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 2,
+          "weight": 9.5,
+          "edges": 12,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "MiddlewareDispatcherInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "MiddlewareDispatcher",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 6.0,
+          "edges": 6,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteCollectorProxy",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App",
+              "target": "RouteCollectorProxy",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App.__construct",
+              "target": "RouteCollectorProxy.__construct",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 5.0,
+          "edges": 7,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RoutingMiddleware",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App.addRoutingMiddleware",
+              "target": "RoutingMiddleware",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 3.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteCollectorInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App.__construct",
+              "target": "RouteCollectorInterface.getRouteParser",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteCollectorProxyInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 4,
+          "weight": 3.0,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "BodyParsingMiddleware",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ErrorMiddleware",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App.addErrorMiddleware",
+              "target": "ErrorMiddleware",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 3,
+          "weight": 2.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "ServerRequestCreatorFactory",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App.run",
+              "target": "ServerRequestCreatorFactory.create",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App.run",
+              "target": "ServerRequestCreatorInterface.createServerRequestFromGlobals",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 13,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteResolver",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "App.__construct",
+              "target": "RouteResolver",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 6,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "HttpMethodNotAllowedException",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "HttpNotFoundException",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 11,
+          "weight": 2.5,
+          "edges": 3
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 16
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 2
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/App.php:App.__construct",
+          "name": "App.__construct",
+          "kind": "method",
+          "path": "Slim/App.php"
+        },
+        {
+          "id": "php:Slim/App.php:App.handle",
+          "name": "App.handle",
+          "kind": "method",
+          "path": "Slim/App.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteRunner.php:RouteRunner.handle",
+          "name": "RouteRunner.handle",
+          "kind": "method",
+          "path": "Slim/Routing/RouteRunner.php"
+        },
+        {
+          "id": "php:Slim/App.php:App",
+          "name": "App",
+          "kind": "class",
+          "path": "Slim/App.php"
+        },
+        {
+          "id": "php:Slim/App.php:App.addRoutingMiddleware",
+          "name": "App.addRoutingMiddleware",
+          "kind": "method",
+          "path": "Slim/App.php"
+        },
+        {
+          "id": "php:Slim/App.php:App.run",
+          "name": "App.run",
+          "kind": "method",
+          "path": "Slim/App.php"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "label": "Slim/Factory \u00b7 AppFactory.AppFactory.createFromContainer",
+      "purpose": "The **AppFactory** subsystem is a small, self-contained builder for a Slim `App` object. All of its public static methods cooperate to assemble an application instance by locating or creating the required PSR-17 factories (response, stream), a callable resolver, route collector/resolver, and middleware dispatcher, optionally decorating the factories with Slim-specific adapters. It centralises the logic for \u201cdetermine-or-fetch-from-container\u201d decisions (e.g., `createFromContainer` checks the container for a `ResponseFactoryInterface` and falls back to `determineResponseFactory`), and provides setters that let callers inject custom implementations, which keeps the rest of the codebase independent of concrete factory classes. Because these responsibilities are tightly related\u2014creating a fully-wired Slim application\u2014they are grouped into a single class, making the bootstrapping process reusable and testable.",
+      "members": 14,
+      "files": 1,
+      "loc": 190,
+      "languages": [
+        "php"
+      ],
+      "afferent": 0,
+      "efferent": 10.5,
+      "instability": 1.0,
+      "cohesion": 0.28,
+      "confidence": 0.83,
+      "in_cycle": false,
+      "wave": 5,
+      "readiness": "needs-prep",
+      "blockers": [
+        "weak boundary: only 28% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [],
+      "depends_on": [
+        {
+          "subsystem": 3,
+          "weight": 6.0,
+          "edges": 8,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Psr17Factory",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Psr17FactoryProvider",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "SlimHttpPsr17Factory",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 10,
+          "weight": 2.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "App",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "AppFactory.create",
+              "target": "App",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "AppFactory.createFromContainer",
+              "target": "App",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CallableResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "MiddlewareDispatcherInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteCollectorInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 13
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 2
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Factory/AppFactory.php:AppFactory.createFromContainer",
+          "name": "AppFactory.createFromContainer",
+          "kind": "method",
+          "path": "Slim/Factory/AppFactory.php"
+        },
+        {
+          "id": "php:Slim/Factory/AppFactory.php:AppFactory.determineResponseFactory",
+          "name": "AppFactory.determineResponseFactory",
+          "kind": "method",
+          "path": "Slim/Factory/AppFactory.php"
+        },
+        {
+          "id": "php:Slim/Factory/AppFactory.php:AppFactory.attemptResponseFactoryDecoration",
+          "name": "AppFactory.attemptResponseFactoryDecoration",
+          "kind": "method",
+          "path": "Slim/Factory/AppFactory.php"
+        },
+        {
+          "id": "php:Slim/Factory/AppFactory.php:AppFactory.create",
+          "name": "AppFactory.create",
+          "kind": "method",
+          "path": "Slim/Factory/AppFactory.php"
+        },
+        {
+          "id": "php:Slim/Factory/AppFactory.php:AppFactory",
+          "name": "AppFactory",
+          "kind": "class",
+          "path": "Slim/Factory/AppFactory.php"
+        },
+        {
+          "id": "php:Slim/Factory/AppFactory.php:AppFactory.setPsr17FactoryProvider",
+          "name": "AppFactory.setPsr17FactoryProvider",
+          "kind": "method",
+          "path": "Slim/Factory/AppFactory.php"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "label": "Slim/Handlers/Strategies \u00b7 InvocationStrategyInterface.InvocationStrategyInterface",
+      "purpose": "The subsystem implements **invocation strategies** for Slim\u2019s routing layer.  \nIt defines an `InvocationStrategyInterface` (and a more specific `RequestHandlerInvocationStrategyInterface`) and several concrete strategy classes (`RequestHandler`, `RequestResponse`, `RequestResponseArgs`, `RequestResponseNamedArgs`) whose `__invoke` methods receive a user-supplied callable, the current PSR-7 request/response objects, and the route\u2019s argument list, then invoke the callable in a particular way (e.g., passing the request only, passing request + response, passing arguments as positional or named parameters).  \n\nThese classes are called by `Route` and `RouteCollector` when a route is matched, allowing the framework to decouple route matching from how the handler is actually called. By grouping the interface and its concrete strategies together, the codebase provides a pluggable, interchangeable mechanism for adapting user callbacks to the PSR-7 request/response model.",
+      "members": 12,
+      "files": 6,
+      "loc": 110,
+      "languages": [
+        "php"
+      ],
+      "afferent": 7.0,
+      "efferent": 0,
+      "instability": 0.0,
+      "cohesion": 0.58,
+      "confidence": 1.0,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Handlers/Strategies/RequestResponse.php:RequestResponse",
+          "name": "RequestResponse",
+          "kind": "class",
+          "path": "Slim/Handlers/Strategies/RequestResponse.php",
+          "weight": 3.0,
+          "called_from": [
+            1,
+            5
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/InvocationStrategyInterface.php:InvocationStrategyInterface",
+          "name": "InvocationStrategyInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/InvocationStrategyInterface.php",
+          "weight": 2.0,
+          "called_from": [
+            0,
+            1,
+            5
+          ]
+        },
+        {
+          "id": "php:Slim/Handlers/Strategies/RequestHandler.php:RequestHandler",
+          "name": "RequestHandler",
+          "kind": "class",
+          "path": "Slim/Handlers/Strategies/RequestHandler.php",
+          "weight": 1.5,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/RequestHandlerInvocationStrategyInterface.php:RequestHandlerInvocationStrategyInterface",
+          "name": "RequestHandlerInvocationStrategyInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RequestHandlerInvocationStrategyInterface.php",
+          "weight": 0.5,
+          "called_from": [
+            1
+          ]
+        }
+      ],
+      "depends_on": [],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 4.0,
+          "edges": 6
+        },
+        {
+          "subsystem": 5,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.0,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Psr",
+          "uses": 12
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 3
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Interfaces/InvocationStrategyInterface.php:InvocationStrategyInterface",
+          "name": "InvocationStrategyInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/InvocationStrategyInterface.php"
+        },
+        {
+          "id": "php:Slim/Handlers/Strategies/RequestResponse.php:RequestResponse",
+          "name": "RequestResponse",
+          "kind": "class",
+          "path": "Slim/Handlers/Strategies/RequestResponse.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/RequestHandlerInvocationStrategyInterface.php:RequestHandlerInvocationStrategyInterface",
+          "name": "RequestHandlerInvocationStrategyInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/RequestHandlerInvocationStrategyInterface.php"
+        },
+        {
+          "id": "php:Slim/Handlers/Strategies/RequestHandler.php:RequestHandler",
+          "name": "RequestHandler",
+          "kind": "class",
+          "path": "Slim/Handlers/Strategies/RequestHandler.php"
+        },
+        {
+          "id": "php:Slim/Handlers/Strategies/RequestHandler.php:RequestHandler.__invoke",
+          "name": "RequestHandler.__invoke",
+          "kind": "method",
+          "path": "Slim/Handlers/Strategies/RequestHandler.php"
+        },
+        {
+          "id": "php:Slim/Handlers/Strategies/RequestResponse.php:RequestResponse.__invoke",
+          "name": "RequestResponse.__invoke",
+          "kind": "method",
+          "path": "Slim/Handlers/Strategies/RequestResponse.php"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "label": "Slim/Routing \u00b7 DispatcherInterface.DispatcherInterface",
+      "purpose": "The subsystem implements the core of Slim\u2019s request-routing pipeline. The `DispatcherInterface` defines the contract for a low-level router that can **dispatch** a HTTP method + URI to a route and report the set of **allowed methods** for a matched path. `RouteResolver` is a thin fa\u00e7ade that receives a raw request URI and method, normalises the URI (URL-decoding and ensuring a leading \u201c/\u201d), and then forwards the call to an injected `Dispatcher` implementation via `dispatch`. It also exposes the same \u201callowed-methods\u201d query through `getAllowedMethods`, which is used by higher-level components such as `App` and `RoutingResults`.  \n\nTogether these classes form a cohesive unit because they encapsulate all concerns around turning an incoming request into routing information: URI sanitisation, delegation to the dispatcher, and exposing the dispatcher\u2019s API to the rest of the framework. The grouping is therefore logical \u2013 they collectively provide the routing-resolution service required by the application bootstrap and by result-handling code.",
+      "members": 7,
+      "files": 2,
+      "loc": 46,
+      "languages": [
+        "php"
+      ],
+      "afferent": 5.0,
+      "efferent": 6.0,
+      "instability": 0.55,
+      "cohesion": 0.12,
+      "confidence": 1.0,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 12% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "php:Slim/Interfaces/DispatcherInterface.php:DispatcherInterface",
+          "name": "DispatcherInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/DispatcherInterface.php",
+          "weight": 2.5,
+          "called_from": [
+            1,
+            9
+          ]
+        },
+        {
+          "id": "php:Slim/Routing/RouteResolver.php:RouteResolver",
+          "name": "RouteResolver",
+          "kind": "class",
+          "path": "Slim/Routing/RouteResolver.php",
+          "weight": 1.5,
+          "called_from": [
+            10
+          ]
+        },
+        {
+          "id": "php:Slim/Interfaces/DispatcherInterface.php:DispatcherInterface.getAllowedMethods",
+          "name": "DispatcherInterface.getAllowedMethods",
+          "kind": "method",
+          "path": "Slim/Interfaces/DispatcherInterface.php",
+          "weight": 1.0,
+          "called_from": [
+            9
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 9,
+          "weight": 2.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RoutingResults",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteResolverInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteResolver",
+              "target": "RouteResolverInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteCollectorInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteResolver.resolveRoute",
+              "target": "RouteCollectorInterface.lookupRoute",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Dispatcher",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteResolver.__construct",
+              "target": "Dispatcher",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 10,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 9,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [],
+      "stdlib": [
+        {
+          "package": "php",
+          "uses": 3
+        }
+      ],
+      "top_members": [
+        {
+          "id": "php:Slim/Interfaces/DispatcherInterface.php:DispatcherInterface",
+          "name": "DispatcherInterface",
+          "kind": "class",
+          "path": "Slim/Interfaces/DispatcherInterface.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteResolver.php:RouteResolver",
+          "name": "RouteResolver",
+          "kind": "class",
+          "path": "Slim/Routing/RouteResolver.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteResolver.php:RouteResolver.computeRoutingResults",
+          "name": "RouteResolver.computeRoutingResults",
+          "kind": "method",
+          "path": "Slim/Routing/RouteResolver.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/DispatcherInterface.php:DispatcherInterface.dispatch",
+          "name": "DispatcherInterface.dispatch",
+          "kind": "method",
+          "path": "Slim/Interfaces/DispatcherInterface.php"
+        },
+        {
+          "id": "php:Slim/Interfaces/DispatcherInterface.php:DispatcherInterface.getAllowedMethods",
+          "name": "DispatcherInterface.getAllowedMethods",
+          "kind": "method",
+          "path": "Slim/Interfaces/DispatcherInterface.php"
+        },
+        {
+          "id": "php:Slim/Routing/RouteResolver.php:RouteResolver.__construct",
+          "name": "RouteResolver.__construct",
+          "kind": "method",
+          "path": "Slim/Routing/RouteResolver.php"
+        }
+      ]
+    }
+  ],
+  "waves": [
+    {
+      "index": 0,
+      "units": [
+        {
+          "subsystems": [
+            12
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            6
+          ],
+          "cyclic": false
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "units": [
+        {
+          "subsystems": [
+            7
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            0,
+            1,
+            2,
+            5,
+            9,
+            13
+          ],
+          "cyclic": true
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "units": [
+        {
+          "subsystems": [
+            8
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            3
+          ],
+          "cyclic": false
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "units": [
+        {
+          "subsystems": [
+            4
+          ],
+          "cyclic": false
+        }
+      ]
+    },
+    {
+      "index": 4,
+      "units": [
+        {
+          "subsystems": [
+            10
+          ],
+          "cyclic": false
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "units": [
+        {
+          "subsystems": [
+            11
+          ],
+          "cyclic": false
+        }
+      ]
+    }
+  ],
+  "cycles": [
+    {
+      "members": [
+        0,
+        1,
+        2,
+        5,
+        9,
+        13
+      ],
+      "order_after_cuts": [
+        [
+          0,
+          9
+        ],
+        [
+          2,
+          13
+        ],
+        [
+          1
+        ],
+        [
+          5
+        ]
+      ],
+      "cut_candidates": [
+        {
+          "from": 9,
+          "to": 0,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteParserInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 9,
+          "to": 1,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteContext",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "weight": 1.5,
+          "examples": [
+            {
+              "source": "AdvancedCallableResolverInterface",
+              "target": "CallableResolverInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 9,
+          "to": 13,
+          "weight": 1.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "DispatcherInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RoutingResults.getAllowedMethods",
+              "target": "DispatcherInterface.getAllowedMethods",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 13,
+          "to": 1,
+          "weight": 1.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Dispatcher",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteResolver.__construct",
+              "target": "Dispatcher",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 2,
+          "to": 5,
+          "weight": 2.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteGroupInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "RouteGroup",
+              "target": "RouteGroupInterface",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 1,
+          "to": 5,
+          "weight": 2.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "RouteGroupInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteGroupInterface",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "RouteCollector",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "narrative": "## Target shape  \nThe migration will extract fourteen Slim framework subsystems into six waves, respecting the single dependency cycle that spans the routing-related components. Waves 0 and 1 contain the core interfaces and the routing-pipeline cluster that must be broken by introducing thin fa\u00e7ade interfaces at the three cheapest cut links. Subsequent waves pull in error handling, middleware, the request-runner and the factory that builds the application.\n\n## Migration sequence  \n\n- **Wave 0** \u2013 extract the two independent subsystems:  \n  - `#12` \u2013 expose its `InvocationStrategyInterface` as the fa\u00e7ade for invocation strategies. No prep work blocks this extraction.  \n  - `#6` \u2013 expose the hierarchy of HTTP-specialized exceptions (no additional work required).  \n\n- **Wave 1** \u2013 break the cycle and extract the six inter-dependent routing subsystems in the prescribed order:  \n  1. **Cut link #9 \u2192 #0** (the reference to `RouteParserInterface`). Introduce a fa\u00e7ade over the `RoutingMiddleware.performRouting` entry point that delegates to a new `RoutingFacade` exposing only the needed method.  \n  2. **Cut link #9 \u2192 #1** (the reference to `RouteContext`). Introduce a fa\u00e7ade over the `RoutingMiddleware.performRouting` entry point that hides the `RouteContext` dependency.  \n  3. **Cut link #0 \u2192 #2** (the reference to `CallableResolverInterface`). Introduce a fa\u00e7ade over the `RouteCollectorInterface` entry point that supplies a `CallableResolverFacade`.  \n  After these three fa\u00e7ades are in place, the cycle is broken and the following extractions can proceed:  \n  - `#0` \u2013 expose `RouteCollectorInterface` (the fa\u00e7ade created above satisfies its external callers).  \n  - `#9` \u2013 expose `RoutingMiddleware.performRouting` via the fa\u00e7ade introduced in step 1.  \n  - `#2` \u2013 expose `MiddlewareDispatcher.addDeferred.handle` (now depends only on the fa\u00e7ade for `RouteCollectorInterface`).  \n  - `#13` \u2013 expose `DispatcherInterface` (its only remaining external dependency is the fa\u00e7ade for `RoutingMiddleware`).  \n  - `#1` \u2013 expose `Dispatcher.createDispatcher` (depends on the fa\u00e7ade for `RouteCollectorInterface` and the now-extracted `DispatcherInterface`).  \n  - `#5` \u2013 expose `RouteCollector.setCacheFile` (depends on the already-extracted `RouteCollectorInterface`).  \n\n- **Wave 2** \u2013 extract the error-handling and PSR-17 factory subsystems:  \n  - `#8` \u2013 expose `ErrorHandler.respond` (its dependencies `#7`, `#2`, `#6` are already available).  \n  - `#3` \u2013 expose the `Psr17Factory` fa\u00e7ade (no blockers).  \n\n- **Wave 3** \u2013 extract the method-override middleware:  \n  - `#4` \u2013 expose `MethodOverrideMiddleware.process` (depends on `#2`, `#8`, `#6`, all present).  \n\n- **Wave 4** \u2013 extract the request-runner:  \n  - `#10` \u2013 expose `RouteRunner.handle` (depends on `#2`, `#1`, `#9`, `#0`, `#4`).  \n\n- **Wave 5** \u2013 extract the application factory:  \n  - `#11` \u2013 expose `AppFactory.createFromContainer` (depends on `#3`, `#10`, `#2`, `#0`, `#9`).  \n\n## Biggest risks  \n- The three fa\u00e7ade introductions may leak internal details if not carefully limited to the listed entry points.  \n- Weak boundaries in several subsystems (especially `#0`, `#1`, `#2`, `#5`, `#9`, `#13`) could cause hidden coupling to re-emerge after extraction.  \n- Large public surfaces (e.g., `#0` with 19 entry points) increase the chance of accidental API breakage.  \n- Instability scores above 0.7 in `#1`, `#4`, `#10` suggest these components may change frequently, impacting downstream code.  \n\n## What this analysis cannot tell you  \n- The runtime performance impact of the introduced fa\u00e7ade layers.  \n- Whether the extracted subsystems will meet functional requirements without additional refactoring of calling code.  \n- The completeness of third-party compatibility (e.g., with specific PSR-7 implementations).  \n- Any hidden dynamic dependencies that static analysis missed.",
+  "narrative_warnings": [
+    "`CallableResolverFacade`",
+    "`RoutingFacade`"
+  ]
+}

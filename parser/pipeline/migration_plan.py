@@ -495,6 +495,8 @@ def check_references(narrative: str, plan: dict) -> list[str]:
         token = span.strip().rstrip("()")
         if re.fullmatch(r"[\d.%\s-]+", token):
             continue
+        if re.fullmatch(r"#\d+", token):  # a subsystem reference in backticks: checked against real ids below
+            continue
         if token not in known and not all(piece in known for piece in token.split(".")):
             problems.add(f"`{token}`")
     for number in SUBSYSTEM_REF.findall(narrative):

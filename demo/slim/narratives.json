@@ -1,0 +1,348 @@
+{
+  "0": {
+    "text": "The members of this cluster are all interfaces that define the core routing-related contracts of the Slim PHP framework: callable resolution, PSR-17 factories, route collection, individual route objects, and route parsing. Together they describe how routes are registered, looked-up, grouped, named, and turned into concrete request-handling pipelines, as well as how URLs are generated from those routes. Because they are pure interface definitions with no concrete implementations, the subsystem exists as a cohesive abstraction layer that lets the rest of the framework (e.g., `App`, `Dispatcher`, `RouteResolver`, `RouteRunner`) depend on a stable contract while allowing different implementations (or user-provided containers) to be swapped in. The cluster therefore provides the structural backbone for Slim\u2019s routing and URL-generation functionality.",
+    "member_count": 64,
+    "grounded_in": {
+      "calls_out": [],
+      "calls_in": [
+        "App.__construct",
+        "Dispatcher.createDispatcher",
+        "RouteCollector.map",
+        "RouteCollector.removeNamedRoute",
+        "RouteCollectorProxy.getBasePath",
+        "RouteCollectorProxy.group",
+        "RouteCollectorProxy.map",
+        "RouteCollectorProxy.setBasePath",
+        "RouteParser.relativeUrlFor",
+        "RouteParser.urlFor",
+        "RouteResolver.resolveRoute",
+        "RouteRunner.handle"
+      ],
+      "excerpt_source": "RouteCollectorInterface.getBasePath (Slim/Interfaces/RouteCollectorInterface.php)"
+    }
+  },
+  "1": {
+    "text": "The classes in this cluster implement the **routing layer** of the Slim PHP framework. `Dispatcher` and its concrete `FastRouteDispatcher` translate the collection of `Route` objects (which hold HTTP methods, URL patterns, callables, middleware, etc.) into a FastRoute data-structure and then use it at request time to match an incoming URI, retrieve the matched route identifier and the allowed HTTP methods. `Route`, `RouteCollectorProxy`, `RouteParser` and `RouteContext` provide the API for defining routes, grouping them, generating URLs, and exposing routing results to handlers.  \n\nAll of these pieces call and are called by the same surrounding components (`App`, `RouteCollector`, `RouteResolver`), and they share the same external dependencies (callable resolver, middleware dispatcher, request/response objects). Therefore they form a cohesive subsystem whose sole purpose is to **register, store, match, and dispatch HTTP routes** within the application.",
+    "member_count": 63,
+    "grounded_in": {
+      "calls_out": [
+        "CallableResolverInterface.resolve",
+        "MiddlewareDispatcher",
+        "MiddlewareDispatcher.add",
+        "MiddlewareDispatcher.addMiddleware",
+        "MiddlewareDispatcher.handle",
+        "RequestHandler",
+        "RequestResponse",
+        "RouteCollector",
+        "RouteCollectorInterface.getBasePath",
+        "RouteCollectorInterface.getCacheFile",
+        "RouteCollectorInterface.getNamedRoute",
+        "RouteCollectorInterface.getRoutes",
+        "RouteCollectorInterface.group",
+        "RouteCollectorInterface.map",
+        "RouteCollectorInterface.setBasePath"
+      ],
+      "calls_in": [
+        "App.__construct",
+        "App.addErrorMiddleware",
+        "App.addRoutingMiddleware",
+        "RouteCollector.__construct",
+        "RouteCollector.createProxy",
+        "RouteCollector.createRoute",
+        "RouteResolver.__construct"
+      ],
+      "excerpt_source": "Dispatcher.createDispatcher (Slim/Routing/Dispatcher.php)"
+    }
+  },
+  "2": {
+    "text": "The classes in this cluster implement the **routing-and-middleware execution pipeline** of the Slim framework. `CallableResolver` (and its interface) turn user-supplied strings, arrays or objects into real PHP callables, distinguishing between route handlers and middleware; the various `resolve*` methods handle Slim\u2019s \u201cclass:method\u201d notation, container binding, and predicate-based resolution. `MiddlewareDispatcher` (and its interface) builds a stack of those callables, supports adding middleware immediately, lazily (deferred), or as plain callables, and walks the stack by invoking each middleware with the current request and a \u201cnext\u201d handler. `ResponseEmitter` takes the final `ResponseInterface` produced by the dispatcher and streams its status line, headers and body to the PHP SAPI. `RouteGroup` groups routes under a common URI prefix and aggregates group-level middleware, feeding them into the dispatcher.  \n\nTogether these 46 members form a cohesive subsystem that resolves, orders, and runs middleware and route handlers, then emits the resulting HTTP response\u2014i.e., the core request-handling engine of the Slim micro-framework.",
+    "member_count": 46,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:$callable",
+        "unresolved:$predicate",
+        "unresolved:($this->middleware)",
+        "unresolved:RuntimeException",
+        "unresolved:array_shift",
+        "unresolved:body.eof",
+        "unresolved:body.getSize",
+        "unresolved:body.isSeekable",
+        "unresolved:body.read",
+        "unresolved:body.rewind",
+        "unresolved:callable.bindTo",
+        "unresolved:class_exists",
+        "unresolved:connection_status",
+        "unresolved:function_exists",
+        "unresolved:header"
+      ],
+      "calls_in": [
+        "App.__construct",
+        "App.add",
+        "App.addMiddleware",
+        "App.run",
+        "ErrorHandler.determineRenderer",
+        "ErrorHandler.writeToErrorLog",
+        "ErrorMiddleware.getDefaultErrorHandler",
+        "ErrorMiddleware.getErrorHandler",
+        "Route.__construct",
+        "Route.add",
+        "Route.addMiddleware",
+        "Route.appendGroupMiddlewareToRoute",
+        "Route.handle",
+        "Route.run",
+        "RouteCollector.createGroup"
+      ],
+      "excerpt_source": "MiddlewareDispatcher.addDeferred.handle (Slim/MiddlewareDispatcher.php)"
+    }
+  },
+  "3": {
+    "text": "The classes in this cluster are all concerned with locating, instantiating and decorating **PSR-17 factories** (response, stream and server-request factories) and a **ServerRequestCreator** that can build a `ServerRequest` from PHP globals. The subsystem provides a pluggable abstraction (`Psr17FactoryProviderInterface`, `ServerRequestCreatorInterface`) that can discover which concrete PSR-17 implementation is available at runtime (Guzzle, HttpSoft, Laminas-Diactoros, Nyholm, Slim-Http, etc.), expose its factories via `Psr17FactoryProvider`, and optionally wrap them with Slim-specific decorators (`SlimHttpServerRequestCreator`, `SlimHttpPsr17Factory`).  \n\nIt exists as a cohesive unit because the rest of the framework (e.g., `App.run`, `AppFactory`) needs a reliable way to obtain a PSR-17-compliant request/response stack without hard-coding a particular library; the subsystem isolates the detection logic, the factory-selection loop, and the decoration steps in one place, making the HTTP-message creation interchangeable and extensible.",
+    "member_count": 40,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:(Closure::fromCallable($callable))",
+        "unresolved:Closure.fromCallable",
+        "unresolved:RuntimeException",
+        "unresolved:array_unshift",
+        "unresolved:class_exists",
+        "unresolved:get_called_class",
+        "unresolved:psr17Factory.getServerRequestCreator",
+        "unresolved:psr17Factory.isServerRequestCreatorAvailable"
+      ],
+      "calls_in": [
+        "App.run",
+        "AppFactory.attemptResponseFactoryDecoration",
+        "AppFactory.determineResponseFactory"
+      ],
+      "excerpt_source": "ServerRequestCreatorFactory.determineServerRequestCreator (Slim/Factory/ServerRequestCreatorFactory.php)"
+    }
+  },
+  "4": {
+    "text": "The four classes in this cluster are all **Slim Framework middleware** that sit in the HTTP request-processing pipeline.  \n\n* **BodyParsingMiddleware** registers a map of media-type \u2192 callable parsers (JSON, form-urlencoded, etc.), inspects the incoming `Content-Type` header, invokes the appropriate parser, and stores the resulting data on the request object.  \n* **ContentLengthMiddleware** calculates or validates the `Content-Length` header for responses.  \n* **MethodOverrideMiddleware** looks for special request parameters (e.g., `_METHOD` or the `X-Http-Method-Override` header) and rewrites the request method so that clients can tunnel verbs like PUT/DELETE through POST.  \n* **OutputBufferingMiddleware** starts an output buffer before the next handler runs and flushes it afterward, allowing the framework to capture and manipulate the response body.  \n\nTogether they form a cohesive \u201ccore HTTP-handling\u201d subsystem: each class implements a `process` method that conforms to the same middleware interface, and they are all added to the `App` via `addBodyParsingMiddleware` or `addErrorMiddleware`. Their purpose is to provide reusable, composable preprocessing and post-processing steps (parsing request bodies, normalising methods, managing response length, and buffering output) that are needed for every Slim request, which is why they are grouped together.",
+    "member_count": 26,
+    "grounded_in": {
+      "calls_out": [
+        "CallableResolverInterface.resolve",
+        "ErrorHandler",
+        "unresolved:$handler",
+        "unresolved:$this->bodyParsers[$mediaType]",
+        "unresolved:InvalidArgumentException",
+        "unresolved:RuntimeException",
+        "unresolved:body.write",
+        "unresolved:count",
+        "unresolved:empty",
+        "unresolved:exception.getRequest",
+        "unresolved:explode",
+        "unresolved:get_class",
+        "unresolved:handler.handle",
+        "unresolved:in_array",
+        "unresolved:is_array"
+      ],
+      "calls_in": [
+        "App.addBodyParsingMiddleware",
+        "App.addErrorMiddleware"
+      ],
+      "excerpt_source": "BodyParsingMiddleware.registerDefaultBodyParsers (Slim/Middleware/BodyParsingMiddleware.php)"
+    }
+  },
+  "5": {
+    "text": "The subsystem groups the **Slim routing core** \u2013 an interface that describes a route-group contract and a concrete `RouteCollector` class that builds, stores and looks up routes, groups, and their middleware. All members deal with creating route objects, parsing URL patterns, managing a base path, handling named-route lookup, and optionally persisting the compiled route table to a cache file (as shown by the `setCacheFile` checks for readability/writability). Because these responsibilities are tightly coupled \u2013 the collector must know the group interface, the route parser, the invocation strategy, and the cache location \u2013 they are clustered together as a single cohesive unit that encapsulates the definition, organization, and optional serialization of the application\u2019s routing map. The code does not reveal any business-logic beyond routing infrastructure, so the subsystem\u2019s purpose is purely to manage HTTP route registration and retrieval within Slim.",
+    "member_count": 24,
+    "grounded_in": {
+      "calls_out": [
+        "RequestResponse",
+        "Route",
+        "RouteCollectorProxy",
+        "RouteGroup",
+        "RouteInterface.getIdentifier",
+        "RouteInterface.getName",
+        "RouteParser",
+        "unresolved:RuntimeException",
+        "unresolved:array_pop",
+        "unresolved:dirname",
+        "unresolved:file_exists",
+        "unresolved:is_readable",
+        "unresolved:is_writable",
+        "unresolved:isset",
+        "unresolved:route.getName"
+      ],
+      "calls_in": [
+        "RouteCollectorProxy.__construct"
+      ],
+      "excerpt_source": "RouteCollector.setCacheFile (Slim/Routing/RouteCollector.php)"
+    }
+  },
+  "6": {
+    "text": "The subsystem is a hierarchy of exception classes that model HTTP error responses. All classes extend **HttpException**, which stores the originating PSR-7 request and provides getters/setters for a title and description; the base constructor simply forwards the message to the native **Exception** class and records the request object. Specialized subclasses (BadRequest, Forbidden, NotFound, etc.) represent individual HTTP status codes and, in a few cases, add extra data (e.g., `HttpMethodNotAllowedException` tracks the allowed methods). Because routing middleware (`RoutingMiddleware.performRouting`) throws these exceptions to signal specific HTTP error conditions, the classes are grouped together to provide a consistent, type-safe way for the framework to generate and handle HTTP error responses.",
+    "member_count": 20,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:implode",
+        "unresolved:parent.__construct"
+      ],
+      "calls_in": [
+        "RoutingMiddleware.performRouting"
+      ],
+      "excerpt_source": "HttpException.__construct (Slim/Exception/HttpException.php)"
+    }
+  },
+  "7": {
+    "text": "The subsystem implements a family of **error-rendering components** for the Slim framework. It defines an `ErrorRendererInterface` and an abstract base (`AbstractErrorRenderer`) that provide common helpers such as `getErrorTitle` and `getErrorDescription`, while concrete renderers (`HtmlErrorRenderer`, `JsonErrorRenderer`, `PlainTextErrorRenderer`, `XmlErrorRenderer`) each implement `__invoke` to transform a caught `Throwable` into a response formatted for a specific media type (HTML, JSON, plain-text, XML). All of the classes share the same dependencies (exception introspection methods, `htmlentities`, `json_encode`, `sprintf`, etc.) and are never called from outside the cluster, indicating they are grouped together to allow the framework to plug-in the appropriate renderer based on the request\u2019s \u201cAccept\u201d header or configuration. Thus the subsystem exists as a cohesive unit to centralize and standardize how exceptions are presented to clients in different formats.",
+    "member_count": 18,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:exception.getCode",
+        "unresolved:exception.getDescription",
+        "unresolved:exception.getFile",
+        "unresolved:exception.getLine",
+        "unresolved:exception.getMessage",
+        "unresolved:exception.getPrevious",
+        "unresolved:exception.getTitle",
+        "unresolved:exception.getTraceAsString",
+        "unresolved:get_class",
+        "unresolved:htmlentities",
+        "unresolved:htmlspecialchars",
+        "unresolved:json_encode",
+        "unresolved:sprintf",
+        "unresolved:str_replace"
+      ],
+      "calls_in": [],
+      "excerpt_source": "HtmlErrorRenderer.renderExceptionFragment (Slim/Error/Renderers/HtmlErrorRenderer.php)"
+    }
+  },
+  "8": {
+    "text": "The subsystem is the **error-handling core of the Slim framework**. It groups the `ErrorHandler` class, its interface, and a simple `Logger` together because they all cooperate to turn an exception or PHP error into an HTTP response: they inspect the request\u2019s *Accept* header, pick a matching renderer (e.g., JSON, HTML, plain text), determine the appropriate status code and content-type, render the error body, write details to the log, and finally send the response. The methods `determineContentType`, `determineStatusCode`, `registerErrorRenderer`, etc., implement the logic for content-negotiation and renderer selection, while `Logger` provides a default logging implementation used by the handler. This collection is kept as a single unit because the error-handler needs both rendering and logging capabilities to fulfill its contract defined by `ErrorHandlerInterface`.",
+    "member_count": 18,
+    "grounded_in": {
+      "calls_out": [
+        "CallableResolverInterface.resolve",
+        "unresolved:$renderer",
+        "unresolved:array_intersect",
+        "unresolved:array_key_exists",
+        "unresolved:array_keys",
+        "unresolved:call_user_func",
+        "unresolved:count",
+        "unresolved:current",
+        "unresolved:error_log",
+        "unresolved:explode",
+        "unresolved:implode",
+        "unresolved:is_string",
+        "unresolved:next",
+        "unresolved:preg_match",
+        "unresolved:request.getHeaderLine"
+      ],
+      "calls_in": [
+        "ErrorMiddleware.getDefaultErrorHandler"
+      ],
+      "excerpt_source": "ErrorHandler.determineContentType (Slim/Handlers/ErrorHandler.php)"
+    }
+  },
+  "9": {
+    "text": "The subsystem implements the **routing layer** of the Slim framework. It defines a `RouteResolverInterface` for turning a route identifier into a concrete route object, a `RoutingMiddleware` that intercepts each incoming PSR-7 request, extracts the path and HTTP method, asks the resolver to compute a `RoutingResults` value, and then stores that result (including the matched route, its arguments, allowed methods, and status flags such as FOUND, NOT_FOUND, METHOD_NOT_ALLOWED) as request attributes for downstream middleware/handlers. `RoutingResults` is a simple data holder exposing getters used by the dispatcher and by error handling (e.g., throwing `HttpNotFoundException` or `HttpMethodNotAllowedException`).  \n\nThese classes are grouped together because they all cooperate to translate a raw request into a resolved route and to convey that information through the middleware pipeline, which is a distinct concern separate from request handling, response generation, or dependency injection.",
+    "member_count": 17,
+    "grounded_in": {
+      "calls_out": [
+        "DispatcherInterface.getAllowedMethods",
+        "HttpMethodNotAllowedException",
+        "HttpMethodNotAllowedException.setAllowedMethods",
+        "HttpNotFoundException",
+        "unresolved:RuntimeException",
+        "unresolved:handler.handle",
+        "unresolved:request.getMethod",
+        "unresolved:request.getUri",
+        "unresolved:request.getUri().getPath",
+        "unresolved:request.withAttribute",
+        "unresolved:this.routeResolver .resolveRoute(routeIdentifier).prepare"
+      ],
+      "calls_in": [
+        "App.addRoutingMiddleware",
+        "Dispatcher.dispatch",
+        "RouteRunner.handle"
+      ],
+      "excerpt_source": "RoutingMiddleware.performRouting (Slim/Middleware/RoutingMiddleware.php)"
+    }
+  },
+  "10": {
+    "text": "The subsystem is the core of the Slim framework\u2019s HTTP-request handling pipeline. It defines the **App** class, which composes a response factory, a callable resolver, a route collector/resolver and a middleware dispatcher, and then provides high-level methods (`add`, `addMiddleware`, `addRoutingMiddleware`, `addErrorMiddleware`, `addBodyParsingMiddleware`, `run`, `handle`) that register middleware, configure routing, and finally dispatch a request through the **RouteRunner**. The **RouteRunner** class is a thin wrapper that receives the assembled dispatcher and invokes the appropriate route callback when the app is run.  \n\nBecause all of these pieces work together to build, configure, and execute the request-response lifecycle (routing \u2192 middleware stack \u2192 error handling \u2192 response emission), they are clustered together as a cohesive unit that represents the \u201capplication bootstrap and execution engine\u201d of Slim. The clustering reflects that they share many internal dependencies (middleware dispatcher, route resolver, response emitter) and are only used by the factory methods that create a ready-to-run Slim app.",
+    "member_count": 14,
+    "grounded_in": {
+      "calls_out": [
+        "BodyParsingMiddleware",
+        "CallableResolver",
+        "ErrorMiddleware",
+        "MiddlewareDispatcher",
+        "MiddlewareDispatcherInterface.add",
+        "MiddlewareDispatcherInterface.addMiddleware",
+        "MiddlewareDispatcherInterface.seedMiddlewareStack",
+        "ResponseEmitter",
+        "ResponseEmitter.emit",
+        "RouteCollectorInterface.getRouteParser",
+        "RouteCollectorProxy.__construct",
+        "RouteCollectorProxy.getCallableResolver",
+        "RouteCollectorProxy.getResponseFactory",
+        "RouteCollectorProxy.getRouteCollector",
+        "RouteCollectorProxyInterface.getBasePath"
+      ],
+      "calls_in": [
+        "AppFactory.create",
+        "AppFactory.createFromContainer"
+      ],
+      "excerpt_source": "App.__construct (Slim/App.php)"
+    }
+  },
+  "11": {
+    "text": "The **AppFactory** subsystem is a small, self-contained builder for a Slim `App` object. All of its public static methods cooperate to assemble an application instance by locating or creating the required PSR-17 factories (response, stream), a callable resolver, route collector/resolver, and middleware dispatcher, optionally decorating the factories with Slim-specific adapters. It centralises the logic for \u201cdetermine-or-fetch-from-container\u201d decisions (e.g., `createFromContainer` checks the container for a `ResponseFactoryInterface` and falls back to `determineResponseFactory`), and provides setters that let callers inject custom implementations, which keeps the rest of the codebase independent of concrete factory classes. Because these responsibilities are tightly related\u2014creating a fully-wired Slim application\u2014they are grouped into a single class, making the bootstrapping process reusable and testable.",
+    "member_count": 14,
+    "grounded_in": {
+      "calls_out": [
+        "App",
+        "Psr17Factory.isResponseFactoryAvailable",
+        "Psr17FactoryProvider",
+        "Psr17FactoryProviderInterface.getFactories",
+        "SlimHttpPsr17Factory.createDecoratedResponseFactory",
+        "unresolved:RuntimeException",
+        "unresolved:container.get",
+        "unresolved:container.has",
+        "unresolved:psr17factory.getResponseFactory",
+        "unresolved:psr17factory.getStreamFactory",
+        "unresolved:psr17factory.isResponseFactoryAvailable",
+        "unresolved:psr17factory.isStreamFactoryAvailable"
+      ],
+      "calls_in": [],
+      "excerpt_source": "AppFactory.createFromContainer (Slim/Factory/AppFactory.php)"
+    }
+  },
+  "12": {
+    "text": "The subsystem implements **invocation strategies** for Slim\u2019s routing layer.  \nIt defines an `InvocationStrategyInterface` (and a more specific `RequestHandlerInvocationStrategyInterface`) and several concrete strategy classes (`RequestHandler`, `RequestResponse`, `RequestResponseArgs`, `RequestResponseNamedArgs`) whose `__invoke` methods receive a user-supplied callable, the current PSR-7 request/response objects, and the route\u2019s argument list, then invoke the callable in a particular way (e.g., passing the request only, passing request + response, passing arguments as positional or named parameters).  \n\nThese classes are called by `Route` and `RouteCollector` when a route is matched, allowing the framework to decouple route matching from how the handler is actually called. By grouping the interface and its concrete strategies together, the codebase provides a pluggable, interchangeable mechanism for adapting user callbacks to the PSR-7 request/response model.",
+    "member_count": 12,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:$callable",
+        "unresolved:array_values",
+        "unresolved:request.withAttribute"
+      ],
+      "calls_in": [
+        "Route.__construct",
+        "Route.handle",
+        "RouteCollector.__construct"
+      ],
+      "excerpt_source": "RequestHandler.__invoke (Slim/Handlers/Strategies/RequestHandler.php)"
+    }
+  },
+  "13": {
+    "text": "The subsystem implements the core of Slim\u2019s request-routing pipeline. The `DispatcherInterface` defines the contract for a low-level router that can **dispatch** a HTTP method + URI to a route and report the set of **allowed methods** for a matched path. `RouteResolver` is a thin fa\u00e7ade that receives a raw request URI and method, normalises the URI (URL-decoding and ensuring a leading \u201c/\u201d), and then forwards the call to an injected `Dispatcher` implementation via `dispatch`. It also exposes the same \u201callowed-methods\u201d query through `getAllowedMethods`, which is used by higher-level components such as `App` and `RoutingResults`.  \n\nTogether these classes form a cohesive unit because they encapsulate all concerns around turning an incoming request into routing information: URI sanitisation, delegation to the dispatcher, and exposing the dispatcher\u2019s API to the rest of the framework. The grouping is therefore logical \u2013 they collectively provide the routing-resolution service required by the application bootstrap and by result-handling code.",
+    "member_count": 7,
+    "grounded_in": {
+      "calls_out": [
+        "Dispatcher",
+        "RouteCollectorInterface.lookupRoute",
+        "unresolved:rawurldecode"
+      ],
+      "calls_in": [
+        "App.__construct",
+        "RoutingResults.getAllowedMethods"
+      ],
+      "excerpt_source": "RouteResolver.computeRoutingResults (Slim/Routing/RouteResolver.php)"
+    }
+  }
+}

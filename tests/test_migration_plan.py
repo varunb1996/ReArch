@@ -116,6 +116,14 @@ def test_reference_check_flags_invented_names_and_subsystem_numbers():
     assert check_references(invented, plan) == ["#7", "`beta_bridge`"]
 
 
+def test_subsystem_numbers_in_backticks_are_checked_against_real_ids():
+    """Models often write subsystem references as `#0`. Valid ones must pass; invented ones must still be caught."""
+    a, b = node("alpha", 0), node("beta", 1)
+    plan = analyze({"nodes": [a, b], "edges": [edge(a, b)]})
+    assert check_references("Extract `#1` first, then `#0`.", plan) == []
+    assert check_references("Extract `#1` first, then `#7`.", plan) == ["#7"]
+
+
 def test_reference_check_accepts_dotted_names_made_of_known_pieces():
     a = {**node("helper", 0, "pkg/util.py"), "qualified_name": "Util.helper"}
     plan = analyze({"nodes": [a], "edges": []})

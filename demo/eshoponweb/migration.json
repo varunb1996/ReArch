@@ -1,0 +1,3118 @@
+{
+  "summary": {
+    "subsystems": 17,
+    "cycle_groups": 1,
+    "waves": 4,
+    "coverage": 1.0,
+    "overall_confidence": 0.93,
+    "readiness": {
+      "needs-prep": 10,
+      "ready": 6,
+      "caution": 1
+    },
+    "third_party": [
+      {
+        "package": "Microsoft.AspNetCore",
+        "uses": 119
+      },
+      {
+        "package": "Microsoft.EntityFrameworkCore",
+        "uses": 103
+      },
+      {
+        "package": "Ardalis",
+        "uses": 41
+      },
+      {
+        "package": "Microsoft.Extensions",
+        "uses": 40
+      },
+      {
+        "package": "MediatR",
+        "uses": 16
+      },
+      {
+        "package": "MinimalApi",
+        "uses": 9
+      },
+      {
+        "package": "AutoMapper",
+        "uses": 7
+      },
+      {
+        "package": "Blazored",
+        "uses": 3
+      },
+      {
+        "package": "Microsoft.JSInterop",
+        "uses": 3
+      },
+      {
+        "package": "Swashbuckle",
+        "uses": 2
+      }
+    ]
+  },
+  "subsystems": [
+    {
+      "id": 0,
+      "label": "src/PublicApi/CatalogItemEndpoints \u00b7 CatalogContextSeed.CatalogContextSeed.SeedAsync",
+      "purpose": "The members of this cluster form the **catalog-and-authentication API layer** of the application.  \n* It contains domain-level exceptions, guard helpers, repository interfaces, EF Core data-access classes ( `CatalogContext`, `EfRepository`, seed data logic ), and a set of specification objects used to filter catalog entities.  \n* Around the same area are the public-API endpoint classes (`AuthenticateEndpoint`, the various `CatalogItem*Endpoint` and `CatalogType*Endpoint` types) together with request/response DTOs, a mapping profile, pagination helpers and image-validation utilities. All of these classes depend on the same data model (`CatalogItem`, `CatalogBrand`, `CatalogType`) and on the repository abstractions, and they are wired together by the same ASP.NET routing/handler infrastructure.  \n\nBecause they share the same data-access layer, the same exception/guard infrastructure, and expose CRUD operations plus authentication for catalog items, they are grouped together as a cohesive subsystem that implements the **catalog management and security surface of the system**. The seed routine shown simply populates the `CatalogContext` with initial brand data, confirming that this subsystem is responsible for initializing and serving catalog data.",
+      "members": 109,
+      "files": 45,
+      "loc": 793,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 12.5,
+      "efferent": 10.5,
+      "instability": 0.46,
+      "cohesion": 0.77,
+      "confidence": 0.96,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [
+        "depends on 8 third-party packages (Ardalis, AutoMapper, Microsoft.AspNetCore, Microsoft.EntityFrameworkCore...)"
+      ],
+      "exposed_api": [
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IRepository.cs:IRepository",
+          "name": "IRepository",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IRepository.cs",
+          "weight": 3.5,
+          "called_from": [
+            1,
+            2,
+            6,
+            9,
+            15
+          ]
+        },
+        {
+          "id": "csharp:src/Web/ViewModels/PaginationInfoViewModel.cs:PaginationInfoViewModel",
+          "name": "PaginationInfoViewModel",
+          "kind": "class",
+          "path": "src/Web/ViewModels/PaginationInfoViewModel.cs",
+          "weight": 2.0,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Specifications/CatalogFilterPaginatedSpecification.cs:CatalogFilterPaginatedSpecification",
+          "name": "CatalogFilterPaginatedSpecification",
+          "kind": "class",
+          "path": "src/ApplicationCore/Specifications/CatalogFilterPaginatedSpecification.cs",
+          "weight": 1.5,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Specifications/CatalogFilterSpecification.cs:CatalogFilterSpecification",
+          "name": "CatalogFilterSpecification",
+          "kind": "class",
+          "path": "src/ApplicationCore/Specifications/CatalogFilterSpecification.cs",
+          "weight": 1.5,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "csharp:src/PublicApi/BaseResponse.cs:BaseResponse",
+          "name": "BaseResponse",
+          "kind": "class",
+          "path": "src/PublicApi/BaseResponse.cs",
+          "weight": 1.5,
+          "called_from": [
+            15
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IReadRepository.cs:IReadRepository",
+          "name": "IReadRepository",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IReadRepository.cs",
+          "weight": 1.0,
+          "called_from": [
+            7
+          ]
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/CatalogContextSeed.cs:CatalogContextSeed.SeedAsync",
+          "name": "CatalogContextSeed.SeedAsync",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/CatalogContextSeed.cs",
+          "weight": 1.0,
+          "called_from": [
+            13
+          ]
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/CatalogContext.cs:CatalogContext",
+          "name": "CatalogContext",
+          "kind": "class",
+          "path": "src/Infrastructure/Data/CatalogContext.cs",
+          "weight": 0.5,
+          "called_from": [
+            10
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 13,
+          "weight": 6.0,
+          "edges": 8,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IUriComposer",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CatalogItemGetByIdEndpoint.HandleAsync",
+              "target": "IUriComposer.ComposePicUri",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IUriComposer",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 3.0,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItem",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CreateCatalogItemEndpoint.HandleAsync",
+              "target": "CatalogItem",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CreateCatalogItemEndpoint.HandleAsync",
+              "target": "CatalogItem.UpdatePictureUri",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "ITokenClaimsService",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "AuthenticateEndpoint.HandleAsync",
+              "target": "ITokenClaimsService.GetTokenAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 6.0,
+          "edges": 9
+        },
+        {
+          "subsystem": 15,
+          "weight": 2.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 13,
+          "weight": 1.0,
+          "edges": 1
+        },
+        {
+          "subsystem": 7,
+          "weight": 1.0,
+          "edges": 2
+        },
+        {
+          "subsystem": 10,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 6,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 25
+        },
+        {
+          "package": "Ardalis",
+          "uses": 18
+        },
+        {
+          "package": "MinimalApi",
+          "uses": 6
+        },
+        {
+          "package": "AutoMapper",
+          "uses": 6
+        },
+        {
+          "package": "Microsoft.EntityFrameworkCore",
+          "uses": 2
+        },
+        {
+          "package": "Swashbuckle",
+          "uses": 2
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 1
+        },
+        {
+          "package": "Microsoft.OpenApi",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 40
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Infrastructure/Data/CatalogContextSeed.cs:CatalogContextSeed.SeedAsync",
+          "name": "CatalogContextSeed.SeedAsync",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/CatalogContextSeed.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IRepository.cs:IRepository",
+          "name": "IRepository",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IRepository.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs:CatalogItemListPagedEndpoint.HandleAsync",
+          "name": "CatalogItemListPagedEndpoint.HandleAsync",
+          "kind": "method",
+          "path": "src/PublicApi/CatalogItemEndpoints/CatalogItemListPagedEndpoint.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/CatalogItemEndpoints/CreateCatalogItemEndpoint.cs:CreateCatalogItemEndpoint.HandleAsync",
+          "name": "CreateCatalogItemEndpoint.HandleAsync",
+          "kind": "method",
+          "path": "src/PublicApi/CatalogItemEndpoints/CreateCatalogItemEndpoint.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/CatalogItemEndpoints/UpdateCatalogItemEndpoint.cs:UpdateCatalogItemEndpoint.HandleAsync",
+          "name": "UpdateCatalogItemEndpoint.HandleAsync",
+          "kind": "method",
+          "path": "src/PublicApi/CatalogItemEndpoints/UpdateCatalogItemEndpoint.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/BaseResponse.cs:BaseResponse",
+          "name": "BaseResponse",
+          "kind": "class",
+          "path": "src/PublicApi/BaseResponse.cs"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "label": "src/Web/Services \u00b7 CatalogViewModelService.CatalogViewModelService.GetCatalogItems",
+      "purpose": "The members of this cluster are all the types that build and expose the data needed for the public-facing pages of the web site: view-model interfaces, concrete services that assemble catalog and basket view models, Razor-page models (Index, Privacy, Error), a shared view component that renders the shopping-basket widget, and a handful of helper/extension classes for caching keys, URL generation and e-mail confirmation.  \n\nThe core responsibility of the subsystem is to retrieve domain entities (catalog items, brands, types, basket contents) from repositories, apply filtering and pagination specifications, map the results into lightweight view-model objects, cache the catalog look-ups, and expose the resulting models to the MVC/Razor pages. It also provides cross-cutting utilities (email sending, cache-key generation, URL helpers) that the page models use for actions such as sending a confirmation e-mail.  \n\nBecause all of these classes collaborate through the same set of interfaces (e.g., ICatalogViewModelService, IBasketViewModelService) and are only referenced by the page-level code (IndexModel, CheckoutModel, etc.), they form a cohesive \u201cpresentation-layer\u201d subsystem that isolates UI-specific data shaping and auxiliary services from the underlying application core. The clustering reflects this logical boundary rather than any deeper business domain.",
+      "members": 54,
+      "files": 18,
+      "loc": 403,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 10.5,
+      "efferent": 17.0,
+      "instability": 0.62,
+      "cohesion": 0.56,
+      "confidence": 0.97,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/Web/Interfaces/IBasketViewModelService.cs:IBasketViewModelService.GetOrCreateBasketForUser",
+          "name": "IBasketViewModelService.GetOrCreateBasketForUser",
+          "kind": "method",
+          "path": "src/Web/Interfaces/IBasketViewModelService.cs",
+          "weight": 4.0,
+          "called_from": [
+            6
+          ]
+        },
+        {
+          "id": "csharp:src/Web/Pages/Basket/BasketViewModel.cs:BasketViewModel",
+          "name": "BasketViewModel",
+          "kind": "class",
+          "path": "src/Web/Pages/Basket/BasketViewModel.cs",
+          "weight": 3.0,
+          "called_from": [
+            6
+          ]
+        },
+        {
+          "id": "csharp:src/Web/Interfaces/IBasketViewModelService.cs:IBasketViewModelService.Map",
+          "name": "IBasketViewModelService.Map",
+          "kind": "method",
+          "path": "src/Web/Interfaces/IBasketViewModelService.cs",
+          "weight": 2.0,
+          "called_from": [
+            6
+          ]
+        },
+        {
+          "id": "csharp:src/Web/Interfaces/IBasketViewModelService.cs:IBasketViewModelService",
+          "name": "IBasketViewModelService",
+          "kind": "class",
+          "path": "src/Web/Interfaces/IBasketViewModelService.cs",
+          "weight": 1.0,
+          "called_from": [
+            6
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IEmailSender.cs:IEmailSender",
+          "name": "IEmailSender",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IEmailSender.cs",
+          "weight": 0.5,
+          "called_from": [
+            4
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 6.0,
+          "edges": 9,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "CatalogFilterSpecification",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 3.5,
+          "edges": 5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Basket",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Basket",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "CatalogItemsSpecification",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 13,
+          "weight": 3.0,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IUriComposer",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "BasketViewModelService.GetBasketItems",
+              "target": "IUriComposer.ComposePicUri",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IUriComposer",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 10,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IBasketQueryService",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "BasketViewModelService.CountTotalBasketItems",
+              "target": "IBasketQueryService.CountTotalBasketItems",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 7,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "BasketWithItemsSpecification",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "BasketViewModelService.GetOrCreateBasketForUser",
+              "target": "BasketWithItemsSpecification",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItemViewModel",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CatalogViewModelService.GetCatalogItems",
+              "target": "CatalogItemViewModel",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 6,
+          "weight": 10.0,
+          "edges": 12
+        },
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 10
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 18
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Web/Services/CatalogViewModelService.cs:CatalogViewModelService.GetCatalogItems",
+          "name": "CatalogViewModelService.GetCatalogItems",
+          "kind": "method",
+          "path": "src/Web/Services/CatalogViewModelService.cs"
+        },
+        {
+          "id": "csharp:src/Web/Services/CatalogViewModelService.cs:CatalogViewModelService.GetBrands",
+          "name": "CatalogViewModelService.GetBrands",
+          "kind": "method",
+          "path": "src/Web/Services/CatalogViewModelService.cs"
+        },
+        {
+          "id": "csharp:src/Web/Services/CatalogViewModelService.cs:CatalogViewModelService.GetTypes",
+          "name": "CatalogViewModelService.GetTypes",
+          "kind": "method",
+          "path": "src/Web/Services/CatalogViewModelService.cs"
+        },
+        {
+          "id": "csharp:src/Web/Services/BasketViewModelService.cs:BasketViewModelService.GetBasketItems",
+          "name": "BasketViewModelService.GetBasketItems",
+          "kind": "method",
+          "path": "src/Web/Services/BasketViewModelService.cs"
+        },
+        {
+          "id": "csharp:src/Web/ViewModels/CatalogIndexViewModel.cs:CatalogIndexViewModel",
+          "name": "CatalogIndexViewModel",
+          "kind": "class",
+          "path": "src/Web/ViewModels/CatalogIndexViewModel.cs"
+        },
+        {
+          "id": "csharp:src/Web/Pages/Basket/BasketViewModel.cs:BasketViewModel",
+          "name": "BasketViewModel",
+          "kind": "class",
+          "path": "src/Web/Pages/Basket/BasketViewModel.cs"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "label": "src/ApplicationCore/Entities \u00b7 OrderService.OrderService.CreateOrderAsync",
+      "purpose": "The subsystem groups the core domain entities (Basket, BasketItem, Order, OrderItem, CatalogItem, CatalogBrand, CatalogType, Buyer, PaymentMethod, Address) together with the aggregate-root marker interface and a set of specifications, and provides two application services \u2013 BasketService and OrderService \u2013 that orchestrate those entities. Its primary responsibility is to model and manage the e-commerce shopping flow: building a basket, adding or removing items, validating the basket, and converting a validated basket into an order with shipping information. The cohesion comes from the shared aggregate-root pattern, the use of Guard checks and specifications, and the fact that all callers (view-model services, checkout page, catalog endpoints) interact with the basket or order through these services. Because the code only shows entity construction, quantity handling, and order-creation logic, the subsystem\u2019s purpose is limited to the business rules around catalog items, baskets, and orders rather than any UI or persistence concerns.",
+      "members": 51,
+      "files": 16,
+      "loc": 406,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 9.5,
+      "efferent": 13.0,
+      "instability": 0.58,
+      "cohesion": 0.62,
+      "confidence": 0.89,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/ApplicationCore/Entities/OrderAggregate/Address.cs:Address",
+          "name": "Address",
+          "kind": "class",
+          "path": "src/ApplicationCore/Entities/OrderAggregate/Address.cs",
+          "weight": 2.5,
+          "called_from": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Entities/BasketAggregate/Basket.cs:Basket",
+          "name": "Basket",
+          "kind": "class",
+          "path": "src/ApplicationCore/Entities/BasketAggregate/Basket.cs",
+          "weight": 2.0,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Entities/CatalogItem.cs:CatalogItem",
+          "name": "CatalogItem",
+          "kind": "class",
+          "path": "src/ApplicationCore/Entities/CatalogItem.cs",
+          "weight": 1.5,
+          "called_from": [
+            0
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Specifications/CatalogItemsSpecification.cs:CatalogItemsSpecification",
+          "name": "CatalogItemsSpecification",
+          "kind": "class",
+          "path": "src/ApplicationCore/Specifications/CatalogItemsSpecification.cs",
+          "weight": 1.5,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Entities/CatalogItem.cs:CatalogItem.CatalogItemDetails",
+          "name": "CatalogItem.CatalogItemDetails",
+          "kind": "class",
+          "path": "src/ApplicationCore/Entities/CatalogItem.cs",
+          "weight": 1.0,
+          "called_from": [
+            0,
+            9
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Entities/CatalogItem.cs:CatalogItem.UpdatePictureUri",
+          "name": "CatalogItem.UpdatePictureUri",
+          "kind": "method",
+          "path": "src/ApplicationCore/Entities/CatalogItem.cs",
+          "weight": 1.0,
+          "called_from": [
+            0
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 7,
+          "weight": 6.0,
+          "edges": 7,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "BasketWithItemsSpecification",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "BasketService.AddItemToBasket",
+              "target": "BasketWithItemsSpecification",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "BasketService.SetQuantities",
+              "target": "BasketWithItemsSpecification",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 6,
+          "weight": 4.5,
+          "edges": 4,
+          "examples": [
+            {
+              "source": "BasketService",
+              "target": "IBasketService",
+              "kind": "inherits",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IAppLogger",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "BasketService.SetQuantities",
+              "target": "IAppLogger.LogInformation",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 13,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IUriComposer",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "OrderService.CreateOrderAsync",
+              "target": "IUriComposer.ComposePicUri",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 3.5,
+          "edges": 5
+        },
+        {
+          "subsystem": 0,
+          "weight": 3.0,
+          "edges": 4
+        },
+        {
+          "subsystem": 6,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1
+        },
+        {
+          "subsystem": 7,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Ardalis",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 23
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/ApplicationCore/Services/OrderService.cs:OrderService.CreateOrderAsync",
+          "name": "OrderService.CreateOrderAsync",
+          "kind": "method",
+          "path": "src/ApplicationCore/Services/OrderService.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Entities/BasketAggregate/Basket.cs:Basket",
+          "name": "Basket",
+          "kind": "class",
+          "path": "src/ApplicationCore/Entities/BasketAggregate/Basket.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Entities/BaseEntity.cs:BaseEntity",
+          "name": "BaseEntity",
+          "kind": "class",
+          "path": "src/ApplicationCore/Entities/BaseEntity.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Services/BasketService.cs:BasketService.SetQuantities",
+          "name": "BasketService.SetQuantities",
+          "kind": "method",
+          "path": "src/ApplicationCore/Services/BasketService.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Services/BasketService.cs:BasketService.TransferBasketAsync",
+          "name": "BasketService.TransferBasketAsync",
+          "kind": "method",
+          "path": "src/ApplicationCore/Services/BasketService.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Entities/CatalogItem.cs:CatalogItem.UpdateDetails",
+          "name": "CatalogItem.UpdateDetails",
+          "kind": "method",
+          "path": "src/ApplicationCore/Entities/CatalogItem.cs"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "label": "src/BlazorAdmin/Services \u00b7 CatalogItemService.CatalogItemService.List",
+      "purpose": "The subsystem groups together the services that perform CRUD operations on \u201ccatalog\u201d data and the infrastructure that caches those results in the browser\u2019s local storage. `CatalogItemService` and `CatalogLookupDataService` implement the core HTTP-based calls (via `HttpService`) defined by the shared interfaces (`ICatalogItemService`, `ICatalogLookupDataService`), while the corresponding `Cached\u2026Decorator` classes wrap those services, read/write a `CacheEntry<T>` from `ILocalStorageService`, and fall back to the underlying service when the cached value is missing or stale (as shown in the `List` method). `CacheEntry` simply stores a value together with a creation timestamp, and `ToastService` provides UI feedback that the other services can invoke. Together these types form a cohesive caching layer for catalog data, isolating the caching concern from the raw HTTP logic and allowing the rest of the application to request catalog items without worrying about network latency or persistence.",
+      "members": 51,
+      "files": 10,
+      "loc": 442,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 6.0,
+      "efferent": 1.5,
+      "instability": 0.2,
+      "cohesion": 0.87,
+      "confidence": 0.98,
+      "in_cycle": false,
+      "wave": 1,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/BlazorShared/Interfaces/ICatalogItemService.cs:ICatalogItemService.List",
+          "name": "ICatalogItemService.List",
+          "kind": "method",
+          "path": "src/BlazorShared/Interfaces/ICatalogItemService.cs",
+          "weight": 2.0,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "csharp:src/BlazorShared/Interfaces/ICatalogLookupDataService.cs:ICatalogLookupDataService.List",
+          "name": "ICatalogLookupDataService.List",
+          "kind": "method",
+          "path": "src/BlazorShared/Interfaces/ICatalogLookupDataService.cs",
+          "weight": 2.0,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Services/ToastService.cs:ToastLevel",
+          "name": "ToastLevel",
+          "kind": "class",
+          "path": "src/BlazorAdmin/Services/ToastService.cs",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Services/ToastService.cs:ToastService",
+          "name": "ToastService",
+          "kind": "class",
+          "path": "src/BlazorAdmin/Services/ToastService.cs",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "csharp:src/BlazorShared/Interfaces/ICatalogItemService.cs:ICatalogItemService",
+          "name": "ICatalogItemService",
+          "kind": "class",
+          "path": "src/BlazorShared/Interfaces/ICatalogItemService.cs",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        },
+        {
+          "id": "csharp:src/BlazorShared/Interfaces/ICatalogLookupDataService.cs:ICatalogLookupDataService",
+          "name": "ICatalogLookupDataService",
+          "kind": "class",
+          "path": "src/BlazorShared/Interfaces/ICatalogLookupDataService.cs",
+          "weight": 0.5,
+          "called_from": [
+            8
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 11,
+          "weight": 1.5,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItem",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "CatalogItem",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "CatalogItem",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 8,
+          "weight": 6.0,
+          "edges": 8
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 6
+        },
+        {
+          "package": "Blazored",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 33
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/BlazorAdmin/Services/CachedCatalogItemServiceDecorator.cs:CachedCatalogItemServiceDecorator.List",
+          "name": "CachedCatalogItemServiceDecorator.List",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Services/CachedCatalogItemServiceDecorator.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Services/CatalogItemService.cs:CatalogItemService.List",
+          "name": "CatalogItemService.List",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Services/CatalogItemService.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Services/CachedCatalogItemServiceDecorator.cs:CachedCatalogItemServiceDecorator.ListPaged",
+          "name": "CachedCatalogItemServiceDecorator.ListPaged",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Services/CachedCatalogItemServiceDecorator.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Services/CachedCatalogLookupDataServiceDecorator .cs:CachedCatalogLookupDataServiceDecorator.List",
+          "name": "CachedCatalogLookupDataServiceDecorator.List",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Services/CachedCatalogLookupDataServiceDecorator .cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Services/CatalogItemService.cs:CatalogItemService.ListPaged",
+          "name": "CatalogItemService.ListPaged",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Services/CatalogItemService.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Services/HttpService.cs:HttpService.HttpPost",
+          "name": "HttpService.HttpPost",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Services/HttpService.cs"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "label": "src/Web/Controllers \u00b7 ManageController.ManageController.EnableAuthenticator",
+      "purpose": "The members in this cluster are all centered on user-account management and authentication. The **ClaimValue**, **Constants.Roles**, and **UserInfo** types define the data structures used to represent a user\u2019s claims and role information, while the **ManageController** and **UserController** expose MVC actions for viewing and editing the current user\u2019s profile, passwords, external logins, and two-factor authentication (including enabling an authenticator app, generating recovery codes, and handling login linking). The accompanying view-model classes provide the strongly-typed payloads for those actions.  \n\nBecause these classes share the same namespace (`BlazorShared.Authorization` and `Web.Controllers/Manage`) and call the same services (e.g., `_userManager`, `_signInManager`, `ITokenClaimsService`, logging, and token generation), they are grouped together as a cohesive subsystem that implements the application\u2019s account-maintenance UI and the underlying claim-based security model. The subsystem exists to isolate all user-self-service and security-related endpoints, keeping authentication-related data structures, controller logic, and view models together.",
+      "members": 46,
+      "files": 13,
+      "loc": 747,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 0.5,
+      "efferent": 8.0,
+      "instability": 0.94,
+      "cohesion": 0.75,
+      "confidence": 0.98,
+      "in_cycle": false,
+      "wave": 2,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/BlazorShared/Authorization/UserInfo.cs:UserInfo",
+          "name": "UserInfo",
+          "kind": "class",
+          "path": "src/BlazorShared/Authorization/UserInfo.cs",
+          "weight": 0.5,
+          "called_from": [
+            14
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 6,
+          "weight": 5.5,
+          "edges": 6,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IAppLogger",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ManageController.ChangePassword",
+              "target": "IAppLogger.LogInformation",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ManageController.Disable2fa",
+              "target": "IAppLogger.LogInformation",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "ApplicationUser",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ITokenClaimsService",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "UserController.CreateUserInfo",
+              "target": "ITokenClaimsService.GetTokenAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 1,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IEmailSender",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 14,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 10
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 11
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Web/Controllers/ManageController.cs:ManageController.EnableAuthenticator~2",
+          "name": "ManageController.EnableAuthenticator",
+          "kind": "method",
+          "path": "src/Web/Controllers/ManageController.cs"
+        },
+        {
+          "id": "csharp:src/Web/Controllers/ManageController.cs:ManageController.SendVerificationEmail",
+          "name": "ManageController.SendVerificationEmail",
+          "kind": "method",
+          "path": "src/Web/Controllers/ManageController.cs"
+        },
+        {
+          "id": "csharp:src/Web/Controllers/ManageController.cs:ManageController.ChangePassword~2",
+          "name": "ManageController.ChangePassword",
+          "kind": "method",
+          "path": "src/Web/Controllers/ManageController.cs"
+        },
+        {
+          "id": "csharp:src/Web/Controllers/ManageController.cs:ManageController.ExternalLogins",
+          "name": "ManageController.ExternalLogins",
+          "kind": "method",
+          "path": "src/Web/Controllers/ManageController.cs"
+        },
+        {
+          "id": "csharp:src/Web/Controllers/ManageController.cs:ManageController.GenerateRecoveryCodes",
+          "name": "ManageController.GenerateRecoveryCodes",
+          "kind": "method",
+          "path": "src/Web/Controllers/ManageController.cs"
+        },
+        {
+          "id": "csharp:src/Web/Controllers/UserController.cs:UserController.CreateUserInfo",
+          "name": "UserController.CreateUserInfo",
+          "kind": "method",
+          "path": "src/Web/Controllers/UserController.cs"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "label": "src/Web/Areas/Identity/Pages/Account \u00b7 IdentityTokenClaimService.IdentityTokenClaimService.GetTokenAsync",
+      "purpose": "The subsystem groups together everything needed for ASP.NET Core Identity handling and JWT generation. It defines the EF Core `AppIdentityDbContext` (including seeding), the `ApplicationUser` entity, and the `IdentityTokenClaimService` that looks up a user, gathers its roles and builds a signed JWT (using `JwtSecurityTokenHandler`, a secret key, and claim objects). It also contains the Razor-Page models for the standard account UI (register, login, confirm-email, logout) and a custom `UserNotFoundException`, all of which depend on the same identity services (`UserManager`, `SignInManager`, `IBasketService` for anonymous-basket transfer). Because these types all share the same data model and authentication infrastructure, they are clustered together as a cohesive \u201cidentity\u201d module that provides user persistence, UI flows, and token-based authentication for the rest of the application.",
+      "members": 31,
+      "files": 10,
+      "loc": 348,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 4.5,
+      "efferent": 1.5,
+      "instability": 0.25,
+      "cohesion": 0.61,
+      "confidence": 0.93,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [
+        "depends on 4 third-party packages (Microsoft.AspNetCore, Microsoft.EntityFrameworkCore, Microsoft.Extensions, Microsoft.IdentityModel...)"
+      ],
+      "exposed_api": [
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/ITokenClaimsService.cs:ITokenClaimsService.GetTokenAsync",
+          "name": "ITokenClaimsService.GetTokenAsync",
+          "kind": "method",
+          "path": "src/ApplicationCore/Interfaces/ITokenClaimsService.cs",
+          "weight": 2.0,
+          "called_from": [
+            0,
+            4
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/ITokenClaimsService.cs:ITokenClaimsService",
+          "name": "ITokenClaimsService",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/ITokenClaimsService.cs",
+          "weight": 1.0,
+          "called_from": [
+            0,
+            4
+          ]
+        },
+        {
+          "id": "csharp:src/Infrastructure/Identity/AppIdentityDbContextSeed.cs:AppIdentityDbContextSeed.SeedAsync",
+          "name": "AppIdentityDbContextSeed.SeedAsync",
+          "kind": "method",
+          "path": "src/Infrastructure/Identity/AppIdentityDbContextSeed.cs",
+          "weight": 1.0,
+          "called_from": [
+            13
+          ]
+        },
+        {
+          "id": "csharp:src/Infrastructure/Identity/ApplicationUser.cs:ApplicationUser",
+          "name": "ApplicationUser",
+          "kind": "class",
+          "path": "src/Infrastructure/Identity/ApplicationUser.cs",
+          "weight": 0.5,
+          "called_from": [
+            4
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 6,
+          "weight": 1.5,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IBasketService",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "LoginModel.TransferAnonymousBasketToUserAsync",
+              "target": "IBasketService.TransferBasketAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 4,
+          "weight": 2.0,
+          "edges": 3
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 13,
+          "weight": 1.0,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 20
+        },
+        {
+          "package": "Microsoft.EntityFrameworkCore",
+          "uses": 2
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 2
+        },
+        {
+          "package": "Microsoft.IdentityModel",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 20
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Infrastructure/Identity/IdentityTokenClaimService.cs:IdentityTokenClaimService.GetTokenAsync",
+          "name": "IdentityTokenClaimService.GetTokenAsync",
+          "kind": "method",
+          "path": "src/Infrastructure/Identity/IdentityTokenClaimService.cs"
+        },
+        {
+          "id": "csharp:src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs:RegisterModel.OnPostAsync",
+          "name": "RegisterModel.OnPostAsync",
+          "kind": "method",
+          "path": "src/Web/Areas/Identity/Pages/Account/Register.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Identity/AppIdentityDbContextSeed.cs:AppIdentityDbContextSeed.SeedAsync",
+          "name": "AppIdentityDbContextSeed.SeedAsync",
+          "kind": "method",
+          "path": "src/Infrastructure/Identity/AppIdentityDbContextSeed.cs"
+        },
+        {
+          "id": "csharp:src/Web/Areas/Identity/Pages/Account/Login.cshtml.cs:LoginModel.OnPostAsync",
+          "name": "LoginModel.OnPostAsync",
+          "kind": "method",
+          "path": "src/Web/Areas/Identity/Pages/Account/Login.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Web/Areas/Identity/Pages/Account/Logout.cshtml.cs:LogoutModel.OnPost",
+          "name": "LogoutModel.OnPost",
+          "kind": "method",
+          "path": "src/Web/Areas/Identity/Pages/Account/Logout.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Identity/ApplicationUser.cs:ApplicationUser",
+          "name": "ApplicationUser",
+          "kind": "class",
+          "path": "src/Infrastructure/Identity/ApplicationUser.cs"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "label": "src/Web/Pages/Basket \u00b7 Index.cshtml.IndexModel.GetOrSetBasketCookieAndUserName",
+      "purpose": "The six-member subsystem groups together the **basket-checkout workflow** and the **logging abstraction** that supports it.  \n* The `IBasketService` and `IOrderService` interfaces define the core domain operations for manipulating a shopping basket (add items, set quantities, transfer a basket, delete it) and for turning a basket into an order (`CreateOrderAsync`).  \n* `CheckoutModel`, `IndexModel`, and `SuccessModel` are Razor-Page page-models that drive the UI for viewing the basket, updating it, and completing the purchase; they call the basket service methods, read/write a cookie that stores a temporary basket identifier, and use `Guard.Against.Null` to validate the HTTP context.  \n* `IAppLogger` and its concrete `LoggerAdapter` provide a thin, application-wide logging contract (information and warning levels) that the page-models and services can use without depending on a specific logging framework.  \n\nBecause all of these types collaborate to present, modify, and finalize a user\u2019s shopping basket while recording diagnostic events, they naturally cluster together as a cohesive \u201cbasket/checkout + logging\u201d subsystem. The exact business purpose (e.g., e-commerce) is inferred from the naming, but the structural facts only guarantee that the code handles basket state, order creation, and logging.",
+      "members": 28,
+      "files": 7,
+      "loc": 216,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 11.5,
+      "efferent": 13.0,
+      "instability": 0.53,
+      "cohesion": 0.39,
+      "confidence": 0.94,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 39% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IAppLogger.cs:IAppLogger.LogInformation",
+          "name": "IAppLogger.LogInformation",
+          "kind": "method",
+          "path": "src/ApplicationCore/Interfaces/IAppLogger.cs",
+          "weight": 6.0,
+          "called_from": [
+            2,
+            4
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IBasketService.cs:IBasketService",
+          "name": "IBasketService",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IBasketService.cs",
+          "weight": 2.0,
+          "called_from": [
+            2,
+            5
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IOrderService.cs:IOrderService",
+          "name": "IOrderService",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IOrderService.cs",
+          "weight": 1.5,
+          "called_from": [
+            2
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IAppLogger.cs:IAppLogger",
+          "name": "IAppLogger",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IAppLogger.cs",
+          "weight": 1.0,
+          "called_from": [
+            2,
+            4
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IBasketService.cs:IBasketService.TransferBasketAsync",
+          "name": "IBasketService.TransferBasketAsync",
+          "kind": "method",
+          "path": "src/ApplicationCore/Interfaces/IBasketService.cs",
+          "weight": 1.0,
+          "called_from": [
+            5
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 1,
+          "weight": 10.0,
+          "edges": 12,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IBasketViewModelService",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "BasketViewModel",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CheckoutModel",
+              "target": "BasketViewModel",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 2.0,
+          "edges": 3,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Address",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Address",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CheckoutModel.OnPost",
+              "target": "Address",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 9,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItemViewModel",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 4,
+          "weight": 5.5,
+          "edges": 6
+        },
+        {
+          "subsystem": 2,
+          "weight": 4.5,
+          "edges": 4
+        },
+        {
+          "subsystem": 5,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 20
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 4
+        },
+        {
+          "package": "Ardalis",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 7
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Web/Pages/Basket/Index.cshtml.cs:IndexModel.GetOrSetBasketCookieAndUserName",
+          "name": "IndexModel.GetOrSetBasketCookieAndUserName",
+          "kind": "method",
+          "path": "src/Web/Pages/Basket/Index.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Web/Pages/Basket/Checkout.cshtml.cs:CheckoutModel.OnPost",
+          "name": "CheckoutModel.OnPost",
+          "kind": "method",
+          "path": "src/Web/Pages/Basket/Checkout.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Web/Pages/Basket/Checkout.cshtml.cs:CheckoutModel.SetBasketModelAsync",
+          "name": "CheckoutModel.SetBasketModelAsync",
+          "kind": "method",
+          "path": "src/Web/Pages/Basket/Checkout.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Web/Pages/Basket/Checkout.cshtml.cs:CheckoutModel.GetOrSetBasketCookieAndUserName",
+          "name": "CheckoutModel.GetOrSetBasketCookieAndUserName",
+          "kind": "method",
+          "path": "src/Web/Pages/Basket/Checkout.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Web/Pages/Basket/Index.cshtml.cs:IndexModel.OnPost",
+          "name": "IndexModel.OnPost",
+          "kind": "method",
+          "path": "src/Web/Pages/Basket/Index.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IAppLogger.cs:IAppLogger.LogInformation",
+          "name": "IAppLogger.LogInformation",
+          "kind": "method",
+          "path": "src/ApplicationCore/Interfaces/IAppLogger.cs"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "label": "src/ApplicationCore/Specifications \u00b7 BasketWithItemsSpecification.BasketWithItemsSpecification",
+      "purpose": "The subsystem groups together a set of **query specifications**, **mediator-based request/handler classes**, **view-model DTOs**, and an **MVC controller** that all revolve around reading order-related data.  \n* The specification classes (e.g., `BasketWithItemsSpecification`, `CustomerOrdersSpecification`, `OrderWithItemsByIdSpec`) encapsulate EF Core query logic for loading orders, baskets and their items with the appropriate `Include` clauses.  \n* The \u201cfeature\u201d classes (`GetMyOrders`, `GetMyOrdersHandler`, `GetOrderDetails`, `GetOrderDetailsHandler`) implement the application-layer request-response pattern (likely MediatR), using the specifications to fetch data from an `IOrderRepository` and then mapping the domain entities to simple view-model objects (`OrderViewModel`, `OrderDetailViewModel`, `OrderItemViewModel`).  \n* `OrderController` exposes HTTP endpoints (`MyOrders`, `Detail`) that forward the incoming request to the mediator (`_mediator.Send`) and return the resulting view models to the UI.\n\nBecause all of these types share the same concern\u2014**retrieving and presenting order or basket information for a given user or order id**\u2014they are clustered together as a cohesive unit that isolates read-only order queries from other parts of the system (e.g., order creation or payment). The subsystem therefore exists to provide a clean, reusable way to query, transform, and serve order data to the web layer.",
+      "members": 26,
+      "files": 12,
+      "loc": 182,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 7.5,
+      "efferent": 1.5,
+      "instability": 0.17,
+      "cohesion": 0.59,
+      "confidence": 0.91,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/ApplicationCore/Specifications/BasketWithItemsSpecification.cs:BasketWithItemsSpecification",
+          "name": "BasketWithItemsSpecification",
+          "kind": "class",
+          "path": "src/ApplicationCore/Specifications/BasketWithItemsSpecification.cs",
+          "weight": 7.5,
+          "called_from": [
+            1,
+            2
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 1.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IReadRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IReadRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Address",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 2,
+          "weight": 6.0,
+          "edges": 7
+        },
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Ardalis",
+          "uses": 20
+        },
+        {
+          "package": "MediatR",
+          "uses": 9
+        },
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 1
+        }
+      ],
+      "stdlib": [],
+      "top_members": [
+        {
+          "id": "csharp:src/ApplicationCore/Specifications/BasketWithItemsSpecification.cs:BasketWithItemsSpecification",
+          "name": "BasketWithItemsSpecification",
+          "kind": "class",
+          "path": "src/ApplicationCore/Specifications/BasketWithItemsSpecification.cs"
+        },
+        {
+          "id": "csharp:src/Web/Features/OrderDetails/GetOrderDetailsHandler.cs:GetOrderDetailsHandler.Handle",
+          "name": "GetOrderDetailsHandler.Handle",
+          "kind": "method",
+          "path": "src/Web/Features/OrderDetails/GetOrderDetailsHandler.cs"
+        },
+        {
+          "id": "csharp:src/Web/Controllers/OrderController.cs:OrderController.Detail",
+          "name": "OrderController.Detail",
+          "kind": "method",
+          "path": "src/Web/Controllers/OrderController.cs"
+        },
+        {
+          "id": "csharp:src/Web/Controllers/OrderController.cs:OrderController.MyOrders",
+          "name": "OrderController.MyOrders",
+          "kind": "method",
+          "path": "src/Web/Controllers/OrderController.cs"
+        },
+        {
+          "id": "csharp:src/Web/Features/MyOrders/GetMyOrdersHandler.cs:GetMyOrdersHandler.Handle",
+          "name": "GetMyOrdersHandler.Handle",
+          "kind": "method",
+          "path": "src/Web/Features/MyOrders/GetMyOrdersHandler.cs"
+        },
+        {
+          "id": "csharp:src/Web/Features/MyOrders/GetMyOrders.cs:GetMyOrders",
+          "name": "GetMyOrders",
+          "kind": "class",
+          "path": "src/Web/Features/MyOrders/GetMyOrders.cs"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "label": "src/BlazorAdmin/Helpers \u00b7 List.razor.List",
+      "purpose": "The eight-member subsystem groups a set of small Blazor helper classes together with a page-level component that derives from them. The three base classes \u2013 **BlazorComponent**, **BlazorLayoutComponent**, and **RefreshBroadcast** \u2013 each expose a `CallRequestRefresh` / `DoRefresh` pattern that lets a component raise a refresh event and react to it, while **ToastComponent** provides a reusable UI for showing transient messages (show/hide and configuration). The **List** page class inherits from **BlazorComponent** and uses those refresh mechanisms (e.g., `RefreshRequested?.Invoke`, `StateHasChanged`) together with injected catalog services to load, display and manipulate catalog items, brands, and types.  \n\nStructurally, the subsystem exists as a cohesive unit because all members share the same concern: providing common UI-behaviour (initialisation, refresh broadcasting, toast notifications) for Blazor pages in the admin area, and the page component (`List`) composes these helpers to implement its CRUD-style catalog listing. The clustering reflects this shared responsibility rather than any business-logic domain.",
+      "members": 24,
+      "files": 5,
+      "loc": 201,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 0,
+      "efferent": 6.0,
+      "instability": 1.0,
+      "cohesion": 0.66,
+      "confidence": 0.88,
+      "in_cycle": false,
+      "wave": 2,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [],
+      "depends_on": [
+        {
+          "subsystem": 3,
+          "weight": 6.0,
+          "edges": 8,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "ToastService",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ToastLevel",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "ICatalogItemService",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 5
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 8
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/BlazorAdmin/Pages/CatalogItemPage/List.razor.cs:List",
+          "name": "List",
+          "kind": "class",
+          "path": "src/BlazorAdmin/Pages/CatalogItemPage/List.razor.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Helpers/RefreshBroadcast.cs:RefreshBroadcast",
+          "name": "RefreshBroadcast",
+          "kind": "class",
+          "path": "src/BlazorAdmin/Helpers/RefreshBroadcast.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Pages/CatalogItemPage/List.razor.cs:List.OnAfterRenderAsync",
+          "name": "List.OnAfterRenderAsync",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Pages/CatalogItemPage/List.razor.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Helpers/RefreshBroadcast.cs:RefreshBroadcast.CallRequestRefresh",
+          "name": "RefreshBroadcast.CallRequestRefresh",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Helpers/RefreshBroadcast.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Helpers/BlazorComponent.cs:BlazorComponent",
+          "name": "BlazorComponent",
+          "kind": "class",
+          "path": "src/BlazorAdmin/Helpers/BlazorComponent.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Helpers/BlazorComponent.cs:BlazorComponent.CallRequestRefresh",
+          "name": "BlazorComponent.CallRequestRefresh",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Helpers/BlazorComponent.cs"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "label": "src/BlazorAdmin/JavaScript \u00b7 CatalogItemViewModel.CatalogItemViewModel",
+      "purpose": "The nine-plus classes in this cluster implement the **admin-side editing flow for catalog items** and the small JavaScript helpers that the Razor pages use.  \n* The `CatalogItemViewModel`, `ICatalogItemViewModelService`, `CatalogItemViewModelService`, and the page models `IndexModel` / `EditCatalogItemModel` work together to retrieve a catalog item, expose it to a Razor page, accept posted changes, and persist them via `_catalogItemRepository`. The `UpdateCatalogItem` method shown validates the retrieved entity, builds a `CatalogItemDetails` DTO from the view-model, calls the domain entity\u2019s `UpdateDetails`, and saves the changes.  \n* The `Cookies`, `Css`, `Route`, and `JSInteropConstants` classes are thin wrappers around browser-side operations (reading/writing cookies, toggling body overflow, navigating routes, invoking JS via Blazor\u2019s `IJSRuntime`). They are grouped with the admin pages because those pages need client-side state (e.g., remembering UI preferences or handling navigation) while performing catalog edits.  \n\nTogether they form a cohesive subsystem that provides a **full stack \u201cedit catalog item\u201d feature**: server-side view-model handling and persistence, plus client-side utilities accessed through Blazor JS interop. The grouping reflects the shared responsibility of these types for the admin UI\u2019s data flow and browser interactions.",
+      "members": 24,
+      "files": 9,
+      "loc": 127,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 2.0,
+      "efferent": 1.0,
+      "instability": 0.33,
+      "cohesion": 0.65,
+      "confidence": 0.9,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/Web/ViewModels/CatalogItemViewModel.cs:CatalogItemViewModel",
+          "name": "CatalogItemViewModel",
+          "kind": "class",
+          "path": "src/Web/ViewModels/CatalogItemViewModel.cs",
+          "weight": 2.0,
+          "called_from": [
+            1,
+            6
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 2,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItem.CatalogItemDetails",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2
+        },
+        {
+          "subsystem": 6,
+          "weight": 0.5,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 4
+        },
+        {
+          "package": "Microsoft.JSInterop",
+          "uses": 3
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 6
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Web/ViewModels/CatalogItemViewModel.cs:CatalogItemViewModel",
+          "name": "CatalogItemViewModel",
+          "kind": "class",
+          "path": "src/Web/ViewModels/CatalogItemViewModel.cs"
+        },
+        {
+          "id": "csharp:src/Web/Services/CatalogItemViewModelService.cs:CatalogItemViewModelService.UpdateCatalogItem",
+          "name": "CatalogItemViewModelService.UpdateCatalogItem",
+          "kind": "method",
+          "path": "src/Web/Services/CatalogItemViewModelService.cs"
+        },
+        {
+          "id": "csharp:src/Web/Interfaces/ICatalogItemViewModelService.cs:ICatalogItemViewModelService",
+          "name": "ICatalogItemViewModelService",
+          "kind": "class",
+          "path": "src/Web/Interfaces/ICatalogItemViewModelService.cs"
+        },
+        {
+          "id": "csharp:src/Web/Pages/Admin/EditCatalogItem.cshtml.cs:EditCatalogItemModel",
+          "name": "EditCatalogItemModel",
+          "kind": "class",
+          "path": "src/Web/Pages/Admin/EditCatalogItem.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/Web/Pages/Admin/EditCatalogItem.cshtml.cs:EditCatalogItemModel.OnPostAsync",
+          "name": "EditCatalogItemModel.OnPostAsync",
+          "kind": "method",
+          "path": "src/Web/Pages/Admin/EditCatalogItem.cshtml.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/JavaScript/Cookies.cs:Cookies.DeleteCookie",
+          "name": "Cookies.DeleteCookie",
+          "kind": "method",
+          "path": "src/BlazorAdmin/JavaScript/Cookies.cs"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "label": "src/Infrastructure/Data/Migrations \u00b7 CatalogContextModelSnapshot.CatalogContextModelSnapshot.BuildModel",
+      "purpose": "The ten-member subsystem groups together everything that defines and manipulates the **catalog-related Entity Framework Core model** and the **basket-query service** that reads basket data.  \n* The migration classes (`InitialModel`, `FixBuyerId`, `FixShipToAddress`) and the snapshot (`CatalogContextModelSnapshot`) contain the fluent-API calls that create tables, keys, indexes and sequences for the catalog domain (brands, products, etc.) and also adjust columns such as `BuyerId` and `ShipToAddress`.  \n* `BasketQueryService` implements the `IBasketQueryService` interface and uses the same `CatalogContext` (`_dbContext`) to run LINQ-to-SQL queries that filter `Baskets` by `BuyerId` and sum the quantities of the basket items (`CountTotalBasketItems`).  \n* Supporting types (`Constants`, `BaseApiController`, `SlugifyParameterTransformer`, `FileViewModel`) are infrastructure helpers used by the web layer but do not introduce new business logic; they are co-located because they all depend on the same data-access project.  \n\nTogether these files form a cohesive unit that **encapsulates the data-model definition (migrations and snapshot) and the read-only query service that operates on that model**, allowing the rest of the application to retrieve basket totals without needing to know the underlying EF Core schema. The subsystem exists to keep all persistence-related definitions and queries in one place, ensuring schema evolution and query logic stay synchronized.",
+      "members": 21,
+      "files": 10,
+      "loc": 702,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 1.5,
+      "efferent": 0.5,
+      "instability": 0.25,
+      "cohesion": 0.43,
+      "confidence": 0.67,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 43% of its dependencies stay inside it"
+      ],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IBasketQueryService.cs:IBasketQueryService.CountTotalBasketItems",
+          "name": "IBasketQueryService.CountTotalBasketItems",
+          "kind": "method",
+          "path": "src/ApplicationCore/Interfaces/IBasketQueryService.cs",
+          "weight": 1.0,
+          "called_from": [
+            1
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IBasketQueryService.cs:IBasketQueryService",
+          "name": "IBasketQueryService",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IBasketQueryService.cs",
+          "weight": 0.5,
+          "called_from": [
+            1
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogContext",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 1,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.EntityFrameworkCore",
+          "uses": 22
+        },
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 6
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Infrastructure/Data/Migrations/CatalogContextModelSnapshot.cs:CatalogContextModelSnapshot.BuildModel",
+          "name": "CatalogContextModelSnapshot.BuildModel",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Migrations/CatalogContextModelSnapshot.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Migrations/20201202111507_InitialModel.cs:InitialModel.Up",
+          "name": "InitialModel.Up",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Migrations/20201202111507_InitialModel.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Migrations/20201202111507_InitialModel.cs:InitialModel.Down",
+          "name": "InitialModel.Down",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Migrations/20201202111507_InitialModel.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Migrations/20211231093753_FixShipToAddress.cs:FixShipToAddress.Up",
+          "name": "FixShipToAddress.Up",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Migrations/20211231093753_FixShipToAddress.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Migrations/20211231093753_FixShipToAddress.cs:FixShipToAddress.Down",
+          "name": "FixShipToAddress.Down",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Migrations/20211231093753_FixShipToAddress.cs"
+        },
+        {
+          "id": "csharp:src/Web/SlugifyParameterTransformer.cs:SlugifyParameterTransformer.TransformOutbound",
+          "name": "SlugifyParameterTransformer.TransformOutbound",
+          "kind": "method",
+          "path": "src/Web/SlugifyParameterTransformer.cs"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "label": "src/BlazorShared/Models \u00b7 ExceptionMiddleware.ExceptionMiddleware.HandleExceptionAsync",
+      "purpose": "The subsystem groups together a set of DTO-style model classes (CatalogItem, CatalogBrand, CatalogType, their \u201cResponse\u201d variants, paging and lookup wrappers) together with a small error-handling infrastructure (ErrorDetails and an ExceptionMiddleware that catches exceptions, formats them as JSON and writes the appropriate HTTP status code).  \n\nStructurally, the middleware is responsible for intercepting unhandled exceptions in the public API pipeline, distinguishing a specific `DuplicateException` (returning 409 Conflict) from other errors, and serializing an `ErrorDetails` object to the response body using `JsonSerializer`. The model classes provide the shape of data that the API returns or receives (catalog items, brands, types, paged results, lookup data) and include helper methods for validating image extensions and converting image data to/from Base64 strings.  \n\nBecause all of these types are used by the same API layer\u2014models that are sent over HTTP and a middleware that formats error responses\u2014they naturally form a cohesive unit that isolates the public-facing contract and its error-handling logic from the rest of the application.",
+      "members": 20,
+      "files": 13,
+      "loc": 178,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 1.5,
+      "efferent": 0,
+      "instability": 0.0,
+      "cohesion": 0.9,
+      "confidence": 0.87,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [
+        {
+          "id": "csharp:src/BlazorShared/Models/CatalogItem.cs:CatalogItem",
+          "name": "CatalogItem",
+          "kind": "class",
+          "path": "src/BlazorShared/Models/CatalogItem.cs",
+          "weight": 1.5,
+          "called_from": [
+            3
+          ]
+        }
+      ],
+      "depends_on": [],
+      "depended_on_by": [
+        {
+          "subsystem": 3,
+          "weight": 1.5,
+          "edges": 3
+        }
+      ],
+      "third_party": [
+        {
+          "package": "BlazorInputFile",
+          "uses": 1
+        },
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 15
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/BlazorShared/Models/CatalogItem.cs:CatalogItem",
+          "name": "CatalogItem",
+          "kind": "class",
+          "path": "src/BlazorShared/Models/CatalogItem.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/Middleware/ExceptionMiddleware.cs:ExceptionMiddleware.HandleExceptionAsync",
+          "name": "ExceptionMiddleware.HandleExceptionAsync",
+          "kind": "method",
+          "path": "src/PublicApi/Middleware/ExceptionMiddleware.cs"
+        },
+        {
+          "id": "csharp:src/BlazorShared/Models/CatalogItem.cs:CatalogItem.IsExtensionValid",
+          "name": "CatalogItem.IsExtensionValid",
+          "kind": "method",
+          "path": "src/BlazorShared/Models/CatalogItem.cs"
+        },
+        {
+          "id": "csharp:src/BlazorShared/Models/CatalogItem.cs:CatalogItem.DataToBase64",
+          "name": "CatalogItem.DataToBase64",
+          "kind": "method",
+          "path": "src/BlazorShared/Models/CatalogItem.cs"
+        },
+        {
+          "id": "csharp:src/BlazorShared/Models/CatalogItem.cs:CatalogItem.IsValidImage",
+          "name": "CatalogItem.IsValidImage",
+          "kind": "method",
+          "path": "src/BlazorShared/Models/CatalogItem.cs"
+        },
+        {
+          "id": "csharp:src/BlazorShared/Models/ErrorDetails.cs:ErrorDetails",
+          "name": "ErrorDetails",
+          "kind": "class",
+          "path": "src/BlazorShared/Models/ErrorDetails.cs"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "label": "src/Infrastructure/Identity/Migrations \u00b7 AppIdentityDbContextModelSnapshot.AppIdentityDbContextModelSnapshot.BuildModel",
+      "purpose": "The twelve-member subsystem is the **Identity/authorization infrastructure** of the application.  \nIt groups together the Entity Framework Core migration that creates the ASP.NET Core Identity tables (`InitialIdentityModel`, `AppIdentityDbContextModelSnapshot`), the `ApplicationUser`-derived `AppIdentityDbContext` configuration (`BuildModel`), the startup hook that registers the Identity services (`IdentityHostingStartup.Configure` and `Dependencies.ConfigureServices`), a set of constant values used for permission checks (`AuthorizationConstants`), and the view-models that drive the UI for login, registration and password reset.  \n\nThe presence of the `EndpointAttribute` and the custom Blazor input component (`CustomInputSelect`) suggests the same package also supplies UI helpers that need the same Identity services, so they are kept together to ensure the authentication system is initialized, its database schema is versioned, and the UI can bind to the corresponding view-models.  \n\nAll of these pieces depend on the same external EF Core/Identity APIs (e.g., `HasKey`, `HasIndex`, `HasOne`), which is why they form a cohesive unit: they collectively define, configure, and expose the user-account data model and the surrounding UI scaffolding.",
+      "members": 17,
+      "files": 11,
+      "loc": 618,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 1.0,
+      "efferent": 0,
+      "instability": 0.0,
+      "cohesion": 0.0,
+      "confidence": 0.0,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "needs-prep",
+      "blockers": [
+        "weak boundary: only 0% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "only 0% of its calls could be resolved statically; verify by hand"
+      ],
+      "exposed_api": [
+        {
+          "id": "csharp:src/Infrastructure/Dependencies.cs:Dependencies.ConfigureServices",
+          "name": "Dependencies.ConfigureServices",
+          "kind": "method",
+          "path": "src/Infrastructure/Dependencies.cs",
+          "weight": 1.0,
+          "called_from": [
+            13
+          ]
+        }
+      ],
+      "depends_on": [],
+      "depended_on_by": [
+        {
+          "subsystem": 13,
+          "weight": 1.0,
+          "edges": 1
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.EntityFrameworkCore",
+          "uses": 6
+        },
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 5
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 2
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 7
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Infrastructure/Identity/Migrations/AppIdentityDbContextModelSnapshot.cs:AppIdentityDbContextModelSnapshot.BuildModel",
+          "name": "AppIdentityDbContextModelSnapshot.BuildModel",
+          "kind": "method",
+          "path": "src/Infrastructure/Identity/Migrations/AppIdentityDbContextModelSnapshot.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Identity/Migrations/20201202111612_InitialIdentityModel.cs:InitialIdentityModel.Up",
+          "name": "InitialIdentityModel.Up",
+          "kind": "method",
+          "path": "src/Infrastructure/Identity/Migrations/20201202111612_InitialIdentityModel.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Dependencies.cs:Dependencies.ConfigureServices",
+          "name": "Dependencies.ConfigureServices",
+          "kind": "method",
+          "path": "src/Infrastructure/Dependencies.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Identity/Migrations/20201202111612_InitialIdentityModel.cs:InitialIdentityModel.Down",
+          "name": "InitialIdentityModel.Down",
+          "kind": "method",
+          "path": "src/Infrastructure/Identity/Migrations/20201202111612_InitialIdentityModel.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Shared/CustomInputSelect.cs:CustomInputSelect.TryParseValueFromString",
+          "name": "CustomInputSelect.TryParseValueFromString",
+          "kind": "method",
+          "path": "src/BlazorAdmin/Shared/CustomInputSelect.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Shared/CustomInputSelect.cs:CustomInputSelect",
+          "name": "CustomInputSelect",
+          "kind": "class",
+          "path": "src/BlazorAdmin/Shared/CustomInputSelect.cs"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "label": "src/Web/Configuration \u00b7 ConfigureCoreServices.ConfigureCoreServices.AddCoreServices",
+      "purpose": "The subsystem groups together the configuration- and composition-logic that wires the application\u2019s core services into the ASP.NET DI container and provides a small utility for building absolute picture URLs.  \n* `ConfigureCoreServices.AddCoreServices` registers generic repositories, basket/order services, logging, email and, importantly, reads a `CatalogSettings` section from configuration and registers a singleton `IUriComposer` implementation (`UriComposer`) that uses those settings to compose picture URIs via `ComposePicUri`.  \n* `ConfigureWebServices`, `ConfigureCookieSettings` and `RevokeAuthenticationEvents` contain related ASP.NET Core startup code for cookie authentication and other web-level services, all of which are invoked from `Program` during application boot-strapping.  \n\nBecause all of these classes are only called during application start-up and share the same concern\u2014setting up dependency-injection, authentication cookies, and the URI-composer helper\u2014they form a cohesive \u201capplication-initialisation\u201d subsystem. The exact business purpose of the URI composer (e.g., serving catalog images) is inferred from the name and its use in catalog-related endpoints, but the subsystem\u2019s primary role is structural configuration rather than domain logic.",
+      "members": 16,
+      "files": 8,
+      "loc": 113,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 10.5,
+      "efferent": 3.0,
+      "instability": 0.22,
+      "cohesion": 0.37,
+      "confidence": 0.72,
+      "in_cycle": true,
+      "wave": 1,
+      "readiness": "needs-prep",
+      "blockers": [
+        "part of a dependency cycle: cut the listed links before extracting",
+        "weak boundary: only 37% of its dependencies stay inside it"
+      ],
+      "risks": [
+        "depends on 6 third-party packages (MediatR, Microsoft.AspNetCore, Microsoft.Extensions, Microsoft.IdentityModel...)"
+      ],
+      "exposed_api": [
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IUriComposer.cs:IUriComposer.ComposePicUri",
+          "name": "IUriComposer.ComposePicUri",
+          "kind": "method",
+          "path": "src/ApplicationCore/Interfaces/IUriComposer.cs",
+          "weight": 7.0,
+          "called_from": [
+            0,
+            1,
+            2
+          ]
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IUriComposer.cs:IUriComposer",
+          "name": "IUriComposer",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IUriComposer.cs",
+          "weight": 3.5,
+          "called_from": [
+            0,
+            1,
+            2
+          ]
+        }
+      ],
+      "depends_on": [
+        {
+          "subsystem": 12,
+          "weight": 1.0,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Dependencies.ConfigureServices",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 0,
+          "weight": 1.0,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogContextSeed.SeedAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "subsystem": 5,
+          "weight": 1.0,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "AppIdentityDbContextSeed.SeedAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [
+        {
+          "subsystem": 0,
+          "weight": 6.0,
+          "edges": 8
+        },
+        {
+          "subsystem": 1,
+          "weight": 3.0,
+          "edges": 4
+        },
+        {
+          "subsystem": 2,
+          "weight": 1.5,
+          "edges": 2
+        }
+      ],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 7
+        },
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 7
+        },
+        {
+          "package": "MediatR",
+          "uses": 7
+        },
+        {
+          "package": "MinimalApi",
+          "uses": 2
+        },
+        {
+          "package": "Microsoft.IdentityModel",
+          "uses": 1
+        },
+        {
+          "package": "Microsoft.OpenApi",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 7
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/Web/Configuration/ConfigureCoreServices.cs:ConfigureCoreServices.AddCoreServices",
+          "name": "ConfigureCoreServices.AddCoreServices",
+          "kind": "method",
+          "path": "src/Web/Configuration/ConfigureCoreServices.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IUriComposer.cs:IUriComposer",
+          "name": "IUriComposer",
+          "kind": "class",
+          "path": "src/ApplicationCore/Interfaces/IUriComposer.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Interfaces/IUriComposer.cs:IUriComposer.ComposePicUri",
+          "name": "IUriComposer.ComposePicUri",
+          "kind": "method",
+          "path": "src/ApplicationCore/Interfaces/IUriComposer.cs"
+        },
+        {
+          "id": "csharp:src/Web/Configuration/ConfigureWebServices.cs:ConfigureWebServices.AddWebServices",
+          "name": "ConfigureWebServices.AddWebServices",
+          "kind": "method",
+          "path": "src/Web/Configuration/ConfigureWebServices.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/CatalogSettings.cs:CatalogSettings",
+          "name": "CatalogSettings",
+          "kind": "class",
+          "path": "src/ApplicationCore/CatalogSettings.cs"
+        },
+        {
+          "id": "csharp:src/ApplicationCore/Services/UriComposer.cs:UriComposer",
+          "name": "UriComposer",
+          "kind": "class",
+          "path": "src/ApplicationCore/Services/UriComposer.cs"
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "label": "src/BlazorAdmin \u00b7 CustomAuthStateProvider.CustomAuthStateProvider.FetchUser",
+      "purpose": "The members of this cluster implement the client-side authentication and health-monitoring support for the Blazor-based admin UI. The `CustomAuthStateProvider` class (and its async `GetAuthenticationStateAsync`, `GetUser`, and `FetchUser` methods) supplies a `AuthenticationStateProvider` that queries a backend \u201cUser\u201d endpoint via `HttpClient`, builds a `ClaimsPrincipal` from the returned `UserInfo`, and caches the result (e.g., via `ClearLocalStorageCache`). `ServicesConfiguration.AddBlazorServices` and `BaseUrlConfiguration` are used to register this provider and related HTTP settings with the DI container, while the two `HealthCheck` classes (`ApiHealthCheck` and `HomePageHealthCheck`) expose simple liveness probes that call the same HTTP client to verify that the API and home page are reachable, returning `HealthCheckResult.Healthy` or `Unhealthy`. Together these pieces form a cohesive subsystem that centralises authentication state retrieval and basic service health reporting for the Blazor admin application.",
+      "members": 15,
+      "files": 6,
+      "loc": 155,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 0,
+      "efferent": 0.5,
+      "instability": 1.0,
+      "cohesion": 0.83,
+      "confidence": 0.5,
+      "in_cycle": false,
+      "wave": 3,
+      "readiness": "caution",
+      "blockers": [],
+      "risks": [
+        "only 50% of its calls could be resolved statically; verify by hand"
+      ],
+      "exposed_api": [],
+      "depends_on": [
+        {
+          "subsystem": 4,
+          "weight": 0.5,
+          "edges": 1,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "UserInfo",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [],
+      "third_party": [
+        {
+          "package": "Microsoft.Extensions",
+          "uses": 14
+        },
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 5
+        },
+        {
+          "package": "Blazored",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 15
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/BlazorAdmin/CustomAuthStateProvider.cs:CustomAuthStateProvider.FetchUser",
+          "name": "CustomAuthStateProvider.FetchUser",
+          "kind": "method",
+          "path": "src/BlazorAdmin/CustomAuthStateProvider.cs"
+        },
+        {
+          "id": "csharp:src/Web/HealthChecks/HomePageHealthCheck.cs:HomePageHealthCheck.CheckHealthAsync",
+          "name": "HomePageHealthCheck.CheckHealthAsync",
+          "kind": "method",
+          "path": "src/Web/HealthChecks/HomePageHealthCheck.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/ServicesConfiguration.cs:ServicesConfiguration.AddBlazorServices",
+          "name": "ServicesConfiguration.AddBlazorServices",
+          "kind": "method",
+          "path": "src/BlazorAdmin/ServicesConfiguration.cs"
+        },
+        {
+          "id": "csharp:src/Web/HealthChecks/ApiHealthCheck.cs:ApiHealthCheck.CheckHealthAsync",
+          "name": "ApiHealthCheck.CheckHealthAsync",
+          "kind": "method",
+          "path": "src/Web/HealthChecks/ApiHealthCheck.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/CustomAuthStateProvider.cs:CustomAuthStateProvider",
+          "name": "CustomAuthStateProvider",
+          "kind": "class",
+          "path": "src/BlazorAdmin/CustomAuthStateProvider.cs"
+        },
+        {
+          "id": "csharp:src/BlazorAdmin/Program.cs:ClearLocalStorageCache",
+          "name": "ClearLocalStorageCache",
+          "kind": "function",
+          "path": "src/BlazorAdmin/Program.cs"
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "label": "src/PublicApi/CatalogBrandEndpoints \u00b7 CatalogBrandListEndpoint.CatalogBrandListEndpoint.HandleAsync",
+      "purpose": "The subsystem groups together the HTTP-GET endpoint that returns all catalog brands and the view-helper that renders navigation links for the \u201cManage\u201d area of the web UI.  \n* The `CatalogBrandListEndpoint` class registers a route (`app.MapGet(\"api/catalog-brands\", \u2026)`) and its `HandleAsync` method queries an `IRepository<CatalogBrand>` for all brand entities, maps each entity to a `CatalogBrandDto` with an injected mapper, puts the DTOs into a `ListCatalogBrandsResponse`, and returns the response with `Results.Ok`.  \n* The `CatalogBrandDto` and `ListCatalogBrandsResponse` types are simple data-transfer objects used only by this endpoint.  \n* The `ManageNavPages` class provides a set of static helpers that compute CSS classes for the various pages under the \u201cManage\u201d section (e.g., Index, ChangePassword, ExternalLogins, TwoFactorAuthentication) and a method to add an \u201cactive\u201d class to the current page.\n\nTogether these files form a cohesive unit because they encapsulate the public API for listing catalog brands (request handling, DTO definition, and response shaping) and the UI-side navigation helpers that are part of the same feature area (catalog brand management) in the web application. The grouping reflects a logical feature boundary: exposing catalog brand data via a REST endpoint and supporting the related management UI.",
+      "members": 15,
+      "files": 4,
+      "loc": 76,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 0,
+      "efferent": 2.0,
+      "instability": 1.0,
+      "cohesion": 0.76,
+      "confidence": 1.0,
+      "in_cycle": false,
+      "wave": 2,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [],
+      "depends_on": [
+        {
+          "subsystem": 0,
+          "weight": 2.0,
+          "edges": 2,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "ListCatalogBrandsResponse",
+              "target": "BaseResponse",
+              "kind": "inherits",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ],
+      "depended_on_by": [],
+      "third_party": [
+        {
+          "package": "Microsoft.AspNetCore",
+          "uses": 5
+        },
+        {
+          "package": "AutoMapper",
+          "uses": 1
+        },
+        {
+          "package": "MinimalApi",
+          "uses": 1
+        }
+      ],
+      "stdlib": [
+        {
+          "package": "System",
+          "uses": 5
+        }
+      ],
+      "top_members": [
+        {
+          "id": "csharp:src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.cs:CatalogBrandListEndpoint.HandleAsync",
+          "name": "CatalogBrandListEndpoint.HandleAsync",
+          "kind": "method",
+          "path": "src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.cs"
+        },
+        {
+          "id": "csharp:src/Web/Views/Manage/ManageNavPages.cs:ManageNavPages.PageNavClass",
+          "name": "ManageNavPages.PageNavClass",
+          "kind": "method",
+          "path": "src/Web/Views/Manage/ManageNavPages.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.cs:CatalogBrandListEndpoint.AddRoute",
+          "name": "CatalogBrandListEndpoint.AddRoute",
+          "kind": "method",
+          "path": "src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.ListCatalogBrandsResponse.cs:ListCatalogBrandsResponse",
+          "name": "ListCatalogBrandsResponse",
+          "kind": "class",
+          "path": "src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.ListCatalogBrandsResponse.cs"
+        },
+        {
+          "id": "csharp:src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.cs:CatalogBrandListEndpoint",
+          "name": "CatalogBrandListEndpoint",
+          "kind": "class",
+          "path": "src/PublicApi/CatalogBrandEndpoints/CatalogBrandListEndpoint.cs"
+        },
+        {
+          "id": "csharp:src/Web/Views/Manage/ManageNavPages.cs:ManageNavPages.IndexNavClass",
+          "name": "ManageNavPages.IndexNavClass",
+          "kind": "method",
+          "path": "src/Web/Views/Manage/ManageNavPages.cs"
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "label": "src/Infrastructure/Data/Config \u00b7 OrderConfiguration.OrderConfiguration.Configure",
+      "purpose": "The fourteen classes in this subsystem are all Entity Framework Core configuration types that map domain entities (Basket, BasketItem, CatalogBrand, CatalogItem, CatalogType, Order, OrderItem) to database tables. Each class implements a Configure method that uses an EntityTypeBuilder to declare primary keys, relationships ( HasOne/WithMany ), owned value objects (e.g., Order.ShipToAddress), and column constraints such as IsRequired and HasMaxLength for address fields. Because they all live in the *Infrastructure/Data/Config* folder and are only referenced by the EF Core model-building pipeline, they form a cohesive \u201centity-mapping\u201d subsystem whose purpose is to define the schema, constraints, and navigation behavior for the persistence layer of the application. No other parts of the codebase call them directly, which is typical for configuration classes that are discovered and applied automatically when the DbContext is constructed.",
+      "members": 14,
+      "files": 7,
+      "loc": 138,
+      "languages": [
+        "csharp"
+      ],
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null,
+      "cohesion": null,
+      "confidence": null,
+      "in_cycle": false,
+      "wave": 0,
+      "readiness": "ready",
+      "blockers": [],
+      "risks": [],
+      "exposed_api": [],
+      "depends_on": [],
+      "depended_on_by": [],
+      "third_party": [
+        {
+          "package": "Microsoft.EntityFrameworkCore",
+          "uses": 71
+        }
+      ],
+      "stdlib": [],
+      "top_members": [
+        {
+          "id": "csharp:src/Infrastructure/Data/Config/OrderConfiguration.cs:OrderConfiguration.Configure",
+          "name": "OrderConfiguration.Configure",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Config/OrderConfiguration.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Config/CatalogItemConfiguration.cs:CatalogItemConfiguration.Configure",
+          "name": "CatalogItemConfiguration.Configure",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Config/CatalogItemConfiguration.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Config/OrderItemConfiguration.cs:OrderItemConfiguration.Configure",
+          "name": "OrderItemConfiguration.Configure",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Config/OrderItemConfiguration.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Config/CatalogBrandConfiguration.cs:CatalogBrandConfiguration.Configure",
+          "name": "CatalogBrandConfiguration.Configure",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Config/CatalogBrandConfiguration.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Config/CatalogTypeConfiguration.cs:CatalogTypeConfiguration.Configure",
+          "name": "CatalogTypeConfiguration.Configure",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Config/CatalogTypeConfiguration.cs"
+        },
+        {
+          "id": "csharp:src/Infrastructure/Data/Config/BasketConfiguration.cs:BasketConfiguration.Configure",
+          "name": "BasketConfiguration.Configure",
+          "kind": "method",
+          "path": "src/Infrastructure/Data/Config/BasketConfiguration.cs"
+        }
+      ]
+    }
+  ],
+  "waves": [
+    {
+      "index": 0,
+      "units": [
+        {
+          "subsystems": [
+            16
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            11
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            12
+          ],
+          "cyclic": false
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "units": [
+        {
+          "subsystems": [
+            3
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            0,
+            1,
+            2,
+            5,
+            6,
+            7,
+            9,
+            10,
+            13
+          ],
+          "cyclic": true
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "units": [
+        {
+          "subsystems": [
+            15
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            8
+          ],
+          "cyclic": false
+        },
+        {
+          "subsystems": [
+            4
+          ],
+          "cyclic": false
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "units": [
+        {
+          "subsystems": [
+            14
+          ],
+          "cyclic": false
+        }
+      ]
+    }
+  ],
+  "cycles": [
+    {
+      "members": [
+        0,
+        1,
+        2,
+        5,
+        6,
+        7,
+        9,
+        10,
+        13
+      ],
+      "order_after_cuts": [
+        [
+          7,
+          9,
+          10,
+          13
+        ],
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          6
+        ],
+        [
+          2,
+          5
+        ]
+      ],
+      "cut_candidates": [
+        {
+          "from": 6,
+          "to": 0,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 6,
+          "to": 9,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItemViewModel",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 7,
+          "to": 2,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Address",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 9,
+          "to": 0,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 9,
+          "to": 2,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItem.CatalogItemDetails",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 10,
+          "to": 0,
+          "weight": 0.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogContext",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 2,
+          "to": 0,
+          "weight": 1.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 7,
+          "to": 0,
+          "weight": 1.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "IReadRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "IReadRepository",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 13,
+          "to": 0,
+          "weight": 1.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogContextSeed.SeedAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 13,
+          "to": 5,
+          "weight": 1.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "AppIdentityDbContextSeed.SeedAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 0,
+          "to": 5,
+          "weight": 1.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "ITokenClaimsService",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "AuthenticateEndpoint.HandleAsync",
+              "target": "ITokenClaimsService.GetTokenAsync",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 6,
+          "to": 2,
+          "weight": 2.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Address",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Address",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CheckoutModel.OnPost",
+              "target": "Address",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "weight": 3.0,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "CatalogItem",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CreateCatalogItemEndpoint.HandleAsync",
+              "target": "CatalogItem",
+              "kind": "calls",
+              "resolution": "resolved"
+            },
+            {
+              "source": "CreateCatalogItemEndpoint.HandleAsync",
+              "target": "CatalogItem.UpdatePictureUri",
+              "kind": "calls",
+              "resolution": "resolved"
+            }
+          ]
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "weight": 3.5,
+          "examples": [
+            {
+              "source": "<module>",
+              "target": "Basket",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "Basket",
+              "kind": "imports",
+              "resolution": "resolved"
+            },
+            {
+              "source": "<module>",
+              "target": "CatalogItemsSpecification",
+              "kind": "imports",
+              "resolution": "resolved"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "narrative": "## Target shape  \nThe migration will produce four extraction waves that respect the declared dependencies. Wave 0 contains the two low-risk infrastructure pieces that have no inbound dependencies. Wave 1 holds the large catalog-and-authentication cluster, which must be broken by introducing interfaces for the listed cut links before any of its members can be moved. Waves 2 and 3 finish the remaining UI helpers and the custom auth provider.\n\n## Migration sequence  \n\n- **Wave 0** \u2013 extract **#11** (`ExceptionMiddleware.HandleExceptionAsync`) and **#12** (`AppIdentityDbContextModelSnapshot.BuildModel`).  \n  *Interface*: expose a thin fa\u00e7ade over the exception-handling middleware and over the identity model-building routine.  \n  *Prep work*: for #12 perform a manual review of the migration script (its static-analysis coverage is 0 %) and confirm the identity schema before extraction.  \n\n- **Wave 1** \u2013 break the cycle and extract the following subsystems in the order dictated by the cheapest cut links:  \n\n  1. **#7**, **#9**, **#10**, **#13** (extracted together).  \n     - *Interface*: a fa\u00e7ade over the specification (`BasketWithItemsSpecification`), the JavaScript view-model (`CatalogItemViewModel`), the EF Core model snapshot (`CatalogContextModelSnapshot.BuildModel`), and the core-service registration (`ConfigureCoreServices.AddCoreServices`).  \n     - *Prep work*: cut the links **#7 \u2192 #2**, **#9 \u2192 #0**, **#10 \u2192 #0**, and **#13 \u2192 #0/#5** by introducing the above fa\u00e7ade(s).  \n\n  2. **#0** (`CatalogContextSeed.SeedAsync`).  \n     - *Interface*: a seed-service fa\u00e7ade that hides the direct dependencies on #13, #2 and #5.  \n     - *Prep work*: replace the direct calls with the fa\u00e7ade introduced in step 1.  \n\n  3. **#1** (`CatalogViewModelService.GetCatalogItems`).  \n     - *Interface*: a view-model service fa\u00e7ade that abstracts the underlying calls to #0, #2, #13, #10 and #7.  \n     - *Prep work*: inject the fa\u00e7ade from step 2 and redirect internal calls.  \n\n  4. **#6** (`IndexModel.GetOrSetBasketCookieAndUserName`).  \n     - *Interface*: a basket-helper fa\u00e7ade that removes the two cheapest cycle links **#6 \u2192 #0** and **#6 \u2192 #9**.  \n     - *Prep work*: refactor the method to call the fa\u00e7ade rather than the concrete `IRepository` and `CatalogItemViewModel`.  \n\n  5. **#2** (`OrderService.CreateOrderAsync`) and **#5** (`IdentityTokenClaimService.GetTokenAsync`) together.  \n     - *Interface*: a domain-order fa\u00e7ade and an identity-token fa\u00e7ade that hide their remaining internal dependencies.  \n     - *Prep work*: ensure both subsystems now depend only on already-extracted waves (the fa\u00e7ade from step 1 and the seed fa\u00e7ade).  \n\n  6. **#3** (`CatalogItemService.List`). \u2013 already ready, no cycle.  \n     - *Interface*: none required; can be moved as-is.  \n\n- **Wave 2** \u2013 extract **#8** (`List.razor.List`) and **#4** (`ManageController.EnableAuthenticator`).  \n  *Interface*: none needed; both are ready.  \n  *Prep work*: none beyond confirming that their only dependencies (#3 and #6/#5/#1 respectively) are already extracted.  \n\n- **Wave 3** \u2013 extract **#14** (`CustomAuthStateProvider.FetchUser`).  \n  *Interface*: none required; only depends on #4 which is already in wave 2.  \n  *Prep work*: verify the client-side auth calls manually because static analysis resolved only 50 % of calls.  \n\n## Biggest risks  \n\n- Cutting the cycle links may expose hidden runtime dependencies that static analysis missed.  \n- The weak boundaries of #10 and #13 (\u2264 45 % internal cohesion) could cause runtime breakage after extraction.  \n- Manual verification of the identity migration (#12) is required; errors here affect authentication globally.  \n- The custom auth provider (#14) has low static-analysis confidence (0.5); runtime behavior must be validated thoroughly.  \n\n## What this analysis cannot tell you  \n\n- The exact runtime impact of the introduced fa\u00e7ade layers on performance or latency.  \n- Whether any of the \u201centry points used by others\u201d are consumed via reflection or dynamic loading.  \n- The business-level semantics of the subsystems that were not inferred from the facts.  \n- Any hidden side-effects in third-party packages that could surface after the boundary changes.",
+  "narrative_warnings": []
+}

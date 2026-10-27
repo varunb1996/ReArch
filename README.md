@@ -117,3 +117,7 @@ requirements-hosted.txt           lean dependency set for that image
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for how each stage works, why the design is the way it is, and what it cannot do.
+
+## License
+
+[MIT](LICENSE). Use it, change it, ship it; keep the copyright notice.

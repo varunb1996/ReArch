@@ -1,71 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  ReactFlow,
-  Background,
-  Controls,
-  MiniMap,
-  MarkerType,
-} from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { layoutGraph } from "./layout";
 import { API_BASE, HYBRID, STATIC_DEMO, apiFetch, errorMessage, publicFetch, serverIsAwake } from "./api";
-import { UNCLUSTERED_COLOR, clusterColor } from "./colors";
+import { INK, UNCLUSTERED_COLOR, clusterColor } from "./colors";
+import CodeMap from "./CodeMap";
 import MigrationPanel from "./MigrationPanel";
 import SubsystemMap from "./SubsystemMap";
 import "./App.css";
-
-const KIND_BADGE = {
-  module: "mod",
-  class: "cls",
-  function: "fn",
-  method: "mth",
-  unresolved: "?",
-};
-
-const KIND_BORDER = {
-  module: "#e2e8f0",
-  class: "#f8fafc",
-  function: "#e2e8f0",
-  method: "#e2e8f0",
-  unresolved: "#64748b",
-};
-
-const RESOLUTION_STYLE = {
-  resolved: { stroke: "#16a34a", dashed: false },
-  dynamic: { stroke: "#f59e0b", dashed: true },
-  "inferred-http": { stroke: "#2563eb", dashed: true },
-  unresolved: { stroke: "#cbd5e1", dashed: true },
-};
-
-function toFlowNode(node) {
-  const background = node.kind === "module" || node.kind === "unresolved" ? UNCLUSTERED_COLOR : clusterColor(node.cluster);
-  return {
-    id: node.id,
-    data: { label: `[${KIND_BADGE[node.kind] || node.kind}] ${node.qualified_name || node.name}`, raw: node },
-    position: { x: 0, y: 0 },
-    style: {
-      background,
-      color: "white",
-      borderRadius: 6,
-      fontSize: 11,
-      padding: "4px 6px",
-      width: 200,
-      border: `1px solid ${KIND_BORDER[node.kind] || "#e2e8f0"}`,
-    },
-  };
-}
-
-function toFlowEdge(edge, index) {
-  const style = RESOLUTION_STYLE[edge.resolution] || RESOLUTION_STYLE.unresolved;
-  return {
-    id: `e${index}-${edge.source}-${edge.target}`,
-    source: edge.source,
-    target: edge.target,
-    animated: edge.resolution === "dynamic",
-    style: { stroke: style.stroke, strokeDasharray: style.dashed ? "5,5" : undefined },
-    markerEnd: { type: MarkerType.ArrowClosed, color: style.stroke },
-  };
-}
 
 function RepoPanel({ liveState, showUsername, typedName, setTypedName, username, repos, demoRepos, selectedRepoId, onSelectRepo, onRepoAdded }) {
   const [gitUrl, setGitUrl] = useState("");
@@ -284,6 +224,20 @@ function HistoryPanel({ username, repoId, onReanalyzed }) {
   );
 }
 
+// What a visitor sees before choosing anything: an invitation, not a blank canvas.
+function EmptySheet({ liveState }) {
+  return (
+    <div className="empty-sheet">
+      <h2 className="empty-title">Every old system has a shape. Choose a sheet to see it.</h2>
+      <p className="empty-body">
+        {liveState === "static"
+          ? "Pick one of the five surveyed repositories on the left. Each opens as a map of its subsystems, a closer code map, and an order to move them in."
+          : "Pick a surveyed repository on the left, or paste the address of a public GitHub repository to survey it yourself."}
+      </p>
+    </div>
+  );
+}
+
 export default function App() {
   // Hosted mode asks the server (/api/health) and uses a random private id
   // instead of a typed username; local mode keeps the simple name field.
@@ -308,12 +262,9 @@ export default function App() {
   const [narratives, setNarratives] = useState({});
   const [selectedNode, setSelectedNode] = useState(null);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
   const [focusedCluster, setFocusedCluster] = useState(null);
   const [view, setView] = useState("map");
   const [migration, setMigration] = useState(null);
-  const [showUnresolved, setShowUnresolved] = useState(false);
-  const [flowInstance, setFlowInstance] = useState(null);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showInspector, setShowInspector] = useState(() => window.innerWidth >= 1200);
 
@@ -421,7 +372,6 @@ export default function App() {
     setMigration(null);
     setSelectedNode(null);
     setView("map");
-    setSearchQuery("");
     setFocusedCluster(null);
     setError(null);
     if (selectedRepoId && selectedStatus === "ready") loadRepoData();
@@ -442,44 +392,8 @@ export default function App() {
     [refreshRepos, selectRepo]
   );
 
-  const { flowNodes, flowEdges } = useMemo(() => {
-    if (!graph) return { flowNodes: [], flowEdges: [] };
-    const hidden = showUnresolved ? new Set() : new Set(graph.nodes.filter((n) => n.kind === "unresolved").map((n) => n.id));
-    const visibleNodes = graph.nodes.filter((n) => !hidden.has(n.id));
-    const visibleEdges = graph.edges.filter((e) => !hidden.has(e.source) && !hidden.has(e.target));
-    const rawNodes = visibleNodes.map(toFlowNode);
-    const focusSet = focusedCluster === null
-      ? null
-      : new Set(visibleNodes.filter((n) => n.cluster === focusedCluster).map((n) => n.id));
-    const rawEdges = visibleEdges.map((edge, index) => {
-      const flowEdge = toFlowEdge(edge, index);
-      const touchesFocus = !focusSet || focusSet.has(edge.source) || focusSet.has(edge.target);
-      return touchesFocus ? flowEdge : { ...flowEdge, style: { ...flowEdge.style, opacity: 0.05 } };
-    });
-    const positioned = layoutGraph(rawNodes, visibleEdges);
-
-    const query = searchQuery.trim().toLowerCase();
-    const styled = positioned.map((n) => {
-      const matchesSearch = !query || n.data.label.toLowerCase().includes(query);
-      const matchesCluster = focusedCluster === null || n.data.raw.cluster === focusedCluster;
-      const dimmed = !matchesSearch || !matchesCluster;
-      return { ...n, style: { ...n.style, opacity: dimmed ? 0.12 : 1 } };
-    });
-
-    return { flowNodes: styled, flowEdges: rawEdges };
-  }, [graph, searchQuery, focusedCluster, showUnresolved]);
-
-  // Zoom to the focused subsystem so "Show on blueprint" actually shows it.
-  useEffect(() => {
-    if (!flowInstance || focusedCluster === null) return;
-    const focused = flowNodes.filter((n) => n.data.raw.cluster === focusedCluster);
-    if (focused.length) flowInstance.fitView({ nodes: focused, padding: 0.35, duration: 400, maxZoom: 1.1 });
-  }, [flowInstance, focusedCluster, flowNodes]);
-
   // The map and the plan need a migration plan; fall back to the graph without one.
   const activeView = !migration && view !== "blueprint" ? "blueprint" : view;
-
-  const onNodeClick = useCallback((_, node) => setSelectedNode(node.data.raw), []);
 
   const clusterSummary = useMemo(() => {
     if (!graph) return [];
@@ -494,12 +408,18 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${showSidebar ? "" : "collapsed"}`}>
-        <h2>ReArch</h2>
-        <p className="hint">
+        <header className="brand">
+          <img className="brand-mark" src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width="40" height="40" />
+          <div>
+            <h1 className="brand-name">ReArch</h1>
+            <p className="brand-tag">Decode the past. Design the future.</p>
+          </div>
+        </header>
+        <p className="hint intro">
           {STATIC_DEMO && !HYBRID
-            ? "Reverse-engineer a codebase into a blueprint and a migration plan: what to extract first, what is tangled, and how far to trust the analysis."
+            ? "Maps an old codebase into subsystems and an order to move them in: what to extract first, what is tangled, and how far to trust the analysis."
             : publicMode
-              ? "Reverse-engineer a codebase into a blueprint and a migration plan. Your analyses are private to this browser."
+              ? "Maps an old codebase into subsystems and an order to move them in. Your analyses are private to this browser."
               : "Local mode. Each username only sees its own repos (no real auth)."}
         </p>
         <RepoPanel
@@ -527,30 +447,30 @@ export default function App() {
 
       <div className="canvas">
         <div className="view-tabs">
-          <button className="panel-toggle" onClick={() => setShowSidebar(!showSidebar)} title="Show or hide the repo list">
-            {showSidebar ? "Hide repos" : "Repos"}
+          <button className="panel-toggle" onClick={() => setShowSidebar(!showSidebar)} title="Show or hide the list of repositories">
+            {showSidebar ? "Hide list" : "Repositories"}
           </button>
           {selectedRepoId && graph && (
             <>
               {migration && <button className={activeView === "map" ? "active" : ""} onClick={() => setView("map")}>Subsystem map</button>}
-              <button className={activeView === "blueprint" ? "active" : ""} onClick={() => setView("blueprint")}>Detailed graph</button>
+              <button className={activeView === "blueprint" ? "active" : ""} onClick={() => setView("blueprint")}>Code map</button>
               {migration && <button className={activeView === "migration" ? "active" : ""} onClick={() => setView("migration")}>Migration plan</button>}
             </>
           )}
           {selectedRepoId && graph && activeView === "blueprint" && (
             <button className="panel-toggle push-right" onClick={() => setShowInspector(!showInspector)}>
-              {showInspector ? "Hide inspector" : "Inspector"}
+              {showInspector ? "Hide notes" : "Field notes"}
             </button>
           )}
         </div>
         <div className="canvas-body">
           {error && <div className="status error">{error}</div>}
           {!error && !graph && (
-            <div className="status">
-              {!selectedRepo && (liveState === "static" ? "Pick an example on the left to explore its blueprint and migration plan." : "Pick an example on the left, or paste a public GitHub repository to analyze.")}
+            <div className={selectedRepo ? "status" : "status empty"}>
+              {!selectedRepo && <EmptySheet liveState={liveState} />}
               {selectedRepo?.status === "pending" && "Analyzing this repository (cloning, parsing, clustering, writing the plan). Small repositories take about a minute; larger ones can take a few minutes on the free server."}
               {selectedRepo?.status === "error" && `Analysis failed: ${selectedRepo.error || "unknown error"}`}
-              {selectedRepo?.status === "ready" && "Loading blueprint..."}
+              {selectedRepo?.status === "ready" && "Loading the map…"}
             </div>
           )}
           {graph && activeView === "map" && (
@@ -578,45 +498,29 @@ export default function App() {
             )
           )}
           {graph && activeView === "blueprint" && (
-            <>
-              <div className="canvas-toolbar">
-                <input
-                  className="search-box"
-                  type="text"
-                  placeholder="Search nodes by name..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <label className="toggle">
-                  <input type="checkbox" checked={showUnresolved} onChange={(e) => setShowUnresolved(e.target.checked)} />
-                  show unresolved calls
-                </label>
-                {focusedCluster !== null && (
-                  <button className="clear-focus" onClick={() => setFocusedCluster(null)}>
-                    Clear cluster focus (#{focusedCluster})
-                  </button>
-                )}
-              </div>
-              <ReactFlow nodes={flowNodes} edges={flowEdges} onNodeClick={onNodeClick} onInit={setFlowInstance} colorMode="dark" minZoom={0.05} fitView>
-                <Background />
-                <Controls />
-                <MiniMap pannable zoomable style={{ width: 150, height: 100 }} nodeColor={(n) => n.style?.background || "#475569"} />
-              </ReactFlow>
-            </>
+            <CodeMap
+              key={selectedRepoId}
+              graph={graph}
+              plan={migration}
+              focusedCluster={focusedCluster}
+              onFocus={setFocusedCluster}
+              selectedNode={selectedNode}
+              onSelectNode={setSelectedNode}
+            />
           )}
         </div>
       </div>
 
-      <aside className={`inspector ${showInspector && activeView === "blueprint" ? "" : "collapsed"}`}>
-        <h3>Inspector</h3>
-        <p className="hint">Click a node. Dashed edges are dynamic/inferred, not certain.</p>
+      <aside className={`inspector ${showInspector && graph && activeView === "blueprint" ? "" : "collapsed"}`}>
+        <h3>Field notes</h3>
+        <p className="hint">Select a symbol on the code map. Dashed lines are guesses the analysis labels as such, not facts.</p>
         {selectedNode ? (
           <dl>
             <dt>Name</dt>
             <dd>{selectedNode.qualified_name}</dd>
             <dt>Kind</dt>
             <dd>{selectedNode.kind}</dd>
-            <dt>Cluster</dt>
+            <dt>Subsystem</dt>
             <dd>{selectedNode.cluster >= 0 ? `#${selectedNode.cluster}` : "unclustered"}</dd>
             <dt>Language</dt>
             <dd>{selectedNode.language || "—"}</dd>
@@ -630,7 +534,7 @@ export default function App() {
         )}
         {selectedNode && selectedNode.cluster >= 0 && narratives[selectedNode.cluster] && (
           <div className="narrative">
-            <strong>Why this subsystem exists (inferred)</strong>
+            <strong>Why this subsystem exists</strong><span className="inferred">inferred by a model from the structure</span>
             <p>{narratives[selectedNode.cluster].text}</p>
             <details>
               <summary>Grounded in</summary>
@@ -645,25 +549,29 @@ export default function App() {
           </div>
         )}
         <div className="legend">
-          <strong>Edges</strong>
-          <div><span className="swatch" style={{ background: "#16a34a" }} /> resolved</div>
-          <div><span className="swatch" style={{ background: "#f59e0b" }} /> dynamic (fan-out)</div>
-          <div><span className="swatch" style={{ background: "#2563eb" }} /> inferred-http</div>
-          <div><span className="swatch" style={{ background: "#cbd5e1" }} /> unresolved</div>
+          <strong>Lines</strong>
+          <div><span className="swatch line" style={{ background: INK }} /> a call or import the analysis resolved</div>
+          <div><span className="swatch line dashed" style={{ color: "#B7791F" }} /> dynamic dispatch, any of several targets</div>
+          <div><span className="swatch line dashed" style={{ color: "#3F63A8" }} /> matched by a web route string</div>
+          <div><span className="swatch line dotted" style={{ color: "#8A9690" }} /> could not be resolved</div>
+          <strong className="legend-gap">Symbols</strong>
+          <div><span className="glyph glyph-class" /> class</div>
+          <div><span className="glyph glyph-method" /> method</div>
+          <div><span className="glyph glyph-function" /> function</div>
         </div>
         {clusterSummary.length > 0 && (
           <div className="legend">
-            <strong>Clusters ({clusterSummary.length}) — click to focus</strong>
+            <strong>Subsystems ({clusterSummary.length}). Select one to zoom in</strong>
             {clusterSummary.map(([cluster, count]) => (
               <div
                 key={cluster}
                 className={`cluster-row ${focusedCluster === cluster ? "active" : ""}`}
                 onClick={() => setFocusedCluster(focusedCluster === cluster ? null : cluster)}
               >
-                <span className="swatch" style={{ background: clusterColor(cluster) }} /> #{cluster} ({count} nodes)
+                <span className="swatch" style={{ background: clusterColor(cluster) }} /> #{cluster}, {count} symbols
               </div>
             ))}
-            <div><span className="swatch" style={{ background: UNCLUSTERED_COLOR }} /> unclustered / modules</div>
+            <div><span className="swatch" style={{ background: UNCLUSTERED_COLOR }} /> files and unassigned</div>
           </div>
         )}
       </aside>

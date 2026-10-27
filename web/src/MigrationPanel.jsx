@@ -1,5 +1,5 @@
 import { apiFetch } from "./api";
-import { READINESS_COLOR, clusterColor } from "./colors";
+import { READINESS_COLOR, READINESS_TEXT, clusterColor } from "./colors";
 import Markdown from "./Markdown";
 
 const pct = (x) => (x === null || x === undefined ? "n/a" : `${Math.round(x * 100)}%`);
@@ -18,7 +18,7 @@ function SubsystemCard({ sub, onShow }) {
     <div className="mig-card" style={{ borderLeftColor: clusterColor(sub.id) }}>
       <div className="mig-card-head">
         <strong>#{sub.id} {sub.label}</strong>
-        <span className="mig-badge" style={{ background: READINESS_COLOR[sub.readiness] }}>{sub.readiness}</span>
+        <span className={`mig-badge ${sub.readiness}`}>{READINESS_TEXT[sub.readiness]}</span>
       </div>
 
       <div className="mig-metrics">
@@ -56,7 +56,7 @@ function SubsystemCard({ sub, onShow }) {
           <p>{sub.purpose}</p>
         </details>
       )}
-      <button className="mig-link" onClick={() => onShow(sub.id)}>Show on blueprint</button>
+      <button className="mig-link" onClick={() => onShow(sub.id)}>Open in the code map</button>
     </div>
   );
 }
@@ -82,22 +82,22 @@ export default function MigrationPanel({ plan, repoId, username, onShowSubsystem
         <div>
           <h2>Migration plan</h2>
           <p className="hint">
-            Measured from the code's dependency structure. Extraction order runs leaves-first: a wave only depends on earlier waves.
+            Measured from the code's dependency structure. Waves run in extraction order: a wave only depends on the ones before it.
           </p>
         </div>
-        <button className="mig-download" onClick={download}>Download .md</button>
+        <button className="mig-download" onClick={download}>Download as Markdown</button>
       </div>
 
       <div className="mig-stats">
         <Metric label="subsystems" value={s.subsystems} />
         <Metric label="waves" value={s.waves} />
-        <Metric label="dependency cycles" value={s.cycle_groups} />
+        <Metric label="faults (cycles)" value={s.cycle_groups} />
         <Metric label="code covered" value={pct(s.coverage)} hint="Share of functions/classes assigned to a subsystem" />
         <Metric label="edge confidence" value={pct(s.overall_confidence)} hint="Share of project-looking calls resolved to a single target" />
         {Object.entries(s.readiness).map(([k, v]) => (
           <div key={k} className="mig-metric">
             <span className="mig-metric-value" style={{ color: READINESS_COLOR[k] }}>{v}</span>
-            <span className="mig-metric-label">{k}</span>
+            <span className="mig-metric-label">{READINESS_TEXT[k] || k}</span>
           </div>
         ))}
       </div>
@@ -132,7 +132,7 @@ export default function MigrationPanel({ plan, repoId, username, onShowSubsystem
             <div key={unit.subsystems.join("+")} className={unit.cyclic ? "mig-cycle" : ""}>
               {unit.cyclic && (
                 <div className="mig-cycle-title">
-                  Dependency cycle: {unit.subsystems.map((id) => `#${id}`).join(" <-> ")}. Introduce an interface at the cut link(s) before extracting.
+                  Fault: {unit.subsystems.map((id) => `#${id}`).join(" and ")} depend on each other. Cut the links below with an interface before extracting.
                 </div>
               )}
               {unit.cyclic && plan.cycles

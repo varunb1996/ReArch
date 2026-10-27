@@ -19,6 +19,42 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: python -m pytest -q
 
+  # The hosted API installs only requirements-hosted.txt (no numpy, scikit-learn or embedding model).
+  # Running the suite there proves that subset is sufficient and that nothing on the hosted path imports the rest.
+  backend-lean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-hosted.txt
+      - run: pip install -r requirements-hosted.txt pytest==9.1.1 httpx==0.28.1
+      - run: python -m pytest -q --ignore=tests/test_cluster_unify.py  # that file exercises the numpy-based clusterer on purpose
+
+  # Builds the image and runs it under the limits of Render's free web service (512 MB RAM, 0.1 CPU, no swap),
+  # then analyzes real Java and C# repositories through it. An out-of-memory kill fails this job.
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t rearch-api .
+      - name: Start the container with Render's free-tier limits
+        run: docker run -d --name api --memory=512m --memory-swap=512m --cpus=0.1 -p 10000:10000 rearch-api
+      - name: Analyze real repositories through it
+        run: >
+          python3 scripts/smoke_hosted.py http://localhost:10000
+          https://github.com/spring-projects/spring-petclinic
+          https://github.com/dotnet-architecture/eShopOnWeb
+      - name: Report memory, and fail if the kernel killed the container
+        if: always()
+        run: |
+          docker stats --no-stream api || true
+          docker logs --tail 30 api || true
+          test "$(docker inspect -f '{{.State.OOMKilled}}' api)" = "false"
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

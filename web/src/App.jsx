@@ -8,7 +8,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { layoutGraph } from "./layout";
-import { API_BASE, STATIC_DEMO, apiFetch, errorMessage, publicFetch } from "./api";
+import { API_BASE, HYBRID, STATIC_DEMO, apiFetch, errorMessage, publicFetch, serverIsAwake } from "./api";
 import { UNCLUSTERED_COLOR, clusterColor } from "./colors";
 import MigrationPanel from "./MigrationPanel";
 import SubsystemMap from "./SubsystemMap";
@@ -67,7 +67,7 @@ function toFlowEdge(edge, index) {
   };
 }
 
-function RepoPanel({ staticDemo, showUsername, typedName, setTypedName, username, repos, demoRepos, selectedRepoId, onSelectRepo, onRepoAdded }) {
+function RepoPanel({ liveState, showUsername, typedName, setTypedName, username, repos, demoRepos, selectedRepoId, onSelectRepo, onRepoAdded }) {
   const [gitUrl, setGitUrl] = useState("");
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -111,12 +111,24 @@ function RepoPanel({ staticDemo, showUsername, typedName, setTypedName, username
         </label>
       )}
 
-      {staticDemo ? (
+      {liveState === "static" && (
         <div className="static-note">
           <strong>Read-only demo.</strong> These are pre-analyzed real repositories. To analyze your own code, run ReArch on your machine:{" "}
           <a href="https://github.com/varunb1996/ReArch#run-it-locally" target="_blank" rel="noreferrer">setup takes two commands</a>.
         </div>
-      ) : (
+      )}
+      {liveState === "offline" && (
+        <div className="static-note">
+          <strong>The analysis server is not responding.</strong> The examples below still work. To analyze your own code now, run ReArch on your machine:{" "}
+          <a href="https://github.com/varunb1996/ReArch#run-it-locally" target="_blank" rel="noreferrer">setup takes two commands</a>.
+        </div>
+      )}
+      {liveState === "waking" && (
+        <div className="static-note">
+          <strong>Waking the analysis server.</strong> The free host sleeps when idle and needs about a minute. The examples below work meanwhile.
+        </div>
+      )}
+      {(liveState === "ready" || liveState === "waking") && (
       <form onSubmit={handleSubmit} className="add-repo-form">
         <label className="field">
           <span>Analyze a public GitHub repo</span>
@@ -126,8 +138,8 @@ function RepoPanel({ staticDemo, showUsername, typedName, setTypedName, username
           <span>Name (optional)</span>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="my-repo" />
         </label>
-        <button type="submit" disabled={submitting || !username}>
-          {submitting ? "Starting..." : "Analyze"}
+        <button type="submit" disabled={submitting || !username || liveState !== "ready"}>
+          {submitting ? "Starting..." : liveState === "waking" ? "Server waking up..." : "Analyze"}
         </button>
         {formError && <p className="form-error">{formError}</p>}
       </form>
@@ -135,7 +147,7 @@ function RepoPanel({ staticDemo, showUsername, typedName, setTypedName, username
 
       {repos.length > 0 && (
         <>
-          <div className="list-title">Your analyses</div>
+          <div className="list-title">Your analyses{HYBRID ? " (temporary)" : ""}</div>
           <ul className="repo-list">{repos.map(row)}</ul>
         </>
       )}
@@ -286,6 +298,9 @@ export default function App() {
     return id;
   });
   const username = publicMode ? visitorId : typedName;
+  // "ready" once the API answers. Only the hybrid build can be waiting: its free host sleeps when idle.
+  const [serverState, setServerState] = useState(HYBRID ? "waking" : "ready");
+  const liveState = !STATIC_DEMO ? "ready" : HYBRID ? serverState : "static";
   const [repos, setRepos] = useState([]);
   const [demoRepos, setDemoRepos] = useState([]);
   const [selectedRepoId, setSelectedRepoId] = useState(null);
@@ -303,6 +318,10 @@ export default function App() {
   const [showInspector, setShowInspector] = useState(() => window.innerWidth >= 1200);
 
   useEffect(() => {
+    if (HYBRID) {
+      setPublicMode(true); // examples must not wait for the sleeping server
+      return undefined;
+    }
     publicFetch("/api/health")
       .then((res) => res.json())
       .then((health) => setPublicMode(Boolean(health.public_mode)))
@@ -310,6 +329,28 @@ export default function App() {
         setPublicMode(false);
         setError(`Cannot reach the ReArch API at ${API_BASE}.`);
       });
+  }, []);
+
+  useEffect(() => {
+    if (!HYBRID) return undefined;
+    let cancelled = false;
+    const started = Date.now();
+    (async () => {
+      while (!cancelled) {
+        if (await serverIsAwake()) {
+          setServerState("ready");
+          return;
+        }
+        if (Date.now() - started > 150000) {
+          setServerState("offline");
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -322,7 +363,7 @@ export default function App() {
       .then((res) => (res.ok ? res.json() : []))
       .then(setDemoRepos)
       .catch(() => setDemoRepos([]));
-    if (!username) {
+    if (!username || (HYBRID && liveState !== "ready")) {
       setRepos([]);
       return;
     }
@@ -333,13 +374,16 @@ export default function App() {
       })
       .then(setRepos)
       .catch((err) => setError(err.message || String(err)));
-  }, [username, publicMode]);
+  }, [username, publicMode, liveState]);
+
+  useEffect(() => {
+    setSelectedRepoId(null);
+    setGraph(null);
+  }, [username]);
 
   useEffect(() => {
     refreshRepos();
-    setSelectedRepoId(null);
-    setGraph(null);
-  }, [username, refreshRepos]);
+  }, [refreshRepos]);
 
   // An analysis runs in the background for minutes; poll until it settles.
   const anyPending = repos.some((r) => r.status === "pending") || demoRepos.some((r) => r.status === "pending");
@@ -452,14 +496,14 @@ export default function App() {
       <aside className={`sidebar ${showSidebar ? "" : "collapsed"}`}>
         <h2>ReArch</h2>
         <p className="hint">
-          {STATIC_DEMO
+          {STATIC_DEMO && !HYBRID
             ? "Reverse-engineer a codebase into a blueprint and a migration plan: what to extract first, what is tangled, and how far to trust the analysis."
             : publicMode
               ? "Reverse-engineer a codebase into a blueprint and a migration plan. Your analyses are private to this browser."
               : "Local mode. Each username only sees its own repos (no real auth)."}
         </p>
         <RepoPanel
-          staticDemo={STATIC_DEMO}
+          liveState={liveState}
           showUsername={publicMode === false}
           typedName={typedName}
           setTypedName={setTypedName}
@@ -476,7 +520,7 @@ export default function App() {
         {selectedRepo?.demo && (
           <p className="hint">
             Pre-analyzed example{selectedRepo.commit ? ` (commit ${selectedRepo.commit.slice(0, 8)})` : ""}, read-only.
-            {STATIC_DEMO ? " Run ReArch locally to analyze your own repository." : " Paste a GitHub URL above to analyze your own repository."}
+            {liveState === "static" ? " Run ReArch locally to analyze your own repository." : " Paste a GitHub URL above to analyze your own repository."}
           </p>
         )}
       </aside>
@@ -503,8 +547,8 @@ export default function App() {
           {error && <div className="status error">{error}</div>}
           {!error && !graph && (
             <div className="status">
-              {!selectedRepo && (STATIC_DEMO ? "Pick an example on the left to explore its blueprint and migration plan." : "Pick an example on the left, or paste a public GitHub repository to analyze.")}
-              {selectedRepo?.status === "pending" && "Analyzing this repository (cloning, parsing, clustering, writing the plan). This usually takes 1 to 3 minutes."}
+              {!selectedRepo && (liveState === "static" ? "Pick an example on the left to explore its blueprint and migration plan." : "Pick an example on the left, or paste a public GitHub repository to analyze.")}
+              {selectedRepo?.status === "pending" && "Analyzing this repository (cloning, parsing, clustering, writing the plan). Small repositories take about a minute; larger ones can take a few minutes on the free server."}
               {selectedRepo?.status === "error" && `Analysis failed: ${selectedRepo.error || "unknown error"}`}
               {selectedRepo?.status === "ready" && "Loading blueprint..."}
             </div>

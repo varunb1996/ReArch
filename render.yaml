@@ -1,0 +1,16 @@
+# Render Blueprint: the live-analysis API behind the GitHub Pages UI.
+# Free plan = 0.1 CPU, 512 MB RAM, sleeps after 15 minutes idle (the UI shows a "waking up" notice).
+# Create it once: Render dashboard -> New -> Blueprint -> pick this repository.
+services:
+  - type: web
+    name: rearch-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      # The browser origin that may call this API. Change it if the UI is hosted somewhere else.
+      - key: REARCH_CORS_ORIGINS
+        value: https://varunb1996.github.io
+      # Optional. Enables the written narratives and migration plan. Set it in the dashboard; it is never stored in git.
+      - key: GROQ_API_KEY
+        sync: false

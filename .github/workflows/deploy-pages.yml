@@ -1,8 +1,9 @@
-﻿name: Deploy demo to GitHub Pages
+name: Deploy demo to GitHub Pages
 
-# Free, no backend, no extra accounts. One-time setup: repo Settings -> Pages ->
-# Source: "GitHub Actions". The page serves the pre-analyzed examples in demo/;
-# analyzing your own repository is done locally (see the README).
+# One-time setup: repo Settings -> Pages -> Source: "GitHub Actions". The page always serves the
+# pre-analyzed examples in demo/ as static files. If the repository variable REARCH_API_URL is set
+# (Settings -> Secrets and variables -> Actions -> Variables; the URL of the Render service), the page
+# also lets visitors analyze their own repositories through that API. Unset, it is a read-only demo.
 
 on:
   push:
@@ -30,6 +31,7 @@ jobs:
     env:
       VITE_STATIC_DEMO: "1"
       VITE_BASE: /ReArch/
+      VITE_API_BASE: ${{ vars.REARCH_API_URL }}
     steps:
       - uses: actions/checkout@v4
       - name: Export the bundled analyses as static files
@@ -55,4 +57,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v4

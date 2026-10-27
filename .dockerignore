@@ -1,0 +1,16 @@
+# Only api/, parser/, demo/ and requirements-hosted.txt belong in the image.
+.git
+.github
+.venv
+.claude
+.env
+.env.*
+web
+tests
+fixtures
+ingest
+api/data
+**/__pycache__
+**/*.pyc
+*.log
+node_modules

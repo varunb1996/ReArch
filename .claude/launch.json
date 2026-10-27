@@ -1,25 +1,34 @@
-﻿{
-    "version":  "0.0.1",
-    "configurations":  [
-                           {
-                               "name":  "web",
-                               "runtimeExecutable":  "npm",
-                               "runtimeArgs":  [
-                                                   "run",
-                                                   "dev",
-                                                   "--prefix",
-                                                   "web"
-                                               ],
-                               "port":  5173
-                           },
-                           {
-                               "name":  "web-static",
-                               "runtimeExecutable":  "cmd",
-                               "runtimeArgs":  [
-                                                   "/c",
-                                                   "set VITE_STATIC_DEMO=1\u0026\u0026 npm --prefix web run dev -- --port 5174"
-                                               ],
-                               "port":  5174
-                           }
-                       ]
+{
+    "version": "0.0.1",
+    "configurations": [
+        {
+            "name": "web",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "run",
+                "dev",
+                "--prefix",
+                "web"
+            ],
+            "port": 5173
+        },
+        {
+            "name": "web-static",
+            "runtimeExecutable": "cmd",
+            "runtimeArgs": [
+                "/c",
+                "set VITE_STATIC_DEMO=1&& npm --prefix web run dev -- --port 5174"
+            ],
+            "port": 5174
+        },
+        {
+            "name": "web-hybrid",
+            "runtimeExecutable": "cmd",
+            "runtimeArgs": [
+                "/c",
+                "set VITE_STATIC_DEMO=1&& set VITE_API_BASE=http://localhost:8000&& npm --prefix web run dev -- --port 5175"
+            ],
+            "port": 5175
+        }
+    ]
 }

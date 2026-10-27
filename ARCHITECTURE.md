@@ -14,11 +14,13 @@ Each stage is a script under `parser/pipeline/` that reads and writes plain JSON
 git clone (hardened)  ->  1 parse  ->  2 link  ->  3 cluster  ->  4 narrate  ->  5 migration plan  ->  6 snapshot
 ```
 
-### 1. Parse — `parser/resolvers/{python,javascript}/extract.py`
-tree-sitter parses each file; the extractor reduces the AST to a per-file symbol table: functions/classes/methods with line ranges, imports, call sites, local `x = Foo()` constructions, dict literals (for dispatch tables) and HTTP routes/`fetch` calls. `repo_walk.py` decides which files are in scope: it skips vendor and build directories, **test code** (tests describe how a system is checked, not how it is built; on `psf/requests` they were 60% of all symbols), minified or oversized files, symlinks, and anything listed in the repo's `.rearchignore`.
+### 1. Parse — `parser/resolvers/{python,javascript,java,csharp,php}/extract.py`
+tree-sitter parses each file; the extractor reduces the AST to a per-file symbol table: functions/classes/methods with line ranges, imports, call sites, local `x = Foo()` constructions, dict literals (for dispatch tables) and HTTP routes/`fetch` calls. For Java, C# and PHP (`common.py` holds what they share) it also records the namespace, the declared type of every field, property, parameter and local (`PaymentGateway gateway`), `var x = recv.method()` bindings and each method's declared return type: static typing is what lets those languages be resolved without guessing. Overloads each get their own node (`Class.method`, `Class.method~2`). `repo_walk.py` decides which files are in scope: it skips vendor and build directories, **test code** (tests describe how a system is checked, not how it is built; on `psf/requests` they were 60% of all symbols), minified or oversized files (400 KB for JS, 2 MB for Java/C#/PHP, whose hand-written classes can be large), generated code (`*.Designer.cs`, `*.g.cs`), build output (`target/`, `obj/`, `bin/`, `vendor/`), .NET test projects (`Foo.Tests/`), JUnit/PHPUnit/xUnit-named files, symlinks, and anything listed in the repo's `.rearchignore`.
 
-### 2. Link — `link_calls.py`
-Resolves the symbol tables into a graph:
+### 2. Link — `link_calls.py` and `link_nominal.py`
+Python and JavaScript are linked by module path in `link_calls.py`. Java, C# and PHP are linked by *class name* in `link_nominal.py`: a name is found through the file's own classes, its imports (including `using Namespace;` and Java wildcard imports), and the enclosing namespaces, nearest first. `gateway.charge()` resolves because `gateway` was declared as a `PaymentGateway`; `Strings.CS.once()` resolves by following one declared field type at a time; `var basket = await repo.Get()` resolves through `Get`'s declared return type (looking through `Task<T>`), but only when exactly one method has that name, because overloads can return different types and picking one would be a guess. Calls on an interface-typed receiver resolve to the *interface's* method: which implementation runs is a dependency-injection fact the parser cannot see. A call on a receiver the project never declares stays `unresolved`; if its declared type belongs to a library it is tagged `external` (`stdlib`, `third-party`, `builtin`, or `library` when an imported namespace could be any of several).
+
+For all languages, the linker resolves:
 - imports and direct calls, across files, with Python package-root inference (tries every ancestor of the importing file, nearest first);
 - `self.m()` / `this.m()` and `x = Foo(); x.m()` (direct constructor assignments only), following inheritance;
 - dict-based dispatch as a `dynamic` fan-out to every value in the table, never collapsed to a guessed target;
@@ -27,8 +29,12 @@ Resolves the symbol tables into a graph:
 
 Calls on values the analysis cannot type (`items.append`, `node.child_by_field_name`) stay plain `unresolved`.
 
-### 3. Cluster — `cluster_nodes.py`
-Each function/method/class is embedded from structured facts (qualified name, parameters, resolved callers and callees, never raw source) with `fastembed` (`bge-small-en-v1.5`, local ONNX). Then:
+### 3. Cluster — `cluster_nodes.py` (embeddings) or `cluster_graph.py` (dependency structure)
+Two interchangeable methods, chosen by `REARCH_CLUSTERING`. Both end the same way (renumber by size, keep a class with its methods), so everything after this stage is identical.
+
+**`graph`** (the hosted image's choice) needs no model: Louvain modularity optimisation over the weighted dependency graph, with the same edge weights the migration engine uses, plus a hub vertex per file and per directory so that code which sits together stays together and symbols with no resolved edges still land with their file. Resolution is raised until at least the target count of communities exists, then the smallest are folded into their most-connected neighbour. Pure Python and deterministic. On eShopOnWeb it peaks at 88 MB and 6 s against 1,163 MB and ~25 s for the embedding method, with higher mean cohesion (0.61 vs 0.45, partly by construction: Louvain optimises exactly that kind of measure) and subsystems that follow the project's own directories (`ApplicationCore/Entities`, `BlazorAdmin/Services`).
+
+**`embeddings`** (the local default) groups by meaning: each function/method/class is embedded from structured facts (qualified name, parameters, resolved callers and callees, never raw source) with `fastembed` (`bge-small-en-v1.5`, local ONNX). Then:
 1. **HDBSCAN** finds tight cores (no `k` to choose, genuine outliers stay unassigned).
 2. **Merge to a target count**, `max(5, round(0.7·√n))` subsystems, folding the smallest cluster into its nearest neighbour. HDBSCAN alone reported 59 "subsystems" for a 37-file library; a plan with dozens of subsystems is noise.
 3. **Adopt unassigned nodes** into the subsystem they mostly call and are called by (strictly more than half of their resolved neighbours, so a node that straddles two subsystems stays unassigned).
@@ -59,31 +65,32 @@ The graph is copied to `snapshots/<commit>.json` (node ids are `language:path:qu
 
 ## Running the API in public
 
-The GitHub Pages demo is static (below), so none of this applies to it. These guardrails exist for anyone who self-hosts the API with the Docker image. `REARCH_PUBLIC_MODE=1` (set in the Dockerfile) turns on `api/security.py`; local development stays permissive.
+`REARCH_PUBLIC_MODE=1` (set in the Dockerfile) turns on `api/security.py`; local development stays permissive.
 
-- **Repo URLs**: only `https://github.com/<owner>/<repo>`. Always, even locally, anything git could read as an option (`--upload-pack=...`) is refused, and the clone uses `--`, `core.symlinks=false`, a timeout, no credential prompts, `--depth 1`. Without these, a stranger could clone the server's own directories or run commands through git options.
-- **Identity**: the `X-User` header is a bearer secret. In public mode it must be a long random id (the browser generates one); short guessable names are refused, so nobody can read another visitor's analyses by guessing a username. A reserved read-only `demo` account holds the bundled examples.
-- **Isolation**: all reads go through one `require_repo` check; demo repos are readable by anyone and writable by no one. Commit ids in diff URLs are validated so they cannot escape the snapshots folder.
-- **Load**: analyses run as background jobs (the request returns `pending` and the UI polls, because they outlive a hosting proxy's request timeout); one at a time; 3 per visitor per hour and 10 per IP per day; repository size capped; unexpected errors are logged server-side and replaced with a generic message so server paths never reach users.
-- **Examples**: `demo/<repo>/` holds pre-computed results (`scripts/build_demo.py`). A fresh server loads them in seconds with no clone and no LLM call, which matters on an ephemeral disk.
+- **Repo URLs**: only `https://github.com/<owner>/<repo>`. Always, even locally, anything git could read as an option (`--upload-pack=...`) is refused, and the clone uses `--`, `core.symlinks=false`, `core.longpaths=true` (deep Java/C# package trees exceed Windows' 260-character limit otherwise), a timeout, no credential prompts, no stdin, `--depth 1`. A failed clone's half-written directory is removed so a retry starts clean.
+- **Identity**: the `X-User` header is a bearer secret. In public mode it must be a long random id (the browser generates one); short guessable names are refused, so nobody can read another visitor's analyses by guessing a username. A reserved read-only `demo` account holds the bundled examples when seeding is on.
+- **Isolation**: all reads go through one `require_repo` check; demo repos are readable by anyone and writable by no one. Commit ids in diff URLs are validated so they cannot escape the snapshots folder. CORS allows only `REARCH_CORS_ORIGINS`.
+- **Load**: analyses run as background jobs (the request returns `pending` and the UI polls, because they outlive a hosting proxy's request timeout); one at a time; 3 per visitor per hour and 10 per IP per day; at most `REARCH_MAX_CODE_FILES` analyzable files; unexpected errors are logged server-side and replaced with a generic message so server paths never reach users.
+- **Memory** (what makes a 512 MB host viable). Measured on real repositories, each fix found by profiling rather than guessing:
+  - clustering without the embedding model (above): 1,163 MB -> 88 MB;
+  - the graph database loader sent one statement per node and edge; batching with `UNWIND` took eShopOnWeb's load from ~14 s and ~200 MB to ~0.5 s and ~30 MB (a bulk load otherwise leaves Kùzu holding ~200 MB until it is closed, so a store is closed after loading and reopens itself on the next read, at ~10 MB);
+  - a graph database was kept open per analyzed repo forever, each with its own buffer pool; `REARCH_MAX_OPEN_GRAPHS` bounds that and `REARCH_KUZU_BUFFER_MB` sizes the pool from the container, not the host.
+
+  Result: three analyses in one server process (Java, C#, PHP) peak at 152 MB; the densest repo tried (commons-lang, 12,500 edges) at 211 MB. Memory grows ~12 MB per 1,000 edges, which is where the 500-file default for the hosted image comes from.
+- **Examples**: `demo/<repo>/` holds pre-computed results (`scripts/build_demo.py`). With seeding on, a fresh server loads them in seconds with no clone and no LLM call. The hosted site turns seeding off (`REARCH_SEED_DEMO=0`) because its UI serves the examples itself and seeding was most of the server's startup time.
 
 ## Deployment topology
 
-The public demo is **a static site with no backend**:
-
 ```
-Browser ──> GitHub Pages: React build + pre-computed JSON for each example
-```
-
-`scripts/build_demo.py` runs the full pipeline once (locally, with your Groq key) and stores the results in `demo/`. On every push, the Pages workflow runs `scripts/export_static_demo.py`, which writes those results in exactly the shapes the API returns, and the UI (built with `VITE_STATIC_DEMO=1`) answers its `/api/...` calls from those files. The components do not know which mode they are in; the switch lives in `web/src/api.js`. Live analysis is local: `uvicorn` + `npm run dev`.
-
-Why no hosted backend: it needs git, native parsers, an embedded graph database, an embedding model and an LLM key. Free static hosting cannot run that, and Hugging Face Docker Spaces require a paid plan. The optional self-hosting image looks like this:
-
-```
-Browser ──> your static UI ──> API container (FastAPI + Kùzu + SQLite) ──> git clone (public repos), Groq
+Browser ──> GitHub Pages: React build + the examples as static JSON        (always up)
+        └─> Render free web service: API container (FastAPI + Kùzu + SQLite) ──> git clone (public repos), Groq
 ```
 
-GitHub Actions: `ci.yml` (tests, lint, build; its Linux install also proves the pinned requirements work) and `deploy-pages.yml`.
+The UI is built with `VITE_STATIC_DEMO=1` and `VITE_API_BASE=<render url>` (the `REARCH_API_URL` repository variable). The switch lives in `web/src/api.js`, so components do not know which mode they are in: requests for an example id are answered from `/demo/<id>/*.json`; everything else goes to the API with the visitor's private id. Without `VITE_API_BASE` the same build is a read-only demo.
+
+A free Render service sleeps after 15 minutes without traffic and needs about a minute to wake, and its disk is temporary. The UI therefore starts polling `/api/health` on load and shows "waking the analysis server" with the Analyze button disabled until it answers (examples work meanwhile), gives up gracefully after 150 s with a pointer to running locally, and labels visitors' analyses as temporary. Render's free plan is 0.1 CPU and 512 MB RAM and allows 750 free instance hours a month (both from Render's documentation).
+
+GitHub Actions: `ci.yml` runs the tests twice (full install, and a lean install of only `requirements-hosted.txt` where `numpy` is not even importable, proving the hosted path does not need it), frontend lint and build, and builds the Docker image and analyzes real Java and C# repositories through it under `--memory=512m --cpus=0.1`; `deploy-pages.yml` publishes the UI.
 
 ## Free-tier stack and swap-in points
 
@@ -92,19 +99,19 @@ GitHub Actions: `ci.yml` (tests, lint, build; its Linux install also proves the 
 | Parsing | tree-sitter | (no change) |
 | Graph store | Kùzu, embedded, `api/services/graph_store.py` | Neo4j Aura / self-hosted |
 | Users and repos | SQLite, `api/services/user_store.py` | Postgres |
-| Embeddings | fastembed, local | hosted API if compute becomes the bottleneck |
+| Clustering | graph communities (hosted) or fastembed + HDBSCAN (local), `REARCH_CLUSTERING` | hosted embedding API if compute becomes the bottleneck |
 | LLM | Groq free tier | paid tier, or another provider behind `call_groq` |
-| API hosting | none for the public demo (static); run locally, or self-host the Docker image | any container host |
+| API hosting | Render free web service (Docker); or run locally | any container host |
 | UI hosting | GitHub Pages | (no change) |
 | Identity | random per-browser id | a real auth provider behind `get_current_user()` |
 
 ## Known limitations
 
-- **Two languages.** Python and JavaScript/JSX only. TypeScript, Java, C#, PHP and COBOL are the realistic next step and each needs a tree-sitter extractor plus its import-resolution rules. Most real legacy code is in those languages, so this is the biggest gap.
+- **Five languages.** Python, JavaScript/JSX, Java, C# and PHP. TypeScript, Kotlin, Go and COBOL are the realistic next ones; each needs a tree-sitter extractor and its import-resolution rules. Beyond that: a Java/C#/PHP receiver is resolved only from a declared type, a `new`, or the return type of a uniquely named method, so `foreach ($routes as $route) { $route->getName() }` and chained fluent calls stay unresolved, and a generic return type (`Task<T>` from `IRepository<Basket>`) is not substituted. Calls through an interface resolve to the interface, not the implementation. Razor/Blazor markup, XML/annotation-driven wiring and PHP framework magic (facades, container resolution) are invisible to the parser.
 - **Subsystems are candidates, not modules.** Clusters come from naming and call structure, not from the build system. They can group files across directories, and a cycle between two clusters means those groupings are entangled, which is useful to know but is not a statement about the repo's own package boundaries.
 - **Static analysis has a ceiling.** Reflection, dependency injection, duck typing and cross-service calls are invisible to a parser. The confidence score and `dynamic`/`unresolved` labels exist so that gap is visible rather than hidden. Instance-method resolution covers direct constructor assignments only.
 - **LLM output is advisory.** The reference guard stops invented names, not wrong reasoning. The plan says what the structure supports, not what the business needs.
 - **Free-tier throughput.** Groq's free tier rate-limits the per-subsystem narrative calls, so an analysis of a mid-size repo takes a few minutes. Groq also retires models with little notice.
-- **No hosted analysis.** The public page shows pre-analyzed examples only; analyzing your own repository means running ReArch locally. Hosting that live needs a paid or self-run server.
+- **The free host is small and sleeps.** 512 MB / 0.1 CPU caps analyses at 500 files; a mid-size repository takes minutes rather than seconds on a tenth of a core (0.1 CPU is Render's documented figure; I measured speed on a faster machine, so expect roughly an order of magnitude slower); the first request after idle waits about a minute; and results do not survive a restart. Graph clustering is what makes this possible, and it groups by coupling rather than by meaning, so its subsystems can differ from the embedding method's on the same repository.
 - **Not a security boundary for secrets.** Rate limits are in memory and reset on restart; the client IP is taken from `X-Forwarded-For`. This is fine for a portfolio-scale service and not for adversarial scale.
-- **The Docker image is untested.** Development was on Windows without Docker and nothing in CI builds the image, so the self-hosting `Dockerfile` has never been built. CI's Linux dependency install is the early warning.
+- **The Docker image is verified only in CI.** Development was on Windows without Docker, so the image is built and exercised by the `docker` CI job (under Render's memory and CPU limits), not by the author locally. The memory figures above come from the same configuration run natively in a clean venv of only `requirements-hosted.txt`.

@@ -148,3 +148,12 @@ def test_order_inside_a_cycle_follows_the_graph_once_the_weak_link_is_cut():
     assert [(x["from"], x["to"]) for x in cycle["cut_candidates"]] == [(2, 0)]
     # with c -> a gone, c depends on nothing (first), then b, then a
     assert cycle["order_after_cuts"] == [[2], [1], [0]]
+
+
+def test_reference_check_accepts_whole_subsystem_labels_and_scoped_packages():
+    a = node("alpha", 0, "pkg/mod.py")
+    ext = {"source": a["id"], "target": "unresolved:x", "kind": "calls", "resolution": "unresolved",
+           "external": {"package": "@xyflow/react", "kind": "third-party"}}
+    plan = analyze({"nodes": [a], "edges": [ext]})
+    label = plan["subsystems"][0]["label"]
+    assert "·" in label and check_references(f"see `{label}` which uses `@xyflow/react`", plan) == []

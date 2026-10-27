@@ -88,11 +88,12 @@ def call_groq(prompt: str, api_key: str, model: str, system: str = SYSTEM_PROMPT
         payload["reasoning_effort"] = "low"
         payload["include_reasoning"] = False
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    for attempt in range(3):
+    for attempt in range(5):
         resp = requests.post(GROQ_API_URL, headers=headers, json=payload, timeout=60)
-        if resp.status_code == 429 and attempt < 2:
-            # Free-tier rate limit: wait as long as Groq asks (capped), then retry.
-            time.sleep(min(float(resp.headers.get("retry-after", 5)), 20))
+        if resp.status_code == 429 and attempt < 4:
+            # Free tier allows ~8K tokens a minute; a burst of calls can exhaust it. Wait as
+            # long as Groq asks (a full window can be ~60s), then retry.
+            time.sleep(min(float(resp.headers.get("retry-after", 10)), 60))
             continue
         resp.raise_for_status()
         content = (resp.json()["choices"][0]["message"].get("content") or "").strip()

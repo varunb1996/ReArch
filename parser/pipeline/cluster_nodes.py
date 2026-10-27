@@ -21,7 +21,7 @@ from pathlib import Path
 
 import numpy as np
 from fastembed import TextEmbedding
-from sklearn.cluster import HDBSCAN
+from sklearn.cluster import HDBSCAN, KMeans
 from sklearn.preprocessing import normalize
 
 CLUSTERABLE_KINDS = {"function", "method", "class"}
@@ -49,6 +49,28 @@ def target_cluster_count(n: int) -> int:
     -> 7, 321 -> 13, 800 -> 20, 3000 -> 38.
     """
     return max(5, round(n ** 0.5 * 0.7))
+
+
+def split_to_target(labels: np.ndarray, vectors: np.ndarray, target: int, min_size: int = 6) -> np.ndarray:
+    """Bisect the largest cluster (2-means on the embeddings) until `target` exist.
+
+    The mirror image of merge_to_target. When most of a repo shares one
+    vocabulary (ReArch's own code without its fixtures) HDBSCAN returns a single
+    dense blob; k-means splits it along its real semantic seam. Deterministic
+    (fixed seed). Stops early if nothing big enough is left to split.
+    """
+    labels = labels.copy()
+    while True:
+        ids = sorted(set(labels.tolist()) - {-1})
+        if len(ids) >= target:
+            return labels
+        splittable = [i for i in ids if int((labels == i).sum()) >= min_size]
+        if not splittable:
+            return labels
+        biggest = max(splittable, key=lambda i: (int((labels == i).sum()), -i))
+        members = np.flatnonzero(labels == biggest)
+        halves = KMeans(n_clusters=2, n_init=10, random_state=0).fit_predict(vectors[members])
+        labels[members[halves == 1]] = max(ids) + 1
 
 
 def merge_to_target(labels: np.ndarray, vectors: np.ndarray, target: int) -> np.ndarray:
@@ -166,7 +188,8 @@ def main(graph_path: str, output_path: str, min_cluster_size: int = 3) -> None:
     print("Clustering...")
     labels = HDBSCAN(min_cluster_size=min_cluster_size).fit_predict(vectors)
 
-    labels = merge_to_target(labels, vectors, target_cluster_count(len(clusterable)))
+    target = target_cluster_count(len(clusterable))
+    labels = merge_to_target(split_to_target(labels, vectors, target), vectors, target)
     assigned = adopt_by_graph_affinity({n["id"]: int(label) for n, label in zip(clusterable, labels)}, graph["edges"])
     unified = renumber_by_size(unify_subtrees(clusterable, assigned))
     for node in clusterable:

@@ -57,9 +57,9 @@ The written plan is one LLM call over a compact rendering of these facts (the 15
 ### 6. Snapshot and store
 The graph is copied to `snapshots/<commit>.json` (node ids are `language:path:qualified_name`, stable across commits, so diffing is plain set difference: `diff_graphs.py`) and loaded into Kùzu for the live UI.
 
-## Running it in public
+## Running the API in public
 
-`REARCH_PUBLIC_MODE=1` (set in the Dockerfile) turns on `api/security.py`. Local development stays permissive.
+The GitHub Pages demo is static (below), so none of this applies to it. These guardrails exist for anyone who self-hosts the API with the Docker image. `REARCH_PUBLIC_MODE=1` (set in the Dockerfile) turns on `api/security.py`; local development stays permissive.
 
 - **Repo URLs**: only `https://github.com/<owner>/<repo>`. Always, even locally, anything git could read as an option (`--upload-pack=...`) is refused, and the clone uses `--`, `core.symlinks=false`, a timeout, no credential prompts, `--depth 1`. Without these, a stranger could clone the server's own directories or run commands through git options.
 - **Identity**: the `X-User` header is a bearer secret. In public mode it must be a long random id (the browser generates one); short guessable names are refused, so nobody can read another visitor's analyses by guessing a username. A reserved read-only `demo` account holds the bundled examples.
@@ -69,15 +69,21 @@ The graph is copied to `snapshots/<commit>.json` (node ids are `language:path:qu
 
 ## Deployment topology
 
+The public demo is **a static site with no backend**:
+
 ```
-Browser ──> GitHub Pages (static React build)
-   │
-   └─────> Hugging Face Space (Docker: FastAPI + Kùzu + SQLite, ephemeral disk)
-                 ├─> git clone  github.com (public repos)
-                 └─> Groq API   (narratives + plan, key held server-side only)
+Browser ──> GitHub Pages: React build + pre-computed JSON for each example
 ```
 
-GitHub Actions: `ci.yml` (tests, lint, build; its Linux install also proves the pinned requirements work), `deploy-pages.yml`, `deploy-space.yml`. The Docker image pre-fetches the embedding model and tree-sitter grammars at build time so the first visitor does not wait on downloads.
+`scripts/build_demo.py` runs the full pipeline once (locally, with your Groq key) and stores the results in `demo/`. On every push, the Pages workflow runs `scripts/export_static_demo.py`, which writes those results in exactly the shapes the API returns, and the UI (built with `VITE_STATIC_DEMO=1`) answers its `/api/...` calls from those files. The components do not know which mode they are in; the switch lives in `web/src/api.js`. Live analysis is local: `uvicorn` + `npm run dev`.
+
+Why no hosted backend: it needs git, native parsers, an embedded graph database, an embedding model and an LLM key. Free static hosting cannot run that, and Hugging Face Docker Spaces require a paid plan. The optional self-hosting image looks like this:
+
+```
+Browser ──> your static UI ──> API container (FastAPI + Kùzu + SQLite) ──> git clone (public repos), Groq
+```
+
+GitHub Actions: `ci.yml` (tests, lint, build; its Linux install also proves the pinned requirements work) and `deploy-pages.yml`.
 
 ## Free-tier stack and swap-in points
 
@@ -88,7 +94,7 @@ GitHub Actions: `ci.yml` (tests, lint, build; its Linux install also proves the 
 | Users and repos | SQLite, `api/services/user_store.py` | Postgres |
 | Embeddings | fastembed, local | hosted API if compute becomes the bottleneck |
 | LLM | Groq free tier | paid tier, or another provider behind `call_groq` |
-| API hosting | Hugging Face Docker Space (free, ephemeral disk) | persistent volume or a paid host |
+| API hosting | none for the public demo (static); run locally, or self-host the Docker image | any container host |
 | UI hosting | GitHub Pages | (no change) |
 | Identity | random per-browser id | a real auth provider behind `get_current_user()` |
 
@@ -99,6 +105,6 @@ GitHub Actions: `ci.yml` (tests, lint, build; its Linux install also proves the 
 - **Static analysis has a ceiling.** Reflection, dependency injection, duck typing and cross-service calls are invisible to a parser. The confidence score and `dynamic`/`unresolved` labels exist so that gap is visible rather than hidden. Instance-method resolution covers direct constructor assignments only.
 - **LLM output is advisory.** The reference guard stops invented names, not wrong reasoning. The plan says what the structure supports, not what the business needs.
 - **Free-tier throughput.** Groq's free tier rate-limits the per-subsystem narrative calls, so an analysis of a mid-size repo takes a few minutes. Groq also retires models with little notice.
-- **Ephemeral storage.** On a free Space, user analyses are lost on restart; only the bundled examples persist (they are in the image).
+- **No hosted analysis.** The public page shows pre-analyzed examples only; analyzing your own repository means running ReArch locally. Hosting that live needs a paid or self-run server.
 - **Not a security boundary for secrets.** Rate limits are in memory and reset on restart; the client IP is taken from `X-Forwarded-For`. This is fine for a portfolio-scale service and not for adversarial scale.
-- **Docker image not built locally.** Development was on Windows without Docker; the first real build happens in the Space. CI's Linux dependency install is the early warning.
+- **The Docker image is untested.** Development was on Windows without Docker and nothing in CI builds the image, so the self-hosting `Dockerfile` has never been built. CI's Linux dependency install is the early warning.

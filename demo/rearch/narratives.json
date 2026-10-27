@@ -1,0 +1,264 @@
+{
+  "0": {
+    "text": "The subsystem groups together the API entry points for the web service (functions in **api/main.py**) and the security-related helpers that protect those endpoints (functions and the **RateLimiter** class in **api/security.py**), together with the **UserStore** service that persists per-user and per-repository state.  \n\nStructurally, the main-module functions (`lifespan`, `get_current_user`, `health`, `claim_analysis`, `reanalyze_all`) handle HTTP requests, obtain a **UserStore** instance, and invoke analysis jobs; before doing so they call security utilities such as `validate_identity`, `public_mode`, `enforce_analysis_limits`, and `RateLimiter.check` to enforce authentication, public-mode restrictions, and per-user rate limits.  \n\nThe **UserStore** class provides CRUD-style methods (`get_or_create_user`, `create_repo`, `set_repo_status`, `list_repos`, etc.) that the API handlers use to track which repositories belong to which users and what their analysis status is.  \n\nBecause all of these pieces share the same concerns\u2014receiving API calls, authenticating/authorising the caller, throttling usage, and persisting user-repo metadata\u2014they naturally cluster together as a cohesive \u201cAPI + security + user-state\u201d subsystem.",
+    "member_count": 24,
+    "grounded_in": {
+      "calls_out": [
+        "get_user_store",
+        "run_reanalysis",
+        "seed_demo_repos",
+        "unresolved:HTTPException",
+        "unresolved:Path",
+        "unresolved:Path(db_path).parent.mkdir",
+        "unresolved:VISITOR_ID.fullmatch",
+        "unresolved:_slot.acquire",
+        "unresolved:_slot.release",
+        "unresolved:defaultdict",
+        "unresolved:forwarded.split",
+        "unresolved:forwarded.split(\",\")[0].strip",
+        "unresolved:get_user_store().fail_interrupted",
+        "unresolved:get_user_store().get_or_create_user",
+        "unresolved:hits.append"
+      ],
+      "calls_in": [
+        "<module>",
+        "analysis_job",
+        "create_repo",
+        "get_user_store",
+        "reanalyze_repo",
+        "run_reanalysis",
+        "validate_git_url"
+      ],
+      "excerpt_source": "RateLimiter.check (api/security.py)"
+    }
+  },
+  "1": {
+    "text": "The functions in this cluster are all concerned with taking a directed graph that represents code-level entities (nodes) and their relationships (edges) and turning it into a human-readable migration plan. `analyze`, `assign_subsystems`, `tarjan_scc` and the related helpers compute a decomposition of the graph into strongly-connected components, assign each component to a logical \u201csubsystem\u201d, and collect statistics such as edge weights, node degrees, and line counts. `build_plan_prompt`, `call_groq`, `narrate_plan`, and `render_markdown` then format those results into a prompt for a language-model API (Groq) and render the model\u2019s response as markdown narrative. Because all of these steps share the same data structures (the graph, subsystem assignments, and narrative dictionaries) and are invoked in sequence by `main`, they form a cohesive pipeline that analyses code dependencies and generates a migration-oriented description.",
+    "member_count": 22,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:\" + \".join",
+        "unresolved:\" then \".join",
+        "unresolved:\"+\".join",
+        "unresolved:\", \".join",
+        "unresolved:\"; \".join",
+        "unresolved:\"\\n\".join",
+        "unresolved:\"|\".join",
+        "unresolved:\"|\".join([model, PLAN_SYSTEM_PROMPT, prompt]).encode",
+        "unresolved:', '.join",
+        "unresolved:'; '.join",
+        "unresolved:(narratives or {}).get",
+        "unresolved:(narratives or {}).get(str(sid), {}).get",
+        "unresolved:(resp.json()[\"choices\"][0][\"message\"].get(\"content\") or \"\").strip",
+        "unresolved:BACKTICK_SPAN.findall",
+        "unresolved:Counter"
+      ],
+      "calls_in": [
+        "<module>",
+        "get_repo_migration_markdown",
+        "main"
+      ],
+      "excerpt_source": "analyze (parser/pipeline/migration_plan.py)"
+    }
+  },
+  "2": {
+    "text": "The functions in this cluster are all defined in **api/main.py** and revolve around obtaining and mutating two persistent stores \u2013 a **UserStore** and a **GraphStore** \u2013 as well as handling repository-related operations (creating, listing, loading, re-analyzing, diffing, and exposing repository graphs and narratives). The presence of a `github_webhook` that validates a signed push event and then schedules a background `run_reanalysis` job shows that the subsystem\u2019s primary role is to react to GitHub activity, trigger a potentially long-running analysis pipeline, and expose the results through API endpoints such as `get_repo_graph`, `list_repo_commits`, and `get_repo_migration_markdown`. It is kept together because all of these actions share the same data-access layer (the stores) and the same workflow of \u201creceive a repo change \u2192 run analysis \u2192 store and serve graph-based artefacts\u201d, making it a coherent service layer for repository ingestion and analysis.",
+    "member_count": 21,
+    "grounded_in": {
+      "calls_out": [
+        "GraphStore",
+        "UserStore",
+        "claim_analysis",
+        "diff_graphs",
+        "main",
+        "normalize_git_url",
+        "public_mode",
+        "release_slot",
+        "render_markdown",
+        "unresolved:(body.name or git_url.rstrip(\"/\").rsplit(\"/\", 1)[-1].removesuffix(\".git\")).strip",
+        "unresolved:(folder / \"meta.json\").read_text",
+        "unresolved:(folder / name).is_file",
+        "unresolved:(p / \"meta.json\").is_file",
+        "unresolved:DEMO_ROOT.is_dir",
+        "unresolved:DEMO_ROOT.iterdir"
+      ],
+      "calls_in": [
+        "get_current_user",
+        "lifespan",
+        "reanalyze_all"
+      ],
+      "excerpt_source": "github_webhook (api/main.py)"
+    }
+  },
+  "3": {
+    "text": "The functions in this cluster are all concerned with turning the raw symbol-table data produced by the parser into a graph of call-relationships that can be linked across files and packages. `load_symbol_tables` reads the per-module JSON (or similar) files, while the various `resolve_*` helpers compute absolute import paths for Python and JavaScript modules, locate definitions inside those modules, and map callers to their callee identifiers (`find_method_id`, `enclosing_class`, `instance_class`, etc.). `build_import_bindings` and `dynamic_fanout_targets` then create the actual edges in the call-graph, handling both static imports and dynamic resolution cases, and `main` orchestrates the whole process, collecting nodes per file and writing the resulting structure to `output_path`. Because all of these operations share the same data structures (symbol tables, node dictionaries, module-to-file maps) and are only used together when constructing the cross-module call graph, they form a cohesive subsystem that resolves external calls and builds import-binding information for the overall analysis pipeline.",
+    "member_count": 16,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:\".\".join",
+        "unresolved:\"/\".join",
+        "unresolved:(importing_dir / spec).as_posix",
+        "unresolved:Path",
+        "unresolved:Path(output_path).write_text",
+        "unresolved:all_nodes.append",
+        "unresolved:all_nodes.extend",
+        "unresolved:ancestors.append",
+        "unresolved:any",
+        "unresolved:bindings.get",
+        "unresolved:c.lstrip",
+        "unresolved:call.get",
+        "unresolved:callee.rpartition",
+        "unresolved:caller_node[\"qualified_name\"].rsplit",
+        "unresolved:caller_node[\"qualified_name\"].split"
+      ],
+      "calls_in": [
+        "<module>",
+        "iter_code_files",
+        "main"
+      ],
+      "excerpt_source": "main (parser/pipeline/link_calls.py)"
+    }
+  },
+  "4": {
+    "text": "The subsystem implements a persistent, query-able representation of a call-graph-like structure. `GraphStore` loads a JSON snapshot of nodes and edges, keeps them in memory, and offers helper methods (`all_nodes`, `all_edges`, `callers_of`, `unresolved_edges`, `orphan_modules`) that let other parts of the system ask questions about the graph without dealing with raw JSON. The `diff_graphs` helper (and its `load_snapshot`/`edge_key` utilities) computes the delta between two such snapshots by turning the node and edge lists into dictionaries keyed by ID, then enumerating added, removed, and changed elements. Together these pieces form a cohesive unit that isolates graph-persistence, loading, and diffing logic so that higher-level services can retrieve a stored graph and compare successive versions without re-implementing the low-level JSON handling or diff algorithm.",
+    "member_count": 16,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:Path",
+        "unresolved:Path(graph_json_path).read_text",
+        "unresolved:Path(output_path).write_text",
+        "unresolved:Path(path).read_text",
+        "unresolved:cluster_changed.append",
+        "unresolved:edge.get",
+        "unresolved:edges.append",
+        "unresolved:json.dumps",
+        "unresolved:json.loads",
+        "unresolved:kuzu.Connection",
+        "unresolved:kuzu.Database",
+        "unresolved:len",
+        "unresolved:new_edges.keys",
+        "unresolved:new_nodes.keys",
+        "unresolved:new_nodes[node_id].get"
+      ],
+      "calls_in": [
+        "<module>",
+        "get_graph_store",
+        "get_repo_diff"
+      ],
+      "excerpt_source": "diff_graphs (parser/pipeline/diff_graphs.py)"
+    }
+  },
+  "5": {
+    "text": "The functions in this cluster are all concerned with walking a parsed abstract-syntax-tree (AST) and turning selected nodes into plain data structures. `parse_file`, `get_parser` and `node_to_dict` build or serialize a generic AST, while the various `extract` and `extract.walk` helpers (for JavaScript and Python) traverse that tree, recognise language-specific constructs (imports, decorators, dictionary literals, subscripts, etc.) and append normalized dictionaries to collector lists such as `imports`, `errors`, `call_sites`, etc. Because these routines share the same call-graph pattern\u2014receiving a tree node, a source string, and a mutable collection\u2014they are grouped together as the \u201csymbol-extraction / AST-dump\u201d subsystem that isolates the logic for turning source files into a language-agnostic representation of symbols and structural elements. The module\u2019s only external entry points are `main` (the CLI driver) and callers that iterate over code files, which explains why the whole set forms a cohesive unit.",
+    "member_count": 14,
+    "grounded_in": {
+      "calls_out": [
+        "iter_code_files",
+        "unresolved:\".\".join",
+        "unresolved:EXTENSION_TO_LANGUAGE.get",
+        "unresolved:Path",
+        "unresolved:bases.append",
+        "unresolved:call_node.child_by_field_name",
+        "unresolved:call_sites.append",
+        "unresolved:child.child_by_field_name",
+        "unresolved:collected_decorators.append",
+        "unresolved:dict_literals.append",
+        "unresolved:enumerate",
+        "unresolved:errors.append",
+        "unresolved:file_path.relative_to",
+        "unresolved:func_field.child_by_field_name",
+        "unresolved:imports.append"
+      ],
+      "calls_in": [
+        "<module>",
+        "main"
+      ],
+      "excerpt_source": "extract.walk (parser/resolvers/python/extract.py)"
+    }
+  },
+  "6": {
+    "text": "The functions in this subsystem are all centered on taking a call-graph representation of a codebase, clustering its nodes, and then turning those clusters into short natural-language narratives.  \n*The `cluster_nodes` module builds textual identifiers for graph nodes (`build_node_text`), decides how many clusters are desired (`target_cluster_count`), merges small groups into a target size (`merge_to_target`, `adopt_by_graph_affinity`), renumbers clusters by size, and finally unifies sub-trees of the graph into a stable clustering (`unify_subtrees`). The `main` function in that module orchestrates the whole pipeline.  \n*The `generate_narratives` module reads the serialized graph, optionally loads a cache, and then calls the clustering helpers to produce a prompt (`build_cluster_prompt`, `cluster_cache_key`) that is sent to the Groq LLM API (`call_groq`). Its `main` writes the resulting narratives to an output file.  \n\nTogether these functions form a cohesive unit that prepares a graph for clustering, performs the clustering with HDBSCAN-style logic, and generates human-readable summaries of each cluster via an external language model. The unit exists to isolate the \u201cgraph-to-narrative\u201d workflow from the rest of the parser pipeline.",
+    "member_count": 11,
+    "grounded_in": {
+      "calls_out": [
+        "call_groq",
+        "read_excerpt",
+        "unresolved:\", \".join",
+        "unresolved:\". \".join",
+        "unresolved:\".\".join",
+        "unresolved:\"\\n\".join",
+        "unresolved:\"|\".join",
+        "unresolved:(labels == i).sum",
+        "unresolved:Counter",
+        "unresolved:HDBSCAN",
+        "unresolved:HDBSCAN(min_cluster_size=min_cluster_size).fit_predict",
+        "unresolved:Path",
+        "unresolved:Path(graph_path).read_text",
+        "unresolved:Path(output_path).write_text",
+        "unresolved:TextEmbedding"
+      ],
+      "calls_in": [
+        "<module>",
+        "main"
+      ],
+      "excerpt_source": "main (parser/pipeline/generate_narratives.py)"
+    }
+  },
+  "7": {
+    "text": "The functions in this cluster are all concerned with presenting and manipulating a visual representation of a graph-like data model in the web UI.  \n* `toFlowNode` and `toFlowEdge` convert raw domain objects (repositories, metrics, etc.) into the node/edge format expected by the flow-chart library; `layoutGraph` computes a spatial layout for those elements.  \n* `SubsystemMap`, `RepoPanel`, `HistoryPanel`, `MigrationPanel`, `SubsystemCard`, and the top-level `App` component assemble the UI panels that display the graph, its details, and migration-related metrics, while `Metric` provides a small helper for rendering individual metric values.  \n\nBecause these pieces share the same data-flow (graph construction \u2192 layout \u2192 rendering) and are only referenced internally, they are grouped as a cohesive subsystem that handles the interactive graph view and its associated side panels. The code excerpt shows `App` initializing user/session state before loading the repository data that will later be fed through the conversion and layout functions, confirming that this subsystem is the front-end \u201cgraph viewer\u201d of the application.",
+    "member_count": 10,
+    "grounded_in": {
+      "calls_out": [
+        "unresolved:Boolean",
+        "unresolved:Error",
+        "unresolved:JSON.stringify",
+        "unresolved:Map",
+        "unresolved:Math.max",
+        "unresolved:Object.entries",
+        "unresolved:Object.entries(s.readiness).map",
+        "unresolved:Object.fromEntries",
+        "unresolved:Set",
+        "unresolved:String",
+        "unresolved:URL.createObjectURL",
+        "unresolved:URL.revokeObjectURL",
+        "unresolved:[...counts.entries()].sort",
+        "unresolved:[...repos, ...demoRepos].find",
+        "unresolved:apiFetch"
+      ],
+      "calls_in": [],
+      "excerpt_source": "App (web/src/App.jsx)"
+    }
+  },
+  "8": {
+    "text": "The eight functions form a small pipeline that prepares a Git repository for analysis. `normalize_git_url` and `validate_git_url` (in the API layer) ensure that a user-supplied repository address is well-formed and safe, while `clone_or_update`, `check_repo_size`, and `current_commit_sha` (in `parser/pipeline/ingest_repo.py`) fetch the repository into a working directory, verify it is not too large, and record the exact commit being examined. `load_ignore_prefixes` and `iter_code_files` walk the checked-out tree, filtering out files that match ignore rules, and the various `main` entry points (`parser/pipeline/dump_ast.py`, `parser/pipeline/ingest_repo.py`, and `scripts/build_demo.py`) orchestrate these steps and write out intermediate artefacts such as symbol tables, a graph JSON, and narrative caches. Together they constitute a cohesive \u201crepository ingestion\u201d subsystem that normalises a URL, obtains the code, validates size, determines the revision, and enumerates the source files for downstream parsing or demo-building tasks.",
+    "member_count": 10,
+    "grounded_in": {
+      "calls_out": [
+        "is_ignored",
+        "main",
+        "parse_file",
+        "public_mode",
+        "unresolved:(target / \"meta.json\").write_text",
+        "unresolved:GITHUB_REPO_URL.fullmatch",
+        "unresolved:HTTPException",
+        "unresolved:Path",
+        "unresolved:RuntimeError",
+        "unresolved:TEST_FILE.fullmatch",
+        "unresolved:any",
+        "unresolved:datetime.now",
+        "unresolved:datetime.now(timezone.utc).isoformat",
+        "unresolved:dest.exists",
+        "unresolved:dest.parent.mkdir"
+      ],
+      "calls_in": [
+        "<module>",
+        "create_repo",
+        "github_webhook",
+        "main",
+        "reanalyze_repo",
+        "run_reanalysis"
+      ],
+      "excerpt_source": "main (parser/pipeline/ingest_repo.py)"
+    }
+  }
+}

@@ -85,3 +85,21 @@ def test_only_resolved_edges_count_as_evidence():
 def test_renumbering_puts_the_biggest_subsystem_first():
     labels = {"p": 7, "q": 7, "r": 7, "s": 3, "t": -1}
     assert renumber_by_size(labels) == {"p": 0, "q": 0, "r": 0, "s": 1, "t": -1}
+
+
+def test_split_breaks_one_giant_blob_along_its_semantic_seam():
+    from parser.pipeline.cluster_nodes import split_to_target
+    rng = np.random.default_rng(0)
+    left = rng.normal([1, 0, 0], 0.05, (8, 3))
+    right = rng.normal([0, 1, 0], 0.05, (8, 3))
+    vectors = np.vstack([left, right])
+    labels = split_to_target(np.zeros(16, dtype=int), vectors, target=2)
+    assert len(set(labels.tolist())) == 2
+    assert len(set(labels[:8].tolist())) == 1 and len(set(labels[8:].tolist())) == 1   # no mixing
+
+
+def test_split_stops_when_nothing_is_big_enough_and_leaves_noise_alone():
+    from parser.pipeline.cluster_nodes import split_to_target
+    vectors = np.eye(4)
+    labels = np.array([0, 0, -1, 1])
+    assert split_to_target(labels, vectors, target=10).tolist() == [0, 0, -1, 1]

@@ -1,14 +1,17 @@
-name: Deploy UI to GitHub Pages
+﻿name: Deploy demo to GitHub Pages
 
-# One-time setup: repo Settings -> Pages -> Source: "GitHub Actions", and add the
-# repository variable API_BASE (Settings -> Secrets and variables -> Actions ->
-# Variables) set to the Space URL, e.g. https://varunb1996-rearch-api.hf.space
+# Free, no backend, no extra accounts. One-time setup: repo Settings -> Pages ->
+# Source: "GitHub Actions". The page serves the pre-analyzed examples in demo/;
+# analyzing your own repository is done locally (see the README).
 
 on:
   push:
     branches: [main]
     paths:
       - "web/**"
+      - "demo/**"
+      - "scripts/export_static_demo.py"
+      - "parser/pipeline/migration_plan.py"
       - ".github/workflows/deploy-pages.yml"
   workflow_dispatch:
 
@@ -23,30 +26,23 @@ concurrency:
 
 jobs:
   build:
-    # Skipped (not failed) until the API_BASE variable exists.
-    if: ${{ vars.API_BASE != '' }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
     env:
-      VITE_API_BASE: ${{ vars.API_BASE }}
+      VITE_STATIC_DEMO: "1"
       VITE_BASE: /ReArch/
     steps:
       - uses: actions/checkout@v4
-      - name: Check configuration
-        run: |
-          if [ -z "$VITE_API_BASE" ]; then
-            echo "::error::Set the API_BASE repository variable to the backend URL (see the comment at the top of this workflow)."
-            exit 1
-          fi
+      - name: Export the bundled analyses as static files
+        run: python3 scripts/export_static_demo.py web/public/demo
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+        working-directory: web
       - run: npm run build
+        working-directory: web
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist

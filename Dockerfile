@@ -1,14 +1,17 @@
-# API image for a Hugging Face Docker Space (also runs anywhere Docker does).
+# Self-hosting image for the ReArch API (the public GitHub Pages demo is static and does not use it).
+# Runs in public mode, so it is safe to expose; put the UI's origin in REARCH_CORS_ORIGINS.
 #
 #   docker build -t rearch-api .
-#   docker run -p 7860:7860 -e GROQ_API_KEY=... rearch-api
+#   docker run -p 7860:7860 -e GROQ_API_KEY=... -e REARCH_CORS_ORIGINS=https://your-ui rearch-api
+#
+# Not built in CI or on the author's machine yet: treat the first build as a test.
 FROM python:3.13-slim
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
 
-# Hugging Face Spaces runs the container as uid 1000.
+# Run as an unprivileged user.
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
@@ -16,9 +19,7 @@ ENV HOME=/home/user \
     PYTHONUNBUFFERED=1 \
     FASTEMBED_CACHE_PATH=/home/user/.cache/fastembed \
     REARCH_PUBLIC_MODE=1 \
-    REARCH_DATA_DIR=/home/user/data \
-    REARCH_CORS_ORIGINS=https://varunb1996.github.io \
-    REARCH_UI_URL=https://varunb1996.github.io/ReArch/
+    REARCH_DATA_DIR=/home/user/data
 WORKDIR /home/user/app
 
 COPY --chown=user requirements.txt .

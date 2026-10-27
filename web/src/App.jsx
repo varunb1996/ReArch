@@ -8,7 +8,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { layoutGraph } from "./layout";
-import { API_BASE, apiFetch, errorMessage } from "./api";
+import { API_BASE, STATIC_DEMO, apiFetch, errorMessage, publicFetch } from "./api";
 import { UNCLUSTERED_COLOR, clusterColor } from "./colors";
 import MigrationPanel from "./MigrationPanel";
 import SubsystemMap from "./SubsystemMap";
@@ -67,7 +67,7 @@ function toFlowEdge(edge, index) {
   };
 }
 
-function RepoPanel({ showUsername, typedName, setTypedName, username, repos, demoRepos, selectedRepoId, onSelectRepo, onRepoAdded }) {
+function RepoPanel({ staticDemo, showUsername, typedName, setTypedName, username, repos, demoRepos, selectedRepoId, onSelectRepo, onRepoAdded }) {
   const [gitUrl, setGitUrl] = useState("");
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -111,6 +111,12 @@ function RepoPanel({ showUsername, typedName, setTypedName, username, repos, dem
         </label>
       )}
 
+      {staticDemo ? (
+        <div className="static-note">
+          <strong>Read-only demo.</strong> These are pre-analyzed real repositories. To analyze your own code, run ReArch on your machine:{" "}
+          <a href="https://github.com/varunb1996/ReArch#run-it-locally" target="_blank" rel="noreferrer">setup takes two commands</a>.
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="add-repo-form">
         <label className="field">
           <span>Analyze a public GitHub repo</span>
@@ -125,6 +131,7 @@ function RepoPanel({ showUsername, typedName, setTypedName, username, repos, dem
         </button>
         {formError && <p className="form-error">{formError}</p>}
       </form>
+      )}
 
       {repos.length > 0 && (
         <>
@@ -296,7 +303,7 @@ export default function App() {
   const [showInspector, setShowInspector] = useState(() => window.innerWidth >= 1200);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/health`)
+    publicFetch("/api/health")
       .then((res) => res.json())
       .then((health) => setPublicMode(Boolean(health.public_mode)))
       .catch(() => {
@@ -311,7 +318,7 @@ export default function App() {
 
   const refreshRepos = useCallback(() => {
     if (publicMode === null) return;
-    fetch(`${API_BASE}/api/demo/repos`)
+    publicFetch("/api/demo/repos")
       .then((res) => (res.ok ? res.json() : []))
       .then(setDemoRepos)
       .catch(() => setDemoRepos([]));
@@ -445,11 +452,14 @@ export default function App() {
       <aside className={`sidebar ${showSidebar ? "" : "collapsed"}`}>
         <h2>ReArch</h2>
         <p className="hint">
-          {publicMode
-            ? "Reverse-engineer a codebase into a blueprint and a migration plan. Your analyses are private to this browser."
-            : "Local mode. Each username only sees its own repos (no real auth)."}
+          {STATIC_DEMO
+            ? "Reverse-engineer a codebase into a blueprint and a migration plan: what to extract first, what is tangled, and how far to trust the analysis."
+            : publicMode
+              ? "Reverse-engineer a codebase into a blueprint and a migration plan. Your analyses are private to this browser."
+              : "Local mode. Each username only sees its own repos (no real auth)."}
         </p>
         <RepoPanel
+          staticDemo={STATIC_DEMO}
           showUsername={publicMode === false}
           typedName={typedName}
           setTypedName={setTypedName}
@@ -464,7 +474,10 @@ export default function App() {
           <HistoryPanel username={username} repoId={selectedRepoId} onReanalyzed={refreshRepos} />
         )}
         {selectedRepo?.demo && (
-          <p className="hint">This is a pre-analyzed example, so it is read-only. Paste a GitHub URL above to analyze your own repository.</p>
+          <p className="hint">
+            Pre-analyzed example{selectedRepo.commit ? ` (commit ${selectedRepo.commit.slice(0, 8)})` : ""}, read-only.
+            {STATIC_DEMO ? " Run ReArch locally to analyze your own repository." : " Paste a GitHub URL above to analyze your own repository."}
+          </p>
         )}
       </aside>
 
@@ -490,7 +503,7 @@ export default function App() {
           {error && <div className="status error">{error}</div>}
           {!error && !graph && (
             <div className="status">
-              {!selectedRepo && "Pick an example on the left, or paste a public GitHub repository to analyze."}
+              {!selectedRepo && (STATIC_DEMO ? "Pick an example on the left to explore its blueprint and migration plan." : "Pick an example on the left, or paste a public GitHub repository to analyze.")}
               {selectedRepo?.status === "pending" && "Analyzing this repository (cloning, parsing, clustering, writing the plan). This usually takes 1 to 3 minutes."}
               {selectedRepo?.status === "error" && `Analysis failed: ${selectedRepo.error || "unknown error"}`}
               {selectedRepo?.status === "ready" && "Loading blueprint..."}

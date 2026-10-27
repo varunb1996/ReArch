@@ -43,30 +43,33 @@ Enter any username, paste a git URL (a local path also works in local mode), and
 
 The suite covers the linker against a hand-verified fixture, the migration engine on synthetic graphs with known answers, the access-control and URL-safety rules a public deployment depends on, and the background-analysis flow.
 
-## Deploy it
+## The hosted demo (GitHub Pages, free)
 
-The UI is static (GitHub Pages); the API needs a real process (git, tree-sitter, an embedded graph database), so it runs as a Docker image on a free **Hugging Face Space**. Both deploy automatically from GitHub Actions on every push to `main`. One-time setup:
+The public page is a **static site**: no server, no cost, no account beyond GitHub, nothing to abuse. It serves pre-analyzed real repositories (`demo/`), so the subsystem map, the detailed graph and the full migration plan are all explorable in a browser.
 
-1. **API**: create a Space at huggingface.co/new-space (SDK: **Docker**, blank). In the Space's *Settings → Variables and secrets* add the secret `GROQ_API_KEY`.
-2. In this GitHub repo, *Settings → Secrets and variables → Actions*: add secret `HF_TOKEN` (a Hugging Face token with **write** access) and variable `HF_SPACE` (`owner/space-name`). Push to `main`, or run **Deploy API to Hugging Face Space** manually.
-3. **UI**: add the repository variable `API_BASE` with the Space's URL (`https://<owner>-<space-name>.hf.space`), and set *Settings → Pages → Source* to **GitHub Actions**. The **Deploy UI to GitHub Pages** workflow publishes to `https://<owner>.github.io/ReArch/`.
+One-time setup: repo **Settings → Pages → Source: GitHub Actions**. After that, every push to `main` runs **Deploy demo to GitHub Pages** and publishes to `https://<owner>.github.io/ReArch/`.
 
-The hosted server runs in *public mode* (`REARCH_PUBLIC_MODE=1`, set by the Dockerfile): only public `https://github.com/<owner>/<repo>` URLs are accepted, each browser gets a private random id instead of a username, example analyses bundled in `demo/` are read-only and load instantly, analyses are rate limited (3/hour per visitor, 10/day per IP) and run one at a time. Details in [ARCHITECTURE.md](ARCHITECTURE.md#running-it-in-public).
+**Analyzing your own repository happens locally** (see above, two commands). That is deliberate: analysis needs git, native parsers, an embedded graph database and an LLM key, which a free static host cannot run, and the free server tiers are either paid (Hugging Face Docker Spaces require a paid plan) or too small for the embedding model.
 
-To refresh the bundled examples: `.venv/Scripts/python scripts/build_demo.py https://github.com/psf/requests`, then commit `demo/`.
+To refresh or add examples: `.venv/Scripts/python scripts/build_demo.py https://github.com/psf/requests`, then commit `demo/`. The Pages build converts `demo/` into the static files the UI reads (`scripts/export_static_demo.py`).
+
+## Self-hosting the API (optional)
+
+If you do want live analysis online, the `Dockerfile` builds the API in *public mode* (`REARCH_PUBLIC_MODE=1`): only public `https://github.com/<owner>/<repo>` URLs, private per-browser visitor ids, a read-only example account, rate limits (3 per visitor per hour, 10 per IP per day), one analysis at a time. Build the UI with `VITE_API_BASE` pointing at it and set `REARCH_CORS_ORIGINS` on the API. The image has not been built yet, so treat the first build as a test. Details in [ARCHITECTURE.md](ARCHITECTURE.md#running-the-api-in-public).
 
 ### Configuration
 
 | Variable | Where | Meaning |
 |---|---|---|
-| `GROQ_API_KEY` | API | Enables written narratives and plans. Optional. |
-| `GROQ_MODEL` | API | Defaults to `openai/gpt-oss-120b`. Groq retires models; `GET https://api.groq.com/openai/v1/models` lists what your key can use. |
+| `GROQ_API_KEY` | API / scripts | Enables written narratives and plans. Optional. |
+| `GROQ_MODEL` | API / scripts | Defaults to `openai/gpt-oss-120b`. Groq retires models; `GET https://api.groq.com/openai/v1/models` lists what your key can use. |
 | `WEBHOOK_SECRET` | API | Enables `POST /api/webhooks/github`. |
 | `REARCH_PUBLIC_MODE` | API | `1` turns on the public-deployment guardrails. |
 | `REARCH_CORS_ORIGINS` | API | Comma-separated allowed browser origins. |
 | `REARCH_DATA_DIR` | API | Where analyses and the user database are stored. |
 | `REARCH_MAX_CODE_FILES` | API | Largest repository accepted (default 3000 analyzable files). |
 | `VITE_API_BASE` | UI build | Backend URL. Defaults to `http://localhost:8000`. |
+| `VITE_STATIC_DEMO` | UI build | `1` builds the serverless demo (what Pages serves). |
 
 ## Project layout
 
@@ -80,10 +83,11 @@ api/
   security.py                     public-deployment guardrails
   services/                       Kùzu graph store, SQLite user/repo store
 web/                              React + React Flow UI
-demo/                             bundled example analyses for the hosted demo
+demo/                             pre-analyzed examples (the hosted demo's data)
 scripts/build_demo.py             regenerate those examples
 tests/                            pytest suite
-Dockerfile, .github/workflows/    deployment
+Dockerfile                        optional self-hosting image for the API
+.github/workflows/               CI and the GitHub Pages deploy
 ```
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for how each stage works, why the design is the way it is, and what it cannot do.

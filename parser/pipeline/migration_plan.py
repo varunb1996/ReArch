@@ -461,6 +461,7 @@ def known_names(plan: dict) -> set[str]:
     names: set[str] = set()
 
     def add(text: str) -> None:
+        names.add(text)  # whole labels and scoped packages ("@xyflow/react") are valid references too
         for token in re.split(r"[\s·,/]+", text):
             token = token.strip("()`'\"")
             if token:

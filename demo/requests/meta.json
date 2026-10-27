@@ -1,6 +1,6 @@
 {
-  "name": "requests (Python HTTP library)",
+  "name": "requests",
   "git_url": "https://github.com/psf/requests",
   "commit": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
-  "analyzed_at": "2026-10-27T05:54:25+00:00"
+  "analyzed_at": "2026-10-27T06:21:39+00:00"
 }

@@ -7,3 +7,6 @@ api/data/
 *.log
 ingest/
 .env
+
+# generated from demo/ by scripts/export_static_demo.py for the Pages build
+web/public/demo/

@@ -136,6 +136,17 @@ html, body, #root {
   background: #1d4ed8;
 }
 
+.static-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.static-note a { color: #93c5fd; }
+
 .list-title {
   margin-top: 12px;
   font-size: 11px;

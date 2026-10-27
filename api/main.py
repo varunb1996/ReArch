@@ -16,6 +16,7 @@ import json
 import logging
 import os
 import shutil
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -46,6 +47,10 @@ DEMO_ROOT = PROJECT_ROOT / "demo"
 
 _user_store: UserStore | None = None
 _graph_stores: dict[str, GraphStore] = {}
+_graph_stores_lock = threading.Lock()
+# Each open Kùzu database holds its own buffer pool, so on a small host the number kept open is bounded
+# (least recently used are closed and reopen on demand). 0 keeps every store open, the old behaviour.
+MAX_OPEN_GRAPHS = int(os.environ.get("REARCH_MAX_OPEN_GRAPHS", "0"))
 
 
 def get_user_store() -> UserStore:
@@ -56,16 +61,25 @@ def get_user_store() -> UserStore:
 
 
 def get_graph_store(repo_id: str) -> GraphStore:
-    if repo_id not in _graph_stores:
-        _graph_stores[repo_id] = GraphStore(str(REPOS_ROOT / repo_id / "kuzu_db"))
-    return _graph_stores[repo_id]
+    with _graph_stores_lock:
+        store = _graph_stores.pop(repo_id, None)
+        if store is None:
+            store = GraphStore(str(REPOS_ROOT / repo_id / "kuzu_db"))
+        _graph_stores[repo_id] = store  # re-inserted last: dict order is recency order
+        if MAX_OPEN_GRAPHS:
+            # The requested store counts as open: it is about to be used, and a closed one reopens on use.
+            open_ids = [rid for rid, st in _graph_stores.items() if st.is_open or st is store]
+            for rid in open_ids[:-MAX_OPEN_GRAPHS]:
+                _graph_stores[rid].close()
+        return store
 
 
 def reset_graph_store(repo_id: str) -> GraphStore:
     """Wipe and recreate the Kuzu DB for a repo. Required before re-analysis:
     Kuzu's MERGE only adds/updates, so without a full reset, nodes/edges
     removed since the last analysis would linger as stale data forever."""
-    existing = _graph_stores.pop(repo_id, None)
+    with _graph_stores_lock:
+        existing = _graph_stores.pop(repo_id, None)
     if existing is not None:
         existing.close()
     db_path = REPOS_ROOT / repo_id / "kuzu_db"
@@ -106,10 +120,20 @@ def seed_demo_repos() -> None:
         log.info("seeded demo repo %s", meta["name"])
 
 
+def should_seed_demo() -> bool:
+    """Examples are seeded in public mode so a fresh server shows results at once. A deployment whose UI
+    already serves the examples as static files turns it off (REARCH_SEED_DEMO=0): seeding costs the
+    server its startup time, which on a small free host is most of a cold start."""
+    explicit = os.environ.get("REARCH_SEED_DEMO")
+    if explicit is not None:
+        return explicit == "1"
+    return public_mode()
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     get_user_store().fail_interrupted()
-    if public_mode() or os.environ.get("REARCH_SEED_DEMO") == "1":
+    if should_seed_demo():
         seed_demo_repos()
     yield
 

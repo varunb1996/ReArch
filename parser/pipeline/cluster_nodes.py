@@ -11,18 +11,25 @@ Uses fastembed (ONNX, local, no torch/account/API key) + scikit-learn's
 HDBSCAN (no need to pick k upfront; leaves genuinely uncategorizable nodes
 as noise (-1) instead of forcing them into a cluster).
 
+Set REARCH_CLUSTERING=graph to cluster by dependency structure instead
+(cluster_graph.py): no model, no numpy/scikit-learn, a fraction of the memory.
+That is what the 512 MB hosted deployment uses.
+
 Usage:
     .venv/Scripts/python parser/pipeline/cluster_nodes.py <graph.json> <output_graph.json>
 """
+from __future__ import annotations
+
 import json
+import os
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-import numpy as np
-from fastembed import TextEmbedding
-from sklearn.cluster import HDBSCAN, KMeans
-from sklearn.preprocessing import normalize
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+# numpy, scikit-learn and fastembed are imported inside the functions that need them,
+# so the graph method (and importing this module at all) does not load ~1 GB of libraries.
 
 CLUSTERABLE_KINDS = {"function", "method", "class"}
 EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"
@@ -59,6 +66,9 @@ def split_to_target(labels: np.ndarray, vectors: np.ndarray, target: int, min_si
     dense blob; k-means splits it along its real semantic seam. Deterministic
     (fixed seed). Stops early if nothing big enough is left to split.
     """
+    import numpy as np
+    from sklearn.cluster import KMeans
+
     labels = labels.copy()
     while True:
         ids = sorted(set(labels.tolist()) - {-1})
@@ -76,6 +86,8 @@ def split_to_target(labels: np.ndarray, vectors: np.ndarray, target: int, min_si
 def merge_to_target(labels: np.ndarray, vectors: np.ndarray, target: int) -> np.ndarray:
     """Fold the smallest clusters into their nearest neighbour (cosine on the
     cluster centroids) until at most `target` remain. Noise (-1) is untouched."""
+    from sklearn.preprocessing import normalize
+
     labels = labels.copy()
     while True:
         ids = sorted(set(labels.tolist()) - {-1})
@@ -179,18 +191,27 @@ def main(graph_path: str, output_path: str, min_cluster_size: int = 3) -> None:
         Path(output_path).write_text(json.dumps(graph, indent=2), encoding="utf-8")
         return
 
-    texts = [build_node_text(n, callees.get(n["id"], []), callers.get(n["id"], [])) for n in clusterable]
-
-    print(f"Embedding {len(texts)} nodes with {EMBEDDING_MODEL}...")
-    model = TextEmbedding(model_name=EMBEDDING_MODEL)
-    vectors = normalize(np.array(list(model.embed(texts))))
-
-    print("Clustering...")
-    labels = HDBSCAN(min_cluster_size=min_cluster_size).fit_predict(vectors)
-
     target = target_cluster_count(len(clusterable))
-    labels = merge_to_target(split_to_target(labels, vectors, target), vectors, target)
-    assigned = adopt_by_graph_affinity({n["id"]: int(label) for n, label in zip(clusterable, labels)}, graph["edges"])
+    if os.environ.get("REARCH_CLUSTERING", "embeddings") == "graph":
+        from parser.pipeline.cluster_graph import assign_clusters
+
+        print(f"Clustering {len(clusterable)} nodes by dependency structure...")
+        assigned = assign_clusters(clusterable, graph["edges"], target)
+    else:
+        import numpy as np
+        from fastembed import TextEmbedding
+        from sklearn.cluster import HDBSCAN
+        from sklearn.preprocessing import normalize
+
+        texts = [build_node_text(n, callees.get(n["id"], []), callers.get(n["id"], [])) for n in clusterable]
+        print(f"Embedding {len(texts)} nodes with {EMBEDDING_MODEL}...")
+        model = TextEmbedding(model_name=EMBEDDING_MODEL)
+        vectors = normalize(np.array(list(model.embed(texts))))
+
+        print("Clustering...")
+        labels = HDBSCAN(min_cluster_size=min_cluster_size).fit_predict(vectors)
+        labels = merge_to_target(split_to_target(labels, vectors, target), vectors, target)
+        assigned = adopt_by_graph_affinity({n["id"]: int(label) for n, label in zip(clusterable, labels)}, graph["edges"])
     unified = renumber_by_size(unify_subtrees(clusterable, assigned))
     for node in clusterable:
         node["cluster"] = unified[node["id"]]

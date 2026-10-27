@@ -242,3 +242,18 @@ def test_concurrent_requests_never_see_a_missing_repo_or_crash_on_a_new_visitor(
     with ThreadPoolExecutor(max_workers=16) as pool:
         codes = list(pool.map(hit, jobs))
     assert set(codes) == {200}, {c: codes.count(c) for c in set(codes)}
+
+
+@pytest.mark.parametrize("public,seed_var,expected", [
+    ("1", None, True),    # public mode seeds by default: a fresh server shows examples at once
+    ("1", "0", False),    # ...unless the UI serves the examples itself and startup time matters more
+    ("", "1", True),      # local mode can opt in
+    ("", None, False),
+])
+def test_demo_seeding_switch(monkeypatch, public, seed_var, expected):
+    monkeypatch.setenv("REARCH_PUBLIC_MODE", public)
+    if seed_var is None:
+        monkeypatch.delenv("REARCH_SEED_DEMO", raising=False)
+    else:
+        monkeypatch.setenv("REARCH_SEED_DEMO", seed_var)
+    assert main.should_seed_demo() is expected

@@ -7,6 +7,7 @@ means rewriting this file only, per the project plan's stated migration path.
 Query shapes here are intentionally plain Cypher so that swap stays cheap.
 """
 import json
+import os
 import threading
 from pathlib import Path
 
@@ -31,6 +32,7 @@ SCHEMA_STATEMENTS = [
 ]
 
 EDGE_KIND_TO_REL_TABLE = {"imports": "IMPORTS", "calls": "CALLS", "inherits": "INHERITS"}
+LOAD_BATCH = 500
 
 # Edge targets can be "unresolved:<raw expr>" placeholders that don't
 # correspond to a real symbol anywhere in the repo. Kuzu's REL tables require
@@ -43,78 +45,112 @@ UNRESOLVED_NODE_KIND = "unresolved"
 
 class GraphStore:
     def __init__(self, db_path: str):
-        self.db = kuzu.Database(db_path)
-        self.conn = kuzu.Connection(self.db)
+        self.db_path = db_path
         # One Kuzu connection is shared by FastAPI's request threads; serialize use of it.
         self._lock = threading.RLock()
+        self._closed = True
+        with self._lock:
+            self._open()
+
+    def _open(self) -> None:
+        # Kùzu sizes its buffer pool from the host's RAM (80%), not the container's limit. A small host
+        # sets REARCH_KUZU_BUFFER_MB; unset keeps Kùzu's default.
+        buffer_mb = int(os.environ.get("REARCH_KUZU_BUFFER_MB", "0"))
+        self.db = kuzu.Database(self.db_path, buffer_pool_size=buffer_mb * 1024 * 1024) if buffer_mb else kuzu.Database(self.db_path)
+        self.conn = kuzu.Connection(self.db)
         for stmt in SCHEMA_STATEMENTS:
             self.conn.execute(stmt)
+        self._closed = False
+
+    @property
+    def is_open(self) -> bool:
+        return not self._closed
 
     def close(self) -> None:
-        """Release Kuzu's file handles on db_path. Required before deleting
-        or replacing the DB directory on Windows — without this, re-analysis
-        (which wipes and recreates the DB) fails with a locked-directory
-        error even though the Python object is no longer referenced."""
-        self.conn.close()
-        self.db.close()
+        """Release Kuzu's file handles and memory. Required before deleting or replacing the DB
+        directory on Windows (re-analysis wipes and recreates it), and used to bound memory on a small
+        host. The store reopens itself on next use, so a request that still holds a reference to a
+        store another request just evicted keeps working."""
+        with self._lock:  # waits for any query in flight
+            if self._closed:
+                return
+            self.conn.close()
+            self.db.close()
+            self._closed = True
 
     def load_graph_json(self, graph_json_path: str) -> None:
         with self._lock:
-            self._load_graph_json(graph_json_path)
+            if self._closed:
+                self._open()
+            try:
+                self._load_graph_json(graph_json_path)
+            finally:
+                # A bulk load leaves Kùzu holding ~200 MB for a 1,500-node graph (measured: a checkpoint frees
+                # 19 MB of it, closing frees ~170 MB). Reads reopen the store at ~10 MB, so release it here.
+                self.close()
 
     def _load_graph_json(self, graph_json_path: str) -> None:
         graph = json.loads(Path(graph_json_path).read_text(encoding="utf-8"))
         known_ids = {n["id"] for n in graph["nodes"]}
 
-        for node in graph["nodes"]:
-            self.conn.execute(
-                """MERGE (n:Node {id: $id})
-                   SET n.kind=$kind, n.language=$language, n.path=$path,
-                       n.name=$name, n.qualified_name=$qualified_name,
-                       n.start_line=$start_line, n.end_line=$end_line,
-                       n.cluster=$cluster""",
-                {
-                    "id": node["id"],
-                    "kind": node["kind"],
-                    "language": node.get("language", ""),
-                    "path": node.get("path", ""),
-                    "name": node.get("name", ""),
-                    "qualified_name": node.get("qualified_name", ""),
-                    "start_line": node.get("start_line", 0) or 0,
-                    "end_line": node.get("end_line", 0) or 0,
-                    "cluster": node.get("cluster", -1) if node.get("cluster") is not None else -1,
-                },
-            )
-
+        nodes = [
+            {
+                "id": node["id"],
+                "kind": node["kind"],
+                "language": node.get("language", ""),
+                "path": node.get("path", ""),
+                "name": node.get("name", ""),
+                "qualified_name": node.get("qualified_name", ""),
+                "start_line": node.get("start_line", 0) or 0,
+                "end_line": node.get("end_line", 0) or 0,
+                "cluster": node.get("cluster", -1) if node.get("cluster") is not None else -1,
+            }
+            for node in graph["nodes"]
+        ]
         seen_unresolved = set()
         for edge in graph["edges"]:
             for placeholder_id in (edge["source"], edge["target"]):
                 if placeholder_id not in known_ids and placeholder_id not in seen_unresolved:
                     seen_unresolved.add(placeholder_id)
                     raw = placeholder_id.split(":", 1)[-1] if ":" in placeholder_id else placeholder_id
-                    self.conn.execute(
-                        """MERGE (n:Node {id: $id})
-                           SET n.kind=$kind, n.name=$name, n.qualified_name=$name,
-                               n.language='', n.path='', n.start_line=0, n.end_line=0,
-                               n.cluster=-1""",
-                        {"id": placeholder_id, "kind": UNRESOLVED_NODE_KIND, "name": raw},
-                    )
+                    nodes.append({
+                        "id": placeholder_id, "kind": UNRESOLVED_NODE_KIND, "language": "", "path": "", "name": raw,
+                        "qualified_name": raw, "start_line": 0, "end_line": 0, "cluster": -1,
+                    })
 
+        edges_by_table: dict[str, list[dict]] = {}
         for edge in graph["edges"]:
-            rel_table = EDGE_KIND_TO_REL_TABLE[edge["kind"]]
+            edges_by_table.setdefault(EDGE_KIND_TO_REL_TABLE[edge["kind"]], []).append({
+                "source": edge["source"],
+                "target": edge["target"],
+                "resolution": edge["resolution"],
+                "evidence": edge.get("evidence") or "",
+            })
+
+        # One statement per batch, not per row: a statement is its own transaction, and a 1,500-node graph
+        # took ~14 s and ~200 MB as single statements versus ~0.5 s and ~30 MB in batches (measured).
+        for i in range(0, len(nodes), LOAD_BATCH):
             self.conn.execute(
-                f"""MATCH (a:Node {{id: $source}}), (b:Node {{id: $target}})
-                    CREATE (a)-[:{rel_table} {{resolution: $resolution, evidence: $evidence}}]->(b)""",
-                {
-                    "source": edge["source"],
-                    "target": edge["target"],
-                    "resolution": edge["resolution"],
-                    "evidence": edge.get("evidence") or "",
-                },
+                """UNWIND $rows AS r
+                   MERGE (n:Node {id: r.id})
+                   SET n.kind=r.kind, n.language=r.language, n.path=r.path, n.name=r.name,
+                       n.qualified_name=r.qualified_name, n.start_line=r.start_line, n.end_line=r.end_line,
+                       n.cluster=r.cluster""",
+                {"rows": nodes[i:i + LOAD_BATCH]},
             )
+        for rel_table, edges in edges_by_table.items():
+            for i in range(0, len(edges), LOAD_BATCH):
+                self.conn.execute(
+                    f"""UNWIND $rows AS r
+                        MATCH (a:Node {{id: r.source}}), (b:Node {{id: r.target}})
+                        CREATE (a)-[:{rel_table} {{resolution: r.resolution, evidence: r.evidence}}]->(b)""",
+                    {"rows": edges[i:i + LOAD_BATCH]},
+                )
 
     def query(self, cypher: str, params: dict | None = None) -> list[list]:
         with self._lock:
+            if self._closed:
+                self._open()
             result = self.conn.execute(cypher, params or {})
             rows = []
             while result.has_next():
